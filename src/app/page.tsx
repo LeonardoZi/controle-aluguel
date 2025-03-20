@@ -3,14 +3,64 @@ import Image from "next/image";
 export default function Home() {
   return (
     <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)] bg-white text-gray-900">
-      <main className="flex flex-col gap-8 row-start-2 items-center sm:items-start">
-        <h1 className="text-3xl font-bold text-center sm:text-left">
-          Controle de Estoque em Comércio de Materiais Elétricos
-        </h1>
-        <p className="text-lg text-center sm:text-left max-w-2xl">
-          Sistema completo para gerenciamento de inventário, vendas e
-          fornecedores para seu negócio de materiais elétricos.
-        </p>
+      <main className="flex flex-col gap-8 row-start-2 items-center sm:items-start w-full">
+        {/* Header Section - Improved */}
+        <div className="w-full bg-gradient-to-r from-blue-50 to-white p-6 sm:p-10 rounded-xl border-l-4 border-blue-500 shadow-sm mb-6">
+          <div className="max-w-4xl mx-auto sm:mx-0">
+            <div className="flex items-center gap-3 mb-2">
+              <div className="h-8 w-8 bg-blue-500 rounded-full flex items-center justify-center">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="18"
+                  height="18"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="white"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="M2 9a3 3 0 0 1 0 6v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2a3 3 0 0 1 0-6V7a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z"></path>
+                  <path d="M8 17h8"></path>
+                  <path d="M9 10h6"></path>
+                  <path d="M12 10v7"></path>
+                </svg>
+              </div>
+              <span className="text-blue-600 font-medium tracking-wide text-sm uppercase">
+                Sistema Empresarial
+              </span>
+            </div>
+
+            <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-gray-800 mb-4 leading-tight">
+              Controle de Estoque em
+              <br className="hidden sm:block" /> Comércio de{" "}
+              <span className="text-blue-600">Materiais Elétricos</span>
+            </h1>
+
+            <p className="text-lg text-gray-600 max-w-2xl leading-relaxed">
+              Sistema completo para gerenciamento de inventário, controle de
+              vendas e relacionamento com fornecedores, desenvolvido
+              especificamente para
+              <span className="font-medium">
+                {" "}
+                impulsionar seu negócio de materiais elétricos
+              </span>
+              .
+            </p>
+
+            <div className="mt-6 flex flex-wrap gap-3">
+              <span className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm font-medium">
+                Fácil de usar
+              </span>
+              <span className="px-3 py-1 bg-green-100 text-green-700 rounded-full text-sm font-medium">
+                Relatórios detalhados
+              </span>
+              <span className="px-3 py-1 bg-amber-100 text-amber-700 rounded-full text-sm font-medium">
+                Controle eficiente
+              </span>
+            </div>
+          </div>
+        </div>
 
         {/* Navigation Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 w-full max-w-5xl mt-4">
