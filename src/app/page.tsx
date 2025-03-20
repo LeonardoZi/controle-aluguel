@@ -43,15 +43,12 @@ export default function Home() {
               especificamente para
               <span className="font-medium">
                 {" "}
-                impulsionar seu negócio de materiais elétricos
+                impulsionar seu negócio de materiais elétricos 
               </span>
               .
             </p>
 
             <div className="mt-6 flex flex-wrap gap-3">
-              <span className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm font-medium">
-                Fácil de usar
-              </span>
               <span className="px-3 py-1 bg-green-100 text-green-700 rounded-full text-sm font-medium">
                 Relatórios detalhados
               </span>
