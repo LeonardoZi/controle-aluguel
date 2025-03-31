@@ -64,6 +64,14 @@ h6 {
     @apply bg-amber-500 text-white px-4 py-2 rounded-md hover:bg-amber-600 transition-colors;
   }
 
+  .btn-outline-primary {
+    @apply bg-white text-blue-600 border border-blue-600 px-4 py-2 rounded-md hover:bg-blue-50 transition-colors;
+  }
+
+  .btn-outline-danger {
+    @apply bg-white text-red-600 border border-red-600 px-4 py-2 rounded-md hover:bg-red-50 transition-colors;
+  }
+
   .btn-sm {
     @apply px-3 py-1 text-sm;
   }
@@ -104,6 +112,14 @@ h6 {
     @apply bg-blue-100 text-blue-800;
   }
 
+  .badge-purple {
+    @apply bg-purple-100 text-purple-800;
+  }
+
+  .badge-indigo {
+    @apply bg-indigo-100 text-indigo-800;
+  }
+
   .table-container {
     @apply w-full overflow-x-auto rounded-lg border border-gray-200;
   }
@@ -139,6 +155,30 @@ h6 {
   .sidenav-item-active {
     @apply bg-blue-50 text-blue-700;
   }
+
+  .stat-card {
+    @apply bg-white rounded-lg p-4 border border-gray-200 shadow-sm;
+  }
+
+  .stat-card-title {
+    @apply text-sm text-gray-500 font-medium;
+  }
+
+  .stat-card-value {
+    @apply text-2xl font-bold mt-1;
+  }
+
+  .tab-button {
+    @apply py-2 px-4 font-medium;
+  }
+
+  .tab-button-active {
+    @apply border-b-2 border-blue-500 text-blue-600;
+  }
+
+  .report-filters {
+    @apply bg-white rounded-lg p-4 border border-gray-200 mb-6;
+  }
 }
 
 /* Animações sutis */
@@ -168,4 +208,55 @@ h6 {
 
 .slide-in {
   animation: slideInRight 0.3s ease-out;
+}
+
+/* Status colors for common states */
+.status-pending {
+  @apply bg-yellow-100 text-yellow-800;
+}
+
+.status-processing {
+  @apply bg-blue-100 text-blue-800;
+}
+
+.status-approved {
+  @apply bg-blue-100 text-blue-800;
+}
+
+.status-shipped {
+  @apply bg-indigo-100 text-indigo-800;
+}
+
+.status-delivered {
+  @apply bg-purple-100 text-purple-800;
+}
+
+.status-completed {
+  @apply bg-green-100 text-green-800;
+}
+
+.status-cancelled {
+  @apply bg-red-100 text-red-800;
+}
+
+/* Print styles */
+@media print {
+  .no-print {
+    display: none !important;
+  }
+
+  .print-only {
+    display: block !important;
+  }
+
+  body {
+    font-size: 12pt;
+    color: #000;
+    background: #fff;
+  }
+
+  .app-content {
+    margin-left: 0 !important;
+    padding: 0 !important;
+  }
 }

@@ -1,6 +1,79 @@
 import Link from "next/link";
+import { prisma } from "@/lib/prisma";
 
-export default function Home() {
+// Função para buscar as estatísticas
+async function getStats() {
+  try {
+    const [
+      totalProducts,
+      monthSales,
+      pendingOrders,
+      totalSuppliers,
+      lowStockCount,
+    ] = await Promise.all([
+      // Total de produtos ativos
+      prisma.product.count({
+        where: {
+          isActive: true,
+        },
+      }),
+      // Vendas do mês atual
+      prisma.sale.aggregate({
+        where: {
+          saleDate: {
+            gte: new Date(new Date().getFullYear(), new Date().getMonth(), 1),
+          },
+          status: "COMPLETED",
+        },
+        _sum: {
+          totalAmount: true,
+        },
+      }),
+      // Pedidos pendentes
+      prisma.purchaseOrder.count({
+        where: {
+          status: "PENDING",
+        },
+      }),
+      // Total de fornecedores ativos
+      prisma.supplier.count({
+        where: {
+          isActive: true,
+        },
+      }),
+      // Produtos com estoque baixo
+      prisma.product.count({
+        where: {
+          currentStock: {
+            lte: 10,
+          },
+          isActive: true,
+        },
+      }),
+    ]);
+
+    return {
+      totalProducts,
+      monthSales: monthSales._sum?.totalAmount || 0,
+      pendingOrders,
+      totalSuppliers,
+      lowStockCount,
+    };
+  } catch (error) {
+    console.error("Erro ao buscar estatísticas:", error);
+    return {
+      totalProducts: 0,
+      monthSales: 0,
+      pendingOrders: 0,
+      totalSuppliers: 0,
+      lowStockCount: 0,
+    };
+  }
+}
+
+export default async function Home() {
+  const stats = await getStats();
+
   return (
     <div className="min-h-screen bg-gray-50 font-[family-name:var(--font-geist-sans)] text-gray-900">
       {/* Hero Section com altura reduzida */}
@@ -59,12 +132,14 @@ export default function Home() {
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Quick Stats Section */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-10">
+        <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 mb-10">
           <div className="bg-white rounded-lg p-6 shadow-sm border border-gray-100">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-500">Total de Produtos</p>
-                <h3 className="text-2xl font-bold mt-1">1,248</h3>
+                <h3 className="text-2xl font-bold mt-1">
+                  {stats.totalProducts}
+                </h3>
               </div>
               <div className="h-12 w-12 bg-blue-50 rounded-lg flex items-center justify-center text-blue-500">
                 <svg
@@ -91,7 +166,12 @@ export default function Home() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-500">Vendas do Mês</p>
-                <h3 className="text-2xl font-bold mt-1">R$ 45.830</h3>
+                <h3 className="text-2xl font-bold mt-1">
+                  {new Intl.NumberFormat("pt-BR", {
+                    style: "currency",
+                    currency: "BRL",
+                  }).format(Number(stats.monthSales))}
+                </h3>
               </div>
               <div className="h-12 w-12 bg-green-50 rounded-lg flex items-center justify-center text-green-500">
                 <svg
@@ -116,7 +196,9 @@ export default function Home() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-500">Pedidos Pendentes</p>
-                <h3 className="text-2xl font-bold mt-1">12</h3>
+                <h3 className="text-2xl font-bold mt-1">
+                  {stats.pendingOrders}
+                </h3>
               </div>
               <div className="h-12 w-12 bg-amber-50 rounded-lg flex items-center justify-center text-amber-500">
                 <svg
@@ -143,7 +225,9 @@ export default function Home() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-500">Fornecedores</p>
-                <h3 className="text-2xl font-bold mt-1">32</h3>
+                <h3 className="text-2xl font-bold mt-1">
+                  {stats.totalSuppliers}
+                </h3>
               </div>
               <div className="h-12 w-12 bg-purple-50 rounded-lg flex items-center justify-center text-purple-500">
                 <svg
@@ -161,6 +245,32 @@ export default function Home() {
                   <circle cx="9" cy="7" r="4"></circle>
                   <path d="M22 21v-2a4 4 0 0 0-3-3.87"></path>
                   <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                </svg>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-lg p-6 shadow-sm border border-gray-100">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-500">Estoque Baixo</p>
+                <h3 className="text-2xl font-bold mt-1">
+                  {stats.lowStockCount}
+                </h3>
+              </div>
+              <div className="h-12 w-12 bg-red-50 rounded-lg flex items-center justify-center text-red-500">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="24"
+                  height="24"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="m8 3 4 8 5-5 5 15H2L8 3z"></path>
                 </svg>
               </div>
             </div>
@@ -515,7 +625,7 @@ export default function Home() {
                 </Link>
 
                 <Link
-                  href="/inventory/new"
+                  href="/purchases/new"
                   className="btn-secondary flex items-center justify-center gap-2 px-5 py-3"
                 >
                   <svg
@@ -532,7 +642,7 @@ export default function Home() {
                     <path d="M5 12h14"></path>
                     <path d="M12 5v14"></path>
                   </svg>
-                  Cadastrar Produto
+                  Novo Pedido de Compra
                 </Link>
 
                 <div className="mt-4">
@@ -542,7 +652,7 @@ export default function Home() {
                   <ul className="flex flex-col gap-3">
                     <li>
                       <Link
-                        href="/inventory?lowStock=true"
+                        href="/reports/inventory"
                         className="text-sm text-gray-700 hover:text-blue-600 flex items-center gap-2"
                       >
                         <svg
@@ -558,7 +668,7 @@ export default function Home() {
                         >
                           <path d="m8 3 4 8 5-5 5 15H2L8 3z"></path>
                         </svg>
-                        Produtos com Estoque Baixo
+                        Relatório de Inventário
                       </Link>
                     </li>
                     <li>
@@ -605,6 +715,29 @@ export default function Home() {
                           <circle cx="12" cy="12" r="3"></circle>
                         </svg>
                         Configurações do Sistema
+                      </Link>
+          </li>
+                    <li>
+                      <Link
+                        href="/reports/purchases"
+                        className="text-sm text-gray-700 hover:text-blue-600 flex items-center gap-2"
+                      >
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          width="18"
+                          height="18"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        >
+                          <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"></path>
+                          <path d="M3 6h18"></path>
+                          <path d="M16 10a4 4 0 0 1-8 0"></path>
+                        </svg>
+                        Relatório de Compras
                       </Link>
                     </li>
                   </ul>

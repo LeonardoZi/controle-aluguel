@@ -1,24 +1,48 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Sistema ERP para Materiais Elétricos
 
-## Getting Started
+Sistema completo para gerenciamento de estoque, vendas, compras e relacionamento com fornecedores, desenvolvido para comércio de materiais elétricos.
 
-First, run the development server:
+## Funcionalidades
+
+- Controle de estoque e produtos
+- Gerenciamento de vendas e clientes
+- Compras e relacionamento com fornecedores
+- Relatórios detalhados
+- Dashboard com métricas
+
+## Tecnologias
+
+- Next.js 15 (App Router)
+- React 19
+- TypeScript
+- Prisma (PostgreSQL)
+- Tailwind CSS
+
+## Desenvolvimento
 
 ```bash
+# Instalar dependências
+npm install
+
+# Iniciar ambiente de desenvolvimento
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+
+# Criar build de produção
+npm run build
+
+# Iniciar em modo produção
+npm start
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Acesse [http://localhost:3000](http://localhost:3000) para ver o sistema em funcionamento.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Banco de Dados
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+O projeto utiliza PostgreSQL via Neon Database. Para configurar:
+
+1. Crie um arquivo `.env` na raiz do projeto
+2. Adicione sua string de conexão: `DATABASE_URL="sua_conexao_postgres"`
+3. Execute `npx prisma db push` para sincronizar o schema
 
 ## Learn More
 

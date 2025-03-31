@@ -13,12 +13,13 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Controle de Estoque - Materiais Elétricos",
+  title: "Sistema ERP - Materiais Elétricos",
   description:
-    "Sistema de gerenciamento de estoque para comércio de materiais elétricos",
+    "Sistema completo para gerenciamento de estoque, vendas, compras, fornecedores e clientes para comércio de materiais elétricos",
   keywords:
-    "estoque, materiais elétricos, controle de inventário, gestão de fornecedores",
-  authors: [{ name: "Sua Empresa" }],
+    "materiais elétricos, erp, controle de estoque, gestão de vendas, compras, fornecedores, clientes, relatórios",
+  authors: [{ name: "Eletro Materiais LTDA" }],
+  creator: "Eletro Materiais LTDA",
 };
 
 export const viewport: Viewport = {
