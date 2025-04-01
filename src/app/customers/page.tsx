@@ -108,7 +108,7 @@ export default function CustomersPage() {
           </div>
         ) : filteredCustomers.length === 0 ? (
           <div className="text-center py-10">
-            <p className="text-gray-500">Nenhum cliente encontrado</p>
+            <p className="text-gray-500">Nenhum cliente encontrado.</p>
           </div>
         ) : (
           <div className="overflow-x-auto">
