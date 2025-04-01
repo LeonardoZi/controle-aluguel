@@ -10,7 +10,6 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { cn } from "@/lib/utils";
-import { Customer } from "@/types";
 
 // Schema de validação
 const customerSchema = z.object({
@@ -97,7 +96,7 @@ export function CustomerForm({
   // Hook de formulário
   const form = useForm<CustomerFormValues>({
     initialValues: defaultValues,
-    validationSchema: customerSchema,
+    validationSchema: customerSchema as z.ZodType<CustomerFormValues>,
     onSubmit,
   });
 
@@ -106,6 +105,29 @@ export function CustomerForm({
     const newType = e.target.value as "personal" | "business";
     form.setValue("type", newType);
     setCustomerType(newType);
+  };
+
+  // Definir um tipo para as chaves do objeto address
+  type AddressField = keyof CustomerFormValues["address"];
+
+  const hasAddressFieldError = (field: AddressField): boolean => {
+    return !!(
+      form.touched.address &&
+      typeof form.touched.address === "object" &&
+      form.touched.address[field] &&
+      form.errors.address &&
+      typeof form.errors.address === "object" &&
+      form.errors.address[field]
+    );
+  };
+
+  const getAddressFieldError = (field: AddressField): string => {
+    if (form.errors.address && typeof form.errors.address === "object") {
+      const error = form.errors.address[field];
+      // Verifica se o erro existe e o converte para string de forma segura
+      return error !== undefined && error !== null ? String(error) : "";
+    }
+    return "";
   };
 
   return (
@@ -253,15 +275,11 @@ export function CustomerForm({
               onChange={form.handleChange}
               onBlur={form.handleBlur}
               placeholder="Nome da rua"
-              className={cn(
-                form.touched.address?.street &&
-                  form.errors.address?.street &&
-                  "border-red-500"
-              )}
+              className={cn(hasAddressFieldError("street") && "border-red-500")}
             />
-            {form.touched.address?.street && form.errors.address?.street && (
+            {hasAddressFieldError("street") && (
               <p className="mt-1 text-sm text-red-500">
-                {form.errors.address.street}
+                {getAddressFieldError("street")}
               </p>
             )}
           </div>
@@ -282,14 +300,12 @@ export function CustomerForm({
                 onBlur={form.handleBlur}
                 placeholder="Número"
                 className={cn(
-                  form.touched.address?.number &&
-                    form.errors.address?.number &&
-                    "border-red-500"
+                  hasAddressFieldError("number") && "border-red-500"
                 )}
               />
-              {form.touched.address?.number && form.errors.address?.number && (
+              {hasAddressFieldError("number") && (
                 <p className="mt-1 text-sm text-red-500">
-                  {form.errors.address.number}
+                  {getAddressFieldError("number")}
                 </p>
               )}
             </div>
@@ -329,17 +345,14 @@ export function CustomerForm({
               onBlur={form.handleBlur}
               placeholder="Bairro"
               className={cn(
-                form.touched.address?.neighborhood &&
-                  form.errors.address?.neighborhood &&
-                  "border-red-500"
+                hasAddressFieldError("neighborhood") && "border-red-500"
               )}
             />
-            {form.touched.address?.neighborhood &&
-              form.errors.address?.neighborhood && (
-                <p className="mt-1 text-sm text-red-500">
-                  {form.errors.address.neighborhood}
-                </p>
-              )}
+            {hasAddressFieldError("neighborhood") && (
+              <p className="mt-1 text-sm text-red-500">
+                {getAddressFieldError("neighborhood")}
+              </p>
+            )}
           </div>
 
           <div>
@@ -357,14 +370,12 @@ export function CustomerForm({
               onBlur={form.handleBlur}
               placeholder="00000-000"
               className={cn(
-                form.touched.address?.zipCode &&
-                  form.errors.address?.zipCode &&
-                  "border-red-500"
+                hasAddressFieldError("zipCode") && "border-red-500"
               )}
             />
-            {form.touched.address?.zipCode && form.errors.address?.zipCode && (
+            {hasAddressFieldError("zipCode") && (
               <p className="mt-1 text-sm text-red-500">
-                {form.errors.address.zipCode}
+                {getAddressFieldError("zipCode")}
               </p>
             )}
           </div>
@@ -385,15 +396,11 @@ export function CustomerForm({
               onChange={form.handleChange}
               onBlur={form.handleBlur}
               placeholder="Cidade"
-              className={cn(
-                form.touched.address?.city &&
-                  form.errors.address?.city &&
-                  "border-red-500"
-              )}
+              className={cn(hasAddressFieldError("city") && "border-red-500")}
             />
-            {form.touched.address?.city && form.errors.address?.city && (
+            {hasAddressFieldError("city") && (
               <p className="mt-1 text-sm text-red-500">
-                {form.errors.address.city}
+                {getAddressFieldError("city")}
               </p>
             )}
           </div>
@@ -412,15 +419,11 @@ export function CustomerForm({
               onChange={form.handleChange}
               onBlur={form.handleBlur}
               placeholder="UF"
-              className={cn(
-                form.touched.address?.state &&
-                  form.errors.address?.state &&
-                  "border-red-500"
-              )}
+              className={cn(hasAddressFieldError("state") && "border-red-500")}
             />
-            {form.touched.address?.state && form.errors.address?.state && (
+            {hasAddressFieldError("state") && (
               <p className="mt-1 text-sm text-red-500">
-                {form.errors.address.state}
+                {getAddressFieldError("state")}
               </p>
             )}
           </div>

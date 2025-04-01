@@ -4,6 +4,7 @@
 import { z } from "zod";
 import { useForm } from "@/hooks/use-form";
 import { cn } from "@/lib/utils";
+import React from "react";
 
 // Componentes UI básicos
 const Button = ({
@@ -179,6 +180,9 @@ interface SupplierFormProps {
   isLoading?: boolean;
 }
 
+// Funções auxiliares tipadas
+type AddressField = keyof SupplierFormValues["address"];
+
 export function SupplierForm({
   initialData,
   onSubmit,
@@ -218,33 +222,44 @@ export function SupplierForm({
   // Função auxiliar para obter valor de forma segura
   const getValue = (path: string): string => {
     if (path.startsWith("address.")) {
-      const field = path.split(".")[1] as keyof typeof form.values.address;
-      return form.values.address[field] || "";
+      const field = path.split(".")[1] as AddressField;
+      return (form.values.address[field] || "").toString();
     }
-    return "";
+
+    const key = path as keyof typeof form.values;
+    const value = form.values[key];
+    return value !== undefined && value !== null ? String(value) : "";
   };
 
   // Função auxiliar para verificar toque e erro
   const hasError = (path: string): boolean => {
     if (path.startsWith("address.")) {
-      const field = path.split(".")[1] as keyof typeof form.values.address;
-      return !!(
+      const field = path.split(".")[1] as AddressField;
+      return Boolean(
         form.touched.address &&
-        form.touched.address[field] &&
-        form.errors.address &&
-        form.errors.address[field]
+          Object.prototype.hasOwnProperty.call(form.touched.address, field) &&
+          form.errors.address &&
+          Object.prototype.hasOwnProperty.call(form.errors.address, field)
       );
     }
-    return false;
+
+    const key = path as keyof typeof form.touched;
+    return Boolean(form.touched[key] && form.errors[key]);
   };
 
   // Função para obter mensagem de erro
   const getErrorMessage = (path: string): string => {
     if (path.startsWith("address.")) {
-      const field = path.split(".")[1] as keyof typeof form.values.address;
-      return form.errors.address?.[field] || "";
+      const field = path.split(".")[1] as AddressField;
+      if (form.errors.address && typeof form.errors.address === "object") {
+        const error = form.errors.address[field];
+        return error ? String(error) : "";
+      }
+      return "";
     }
-    return "";
+
+    const key = path as keyof typeof form.errors;
+    return form.errors[key]?.toString() || "";
   };
 
   return (
