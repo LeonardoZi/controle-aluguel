@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Decimal } from "@prisma/client/runtime/library";
 import { Button } from "@/components/ui/button";
-import { getCustomers } from "@/actions/customers";
 
 // Tipos
 interface Customer {
