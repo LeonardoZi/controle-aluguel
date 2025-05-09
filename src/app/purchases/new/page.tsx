@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Decimal } from "@prisma/client/runtime/library";
+import { Button } from "@/components/ui/button";
 
 // Tipos
 interface Supplier {
@@ -215,16 +216,9 @@ export default function NewPurchase() {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <div className="flex justify-between items-center mb-6">
-        <div>
-          <Link href="/purchases" className="text-blue-600 hover:underline">
-            ← Voltar para pedidos
-          </Link>
-          <h1 className="text-2xl font-bold text-gray-800 mt-2">
+          <h1 className="text-2xl font-bold text-gray-800 mb-6 text-center">
             Novo Pedido de Compra
           </h1>
-        </div>
-      </div>
 
       {error && (
         <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-4">
@@ -435,11 +429,10 @@ export default function NewPurchase() {
 
         {/* Botões de Ação */}
         <div className="flex justify-end gap-4">
-          <Link
-            href="/purchases"
-            className="bg-gray-500 hover:bg-gray-600 text-white px-6 py-2 rounded"
-          >
-            Cancelar
+          <Link href="/purchases">
+            <Button variant="outline" type="button">
+              Cancelar
+            </Button>
           </Link>
           <button
             type="submit"

@@ -85,12 +85,9 @@ export default function NewProductPage() {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <div className="flex items-center mb-6">
-        <Link href="/inventory" className="text-blue-600 hover:underline mr-4">
-          ← Voltar
-        </Link>
-        <h1 className="text-2xl font-bold text-gray-800">Novo Produto</h1>
-      </div>
+
+      <h1 className="text-2xl font-bold text-gray-800 text-center mb-6">Novo Produto</h1>
+
 
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
         {error && (

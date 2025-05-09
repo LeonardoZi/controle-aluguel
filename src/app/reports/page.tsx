@@ -82,12 +82,9 @@ export default function ReportsPage() {
         <Link href="/" className="text-blue-600 hover:underline mr-4">
           ← Voltar
         </Link>
-        <h1 className="text-2xl font-bold text-gray-800">
+        <h1 className="text-2xl font-bold text-gray-800 text-center mb-6">
           Relatórios e Análises
         </h1>
-        <p className="text-gray-500 mt-1">
-          Acesse os relatórios disponíveis para análise de dados do seu negócio
-        </p>
       </div>
 
       {/* Barra de pesquisa */}

@@ -142,7 +142,13 @@ export default function DashboardPage() {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <h1 className="text-2xl font-bold text-gray-800 mb-6">Dashboard</h1>
+      <div className="flex items-center mb-6">
+        <Link href="/" className="text-blue-600 hover:underline flex-1 mt-5 mb-6">
+          ← Voltar
+        </Link>
+        <h1 className="text-2xl font-bold text-gray-800 mb-4 text-center flex-1">Dashboard</h1>
+        <div className="flex-1"></div>
+      </div>
 
       {loading ? (
         <div className="text-center py-10">
@@ -287,14 +293,6 @@ export default function DashboardPage() {
                 </div>
               )}
 
-              <div className="mt-4">
-                <Link
-                  href="/sales/new"
-                  className="btn-primary inline-flex items-center justify-center px-4 py-2 w-full"
-                >
-                  Registrar Nova Venda
-                </Link>
-              </div>
             </div>
 
             {/* Produtos com Estoque Baixo */}
@@ -362,14 +360,6 @@ export default function DashboardPage() {
                 </div>
               )}
 
-              <div className="mt-4">
-                <Link
-                  href="/purchases/new"
-                  className="btn-secondary inline-flex items-center justify-center px-4 py-2 w-full"
-                >
-                  Criar Pedido de Compra
-                </Link>
-              </div>
             </div>
           </div>
 

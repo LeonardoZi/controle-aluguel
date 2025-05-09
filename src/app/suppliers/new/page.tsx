@@ -123,14 +123,11 @@ export default function NewSupplier() {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <div className="mb-6">
-        <Link href="/suppliers" className="text-blue-600 hover:underline">
-          ← Voltar para fornecedores
-        </Link>
-        <h1 className="text-2xl font-bold text-gray-800 mt-2">
+
+        <h1 className="text-2xl font-bold text-gray-800 mb-6 text-center">
           Novo Fornecedor
         </h1>
-      </div>
+
 
       {error && (
         <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-4">
