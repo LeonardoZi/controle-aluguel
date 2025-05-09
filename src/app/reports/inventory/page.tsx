@@ -260,12 +260,15 @@ export default function InventoryReport() {
     <div className="container mx-auto px-4 py-8">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-800">
+          <Link href="/" className="text-blue-600 hover:underline block mb-2">
+            ← Voltar
+          </Link>
+        </div>
+
+        <div className="mb-6">
+          <h1 className="text-2xl font-bold text-gray-800 text-center">
             Relatório de Inventário
           </h1>
-          <p className="text-gray-500 mt-1">
-            Visão geral do estoque e valores dos produtos
-          </p>
         </div>
 
         <button

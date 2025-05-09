@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Link from "next/link";
 
 // Interface para as configurações do sistema
 interface SystemSettings {
@@ -200,11 +201,15 @@ export default function SettingsPage() {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold text-gray-800">Configurações</h1>
-        <p className="text-gray-500 mt-1">
-          Gerencie as configurações do sistema e suas preferências
-        </p>
+      <div className="flex flex-col md:flex-row items-center md:items-center mb-6 gap-4">
+        <div className="order-1 md:order-none">
+          <Link href="/" className="text-blue-600 hover:underline inline-flex items-center whitespace-nowrap">
+            ← Voltar
+          </Link>
+        </div>
+        <div className="text-center w-full ">
+          <h1 className="flex-1 text-2xl font-bold text-gray-800">Configurações</h1>
+        </div>
       </div>
 
       {error && (

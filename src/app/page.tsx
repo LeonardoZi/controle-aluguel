@@ -77,7 +77,7 @@ export default async function Home() {
   return (
     <div className="min-h-screen bg-gray-50 font-[family-name:var(--font-geist-sans)] text-gray-900">
       {/* Hero Section com altura reduzida */}
-      <div className="bg-white py-12 border-b border-gray-100 shadow-sm">
+      <div className="bg-white py-6 border-b border-gray-100 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="max-w-4xl">
             <div className="flex items-center gap-3 mb-4">
@@ -100,7 +100,7 @@ export default async function Home() {
                 </svg>
               </div>
               <span className="text-blue-600 font-medium tracking-wide text-sm uppercase">
-                Sistema Empresarial
+                Controle de Estoque
               </span>
             </div>
 
@@ -109,22 +109,6 @@ export default async function Home() {
               <span className="text-blue-600">Materiais Elétricos</span>
             </h1>
 
-            <p className="text-lg text-gray-600 max-w-2xl mb-6">
-              Sistema completo para gerenciamento de inventário, controle de
-              vendas e relacionamento com fornecedores.
-            </p>
-
-            <div className="flex flex-wrap gap-3">
-              <span className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm font-medium">
-                Fácil de usar
-              </span>
-              <span className="px-3 py-1 bg-green-100 text-green-700 rounded-full text-sm font-medium">
-                Relatórios detalhados
-              </span>
-              <span className="px-3 py-1 bg-amber-100 text-amber-700 rounded-full text-sm font-medium">
-                Controle eficiente
-              </span>
-            </div>
           </div>
         </div>
       </div>
@@ -307,10 +291,10 @@ export default async function Home() {
                     </svg>
                   </div>
                   <h2 className="text-xl font-semibold mb-2 group-hover:text-blue-600 transition-colors">
-                    Inventário
+                    Estoque
                   </h2>
                   <p className="text-sm text-gray-600">
-                    Gerencie seu estoque de materiais elétricos com facilidade.
+                    Gerencie seu estoque com facilidade.
                   </p>
                 </div>
                 <span className="text-blue-600 text-sm flex items-center gap-1 mt-3">
@@ -357,7 +341,7 @@ export default async function Home() {
                     Vendas
                   </h2>
                   <p className="text-sm text-gray-600">
-                    Registre e acompanhe todas as vendas e transações.
+                    Registre e acompanhe todas as vendas.
                   </p>
                 </div>
                 <span className="text-green-600 text-sm flex items-center gap-1 mt-3">
@@ -406,7 +390,7 @@ export default async function Home() {
                     Fornecedores
                   </h2>
                   <p className="text-sm text-gray-600">
-                    Gerencie seus fornecedores e pedidos pendentes.
+                    Gerencie seus fornecedores.
                   </p>
                 </div>
                 <span className="text-amber-600 text-sm flex items-center gap-1 mt-3">
@@ -454,7 +438,7 @@ export default async function Home() {
                     Compras
                   </h2>
                   <p className="text-sm text-gray-600">
-                    Faça pedidos a fornecedores e gerencie entregas.
+                    Faça pedidos a fornecedores e acompanhe as entregas.
                   </p>
                 </div>
                 <span className="text-purple-600 text-sm flex items-center gap-1 mt-3">

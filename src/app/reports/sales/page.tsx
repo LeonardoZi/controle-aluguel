@@ -394,12 +394,14 @@ export default function SalesReport() {
     <div className="container mx-auto px-4 py-8">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
         <div>
+            <Link href="/" className="text-blue-600 hover:underline block mb-2">
+              ← Voltar
+            </Link>
+        </div>
+        <div>
           <h1 className="text-2xl font-bold text-gray-800">
             Relatório de Vendas
           </h1>
-          <p className="text-gray-500 mt-1">
-            Análise de vendas, produtos e clientes
-          </p>
         </div>
 
         <button
