@@ -17,7 +17,7 @@ type SaleWithRelations = Sale & {
   items: (SaleItem & { product: Product })[];
 };
 
-// Adicione este tipo para produtos com relações
+// Adicione este tipo para produtos com relações.
 type ProductWithRelations = Product & {
   category: Category;
   supplier: Supplier | null;
