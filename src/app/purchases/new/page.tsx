@@ -5,6 +5,9 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Decimal } from "@prisma/client/runtime/library";
 import { Button } from "@/components/ui/button";
+import { getSuppliers } from "@/actions/suppliers";
+import { createPurchaseOrder } from "@/actions/purchases";
+import { getProducts } from "@/actions/products";
 
 // Tipos
 interface Supplier {
@@ -53,16 +56,16 @@ export default function NewPurchase() {
       setLoading(true);
       try {
         // Buscar fornecedores e produtos do backend
-        const [suppliersRes, productsRes] = await Promise.all([
-          fetch("../actions/suppliers").then((res) => res.json()),
-          fetch("../actions/products").then((res) => res.json()),
+        const [suppliersResult, productsResult] = await Promise.all([
+          getSuppliers(),
+          getProducts(),
         ]);
 
-        if (suppliersRes.error) throw new Error(suppliersRes.error);
-        if (productsRes.error) throw new Error(productsRes.error);
+        if (suppliersResult.error) throw new Error(suppliersResult.error);
+        if (productsResult.error) throw new Error(productsResult.error);
 
-        setSuppliers(suppliersRes.suppliers || []);
-        setProducts(productsRes.products || []);
+        setSuppliers(suppliersResult.suppliers || []);
+        setProducts(productsResult.products || []);
       } catch (err) {
         console.error("Erro ao carregar dados:", err);
         setError("Ocorreu um erro ao carregar fornecedores e produtos.");
@@ -167,7 +170,10 @@ export default function NewPurchase() {
     try {
       const purchaseData = {
         supplierId,
-        expectedDelivery: expectedDeliveryDate || undefined,
+        userId: "your-user-id", // You'll need to get this from your auth system
+        expectedDelivery: expectedDeliveryDate
+          ? new Date(expectedDeliveryDate)
+          : undefined,
         notes: notes || undefined,
         items: items.map((item) => ({
           productId: item.productId,
@@ -176,22 +182,19 @@ export default function NewPurchase() {
         })),
       };
 
-      const response = await fetch("../actions/purchases", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(purchaseData),
-      });
+      const result = await createPurchaseOrder(purchaseData);
 
-      const result = await response.json();
+      if (result.error) {
+        throw new Error(result.error);
+      }
 
-      if (!response.ok) {
-        throw new Error(result.error || "Erro ao criar pedido de compra");
+      // Check if purchaseOrder exists before using it
+      if (!result.purchaseOrder) {
+        throw new Error("Falha ao criar pedido. Nenhum pedido retornado.");
       }
 
       // Redirecionar para a página do pedido criado
-      router.push(`/purchases/${result.purchase.id}`);
+      router.push(`/purchases/${result.purchaseOrder.id}`);
     } catch (err: unknown) {
       console.error("Erro ao submeter formulário:", err);
       setError(
@@ -216,9 +219,9 @@ export default function NewPurchase() {
 
   return (
     <div className="container mx-auto px-4 py-8">
-          <h1 className="text-2xl font-bold text-gray-800 mb-6 text-center">
-            Novo Pedido de Compra
-          </h1>
+      <h1 className="text-2xl font-bold text-gray-800 mb-6 text-center">
+        Novo Pedido de Compra
+      </h1>
 
       {error && (
         <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-4">

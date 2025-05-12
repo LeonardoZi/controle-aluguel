@@ -3,6 +3,9 @@
 import { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
 import { Decimal } from "@prisma/client/runtime/library";
+import { getSalesReport } from "@/actions/reports";
+import { getCustomers } from "@/actions/customers";
+import { getProducts } from "@/actions/products";
 
 type OrderStatus =
   | "PENDING"
@@ -29,18 +32,23 @@ interface SaleItem {
   product: Product;
   quantity: number;
   unitPrice: Decimal | number;
-  subtotal: Decimal | number;
+  total: Decimal | number;
 }
 
 interface Sale {
   id: string;
-  customerId: string;
-  customer: Customer;
-  orderDate: string | Date;
+  customerId: string | null;
+  customer: Customer | null;
+  saleDate: string | Date;
   status: OrderStatus;
   totalAmount: Decimal | number;
   paymentMethod: string;
   items: SaleItem[];
+  user: {
+    id: string;
+    name: string;
+    email: string;
+  };
 }
 
 interface SalesStats {
@@ -86,19 +94,16 @@ export default function SalesReport() {
     const fetchData = async () => {
       setLoading(true);
       try {
-        const [salesRes, customersRes, productsRes] = await Promise.all([
-          fetch("../actions/reports/sales").then((res) => res.json()),
-          fetch("../actions/customers").then((res) => res.json()),
-          fetch("../actions/products").then((res) => res.json()),
-        ]);
+        const [salesResult, customersResult, productsResult] =
+          await Promise.all([getSalesReport(), getCustomers(), getProducts()]);
 
-        if (salesRes.error) throw new Error(salesRes.error);
-        if (customersRes.error) throw new Error(customersRes.error);
-        if (productsRes.error) throw new Error(productsRes.error);
+        if (salesResult.error) throw new Error(salesResult.error);
+        if (customersResult.error) throw new Error(customersResult.error);
+        if (productsResult.error) throw new Error(productsResult.error);
 
-        setSales(salesRes.sales || []);
-        setCustomers(customersRes.customers || []);
-        setProducts(productsRes.products || []);
+        setSales(salesResult.sales || []);
+        setCustomers(customersResult.customers || []);
+        setProducts(productsResult.products || []);
       } catch (err) {
         console.error("Erro ao buscar dados:", err);
         setError("Ocorreu um erro ao carregar os dados do relatório.");
@@ -144,7 +149,7 @@ export default function SalesReport() {
   const filteredSales = useMemo(() => {
     return sales
       .filter((sale) => {
-        const orderDate = new Date(sale.orderDate);
+        const orderDate = new Date(sale.saleDate);
 
         // Filtro de data
         const matchesStartDate = !startDate || orderDate >= new Date(startDate);
@@ -180,9 +185,7 @@ export default function SalesReport() {
       })
       .sort((a, b) => {
         // Ordenar por data (mais recente primeiro)
-        return (
-          new Date(b.orderDate).getTime() - new Date(a.orderDate).getTime()
-        );
+        return new Date(b.saleDate).getTime() - new Date(a.saleDate).getTime();
       });
   }, [
     sales,
@@ -207,7 +210,7 @@ export default function SalesReport() {
     const labels: string[] = [];
 
     filteredSales.forEach((sale) => {
-      const date = new Date(sale.orderDate);
+      const date = new Date(sale.saleDate);
       let groupKey = "";
 
       if (groupBy === "day") {
@@ -239,11 +242,9 @@ export default function SalesReport() {
     return { groups, labels };
   }, [filteredSales, groupBy]);
 
-  // Calcular estatísticas
+  // Cálculos estatísticos com verificações para null
   const stats: SalesStats = useMemo(() => {
     let totalValue = 0;
-
-    // Para encontrar o top cliente e produto
     const customerStats: Record<
       string,
       { purchases: number; value: number; name: string }
@@ -257,17 +258,19 @@ export default function SalesReport() {
       const value = Number(sale.totalAmount);
       totalValue += value;
 
-      // Estatísticas por cliente
-      if (!customerStats[sale.customerId]) {
-        customerStats[sale.customerId] = {
-          purchases: 0,
-          value: 0,
-          name: sale.customer.name,
-        };
-      }
+      // Estatísticas por cliente - garantir que customerId não é null
+      if (sale.customerId !== null) {
+        if (!customerStats[sale.customerId]) {
+          customerStats[sale.customerId] = {
+            purchases: 0,
+            value: 0,
+            name: sale.customer?.name || "Cliente desconhecido",
+          };
+        }
 
-      customerStats[sale.customerId].purchases += 1;
-      customerStats[sale.customerId].value += value;
+        customerStats[sale.customerId].purchases += 1;
+        customerStats[sale.customerId].value += value;
+      }
 
       // Estatísticas por produto
       sale.items.forEach((item) => {
@@ -280,7 +283,7 @@ export default function SalesReport() {
         }
 
         productStats[item.productId].quantity += item.quantity;
-        productStats[item.productId].value += Number(item.subtotal);
+        productStats[item.productId].value += Number(item.total);
       });
     });
 
@@ -343,8 +346,8 @@ export default function SalesReport() {
 
     const rows = filteredSales.map((sale) => [
       sale.id,
-      new Date(sale.orderDate).toLocaleDateString("pt-BR"),
-      sale.customer.name,
+      new Date(sale.saleDate).toLocaleDateString("pt-BR"),
+      sale.customer?.name || "Cliente não informado",
       getStatusLabel(sale.status).label,
       Number(sale.totalAmount).toString(),
       sale.paymentMethod || "-",
@@ -394,9 +397,9 @@ export default function SalesReport() {
     <div className="container mx-auto px-4 py-8">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
         <div>
-            <Link href="/" className="text-blue-600 hover:underline block mb-2">
-              ← Voltar
-            </Link>
+          <Link href="/" className="text-blue-600 hover:underline block mb-2">
+            ← Voltar
+          </Link>
         </div>
         <div>
           <h1 className="text-2xl font-bold text-gray-800">
@@ -768,11 +771,11 @@ export default function SalesReport() {
                         #{sale.id.substring(0, 8)}
                       </div>
                       <div className="text-xs text-gray-500">
-                        {sale.customer.name}
+                        {sale.customer?.name || "Cliente não informado"}
                       </div>
                     </td>
                     <td className="px-4 py-4 whitespace-nowrap text-center text-sm text-gray-500">
-                      {formatDate(sale.orderDate)}
+                      {formatDate(sale.saleDate)}
                     </td>
                     <td className="px-4 py-4 whitespace-nowrap text-center">
                       <span

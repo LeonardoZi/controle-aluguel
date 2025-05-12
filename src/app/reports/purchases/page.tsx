@@ -4,6 +4,8 @@ import { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
 import { Decimal } from "@prisma/client/runtime/library";
 import { PurchaseStatus } from "@prisma/client";
+import { getPurchasesReport } from "@/actions/reports";
+import { getSuppliers } from "@/actions/suppliers";
 
 interface Supplier {
   id: string;
@@ -15,8 +17,8 @@ interface PurchaseOrder {
   supplierId: string;
   supplier: Supplier;
   orderDate: string | Date;
-  expectedDelivery?: string | Date;
-  actualDelivery?: string | Date;
+  expectedDelivery?: string | Date | null;
+  actualDelivery?: string | Date | null;
   status: PurchaseStatus;
   totalAmount: Decimal | number;
   items: {
@@ -65,16 +67,16 @@ export default function PurchasesReport() {
     const fetchData = async () => {
       setLoading(true);
       try {
-        const [purchasesRes, suppliersRes] = await Promise.all([
-          fetch("../actions/reports/purchases").then((res) => res.json()),
-          fetch("../actions/suppliers").then((res) => res.json()),
+        const [purchasesResult, suppliersResult] = await Promise.all([
+          getPurchasesReport(),
+          getSuppliers(),
         ]);
 
-        if (purchasesRes.error) throw new Error(purchasesRes.error);
-        if (suppliersRes.error) throw new Error(suppliersRes.error);
+        if (purchasesResult.error) throw new Error(purchasesResult.error);
+        if (suppliersResult.error) throw new Error(suppliersResult.error);
 
-        setPurchases(purchasesRes.purchases || []);
-        setSuppliers(suppliersRes.suppliers || []);
+        setPurchases(purchasesResult.purchases || []);
+        setSuppliers(suppliersResult.suppliers || []);
       } catch (err) {
         console.error("Erro ao buscar dados:", err);
         setError("Ocorreu um erro ao carregar os dados do relatório.");

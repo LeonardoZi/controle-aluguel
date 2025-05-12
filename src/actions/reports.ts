@@ -1,7 +1,6 @@
 "use server";
 
 import { prisma } from "@/lib/prisma";
-import { Decimal } from "@prisma/client/runtime/library";
 import type { Sale } from "@prisma/client";
 import type {
   Customer,
@@ -11,6 +10,7 @@ import type {
   Supplier,
 } from "@prisma/client";
 import { MovementType } from "@prisma/client";
+import { PurchaseStatus, SaleStatus } from "@prisma/client";
 
 type SaleWithRelations = Sale & {
   customer: Customer | null;
@@ -24,19 +24,37 @@ type ProductWithRelations = Product & {
 };
 
 // Relatório de vendas por período
-export async function getSalesReport(startDate: Date, endDate: Date) {
+export async function getSalesReport(options?: {
+  startDate?: Date;
+  endDate?: Date;
+  customerId?: string;
+  status?: SaleStatus;
+}) {
   try {
-    // Buscar dados de vendas para o período
+    const { startDate, endDate, customerId, status } = options || {};
+
     const sales = await prisma.sale.findMany({
       where: {
-        saleDate: {
-          gte: startDate,
-          lte: endDate,
-        },
-        status: "COMPLETED",
+        ...(startDate || endDate
+          ? {
+              saleDate: {
+                ...(startDate ? { gte: startDate } : {}),
+                ...(endDate ? { lte: endDate } : {}),
+              },
+            }
+          : {}),
+        ...(customerId ? { customerId } : {}),
+        ...(status ? { status } : {}),
       },
       include: {
         customer: true,
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+          },
+        },
         items: {
           include: {
             product: true,
@@ -46,38 +64,19 @@ export async function getSalesReport(startDate: Date, endDate: Date) {
       orderBy: { saleDate: "desc" },
     });
 
-    // Calcular totais
-    const totalSales = sales.length;
-    const totalRevenue = sales.reduce(
-      (sum, sale) => sum.add(sale.totalAmount),
-      new Decimal(0)
-    );
-
-    // Agrupar vendas por dia
-    const salesByDate = groupSalesByDate(sales);
-
-    // Agrupar vendas por método de pagamento
-    const salesByPaymentMethod = groupSalesByPaymentMethod(sales);
-
-    // Top produtos vendidos
-    const topProducts = await getTopSellingProducts(startDate, endDate);
-
-    return {
-      totalSales,
-      totalRevenue: Number(totalRevenue),
-      salesByDate,
-      salesByPaymentMethod,
-      topProducts,
-      sales,
-    };
+    return { sales };
   } catch (error) {
-    console.error("Error generating sales report:", error);
-    return { error: "Falha ao gerar relatório de vendas" };
+    console.error("Error fetching sales report:", error);
+    return { error: "Falha ao buscar relatório de vendas" };
   }
 }
 
-// Agrupar vendas por data
-function groupSalesByDate(sales: SaleWithRelations[]) {
+/**
+ * Agrupa vendas por data para análise de tendências
+ * @param sales Lista de vendas a serem agrupadas
+ * @returns Array de objetos com data, total e contagem de vendas
+ */
+export function groupSalesByDate(sales: SaleWithRelations[]) {
   const salesByDate: { [date: string]: { total: number; count: number } } = {};
 
   sales.forEach((sale) => {
@@ -98,8 +97,12 @@ function groupSalesByDate(sales: SaleWithRelations[]) {
   }));
 }
 
-// Agrupar vendas por método de pagamento
-function groupSalesByPaymentMethod(sales: SaleWithRelations[]) {
+/**
+ * Agrupa vendas por método de pagamento para análise financeira
+ * @param sales Lista de vendas a serem agrupadas
+ * @returns Array de objetos com método, total e contagem de vendas
+ */
+export function groupSalesByPaymentMethod(sales: SaleWithRelations[]) {
   const salesByMethod: { [method: string]: { total: number; count: number } } =
     {};
 
@@ -121,8 +124,13 @@ function groupSalesByPaymentMethod(sales: SaleWithRelations[]) {
   }));
 }
 
-// Top produtos vendidos
-async function getTopSellingProducts(startDate: Date, endDate: Date) {
+/**
+ * Busca os produtos mais vendidos em um período específico
+ * @param startDate Data inicial para análise
+ * @param endDate Data final para análise
+ * @returns Array dos produtos mais vendidos com detalhes
+ */
+export async function getTopSellingProducts(startDate: Date, endDate: Date) {
   const topProducts = await prisma.saleItem.groupBy({
     by: ["productId"],
     where: {
@@ -169,45 +177,47 @@ async function getTopSellingProducts(startDate: Date, endDate: Date) {
 // Relatório de estoque
 export async function getInventoryReport() {
   try {
-    // Buscar todos os produtos ativos
     const products = await prisma.product.findMany({
-      where: { isActive: true },
       include: {
         category: true,
         supplier: true,
+        stockMovements: {
+          orderBy: { createdAt: "desc" },
+          take: 1,
+        },
       },
       orderBy: { name: "asc" },
     });
 
-    // Calcular estatísticas
-    const totalProducts = products.length;
-    const totalValue = products.reduce(
-      (sum, product) =>
-        sum + Number(product.purchasePrice) * product.currentStock,
-      0
-    );
-    const lowStockCount = products.filter(
-      (p) => p.currentStock <= p.minimumStock
-    ).length;
+    // Enhance product data with additional report-specific info
+    const enhancedProducts = products.map((product) => {
+      const lastMovement = product.stockMovements?.[0];
 
-    // Agrupar produtos por categoria
-    const productsByCategory = groupProductsByCategory(products);
+      return {
+        ...product,
+        lastMovementDate: lastMovement?.createdAt,
+        minStock: product.minimumStock,
+        maxStock: product.minimumStock ? product.minimumStock * 3 : undefined, // Example fallback
+        costPrice: product.purchasePrice,
+        stockValue: product.purchasePrice.mul(product.currentStock),
+      };
+    });
 
-    return {
-      totalProducts,
-      totalValue,
-      lowStockCount,
-      productsByCategory,
-      products,
-    };
+    return { products: enhancedProducts };
   } catch (error) {
-    console.error("Error generating inventory report:", error);
-    return { error: "Falha ao gerar relatório de estoque" };
+    console.error("Error fetching inventory report:", error);
+    return { error: "Falha ao buscar relatório de inventário" };
   }
 }
 
-// Agrupar produtos por categoria
-function groupProductsByCategory(products: ProductWithRelations[]) {
+/**
+ * Agrupa produtos por categoria para análise de distribuição de estoque
+ * @param products Lista de produtos com relações a serem agrupados
+ * @returns Array de objetos com categoria, contagem e valor total
+ */
+export async function groupProductsByCategory(
+  products: ProductWithRelations[]
+) {
   const productsByCategory: {
     [category: string]: { count: number; value: number };
   } = {};
@@ -291,5 +301,53 @@ export async function getStockMovementReport(
   } catch (error) {
     console.error("Error generating stock movement report:", error);
     return { error: "Falha ao gerar relatório de movimentação de estoque" };
+  }
+}
+
+// Get purchases data for reports
+export async function getPurchasesReport(options?: {
+  startDate?: Date;
+  endDate?: Date;
+  supplierId?: string;
+  status?: PurchaseStatus;
+}) {
+  try {
+    const { startDate, endDate, supplierId, status } = options || {};
+
+    const purchases = await prisma.purchaseOrder.findMany({
+      where: {
+        ...(startDate || endDate
+          ? {
+              orderDate: {
+                ...(startDate ? { gte: startDate } : {}),
+                ...(endDate ? { lte: endDate } : {}),
+              },
+            }
+          : {}),
+        ...(supplierId ? { supplierId } : {}),
+        ...(status ? { status } : {}),
+      },
+      include: {
+        supplier: true,
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+          },
+        },
+        items: {
+          include: {
+            product: true,
+          },
+        },
+      },
+      orderBy: { orderDate: "desc" },
+    });
+
+    return { purchases };
+  } catch (error) {
+    console.error("Error fetching purchases report:", error);
+    return { error: "Falha ao buscar relatório de compras" };
   }
 }

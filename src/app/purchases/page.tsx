@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { Decimal } from "@prisma/client/runtime/library";
 import { PurchaseStatus } from "@prisma/client";
+import { getPurchaseOrders } from "@/actions/purchases";
 
 interface Supplier {
   id: string;
@@ -15,6 +16,27 @@ interface User {
   name: string;
 }
 
+interface Product {
+  id: string;
+  name: string;
+  sku: string;
+  description?: string | null;
+  supplierId?: string | null;
+  unit: string;
+  currentStock: number;
+  // Add other necessary product fields
+}
+
+interface PurchaseItem {
+  id: string;
+  productId: string;
+  product: Product;
+  quantity: number;
+  receivedQuantity: number;
+  unitPrice: Decimal | number;
+  total: Decimal | number;
+}
+
 interface PurchaseOrder {
   id: string;
   supplierId: string;
@@ -22,13 +44,14 @@ interface PurchaseOrder {
   userId: string;
   user: User;
   orderDate: string | Date;
-  expectedDelivery?: string | Date;
-  actualDelivery?: string | Date;
+  expectedDelivery?: string | Date | null;
+  actualDelivery?: string | Date | null;
   status: PurchaseStatus;
   totalAmount: Decimal | number;
-  notes?: string;
+  notes?: string | null;
   createdAt: string | Date;
   updatedAt: string | Date;
+  items: PurchaseItem[];
 }
 
 export default function PurchasesPage() {
@@ -42,14 +65,13 @@ export default function PurchasesPage() {
     const fetchPurchases = async () => {
       setLoading(true);
       try {
-        const response = await fetch("../actions/purchases");
-        const data = await response.json();
+        const result = await getPurchaseOrders();
 
-        if (!response.ok) {
-          throw new Error(data.error || "Erro ao buscar pedidos de compra");
+        if (result.error) {
+          throw new Error(result.error);
         }
 
-        setPurchases(data.purchases || []);
+        setPurchases(result.purchases || []);
       } catch (err) {
         console.error("Erro ao buscar pedidos:", err);
         setError("Ocorreu um erro ao carregar os pedidos de compra.");
@@ -68,7 +90,7 @@ export default function PurchasesPage() {
     }).format(Number(value));
   };
 
-  const formatDate = (date?: string | Date) => {
+  const formatDate = (date?: string | Date | null) => {
     if (!date) return "-";
     return new Intl.DateTimeFormat("pt-BR").format(new Date(date));
   };

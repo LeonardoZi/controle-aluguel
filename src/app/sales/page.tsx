@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { Decimal } from "@prisma/client/runtime/library";
+import { getSales } from "@/actions/sales";
 
 // Tipos
 type OrderStatus =
@@ -20,17 +21,24 @@ interface Customer {
 
 interface Sale {
   id: string;
-  customerId: string;
-  customer: Customer;
-  orderDate: string | Date;
+  customerId: string | null;
+  customer: Customer | null;
+  saleDate: string | Date;
   status: OrderStatus;
   totalAmount: Decimal | number;
   paymentMethod: string;
-  paymentStatus: string;
   items: {
     id: string;
     quantity: number;
+    productId: string;
+    unitPrice: Decimal | number;
+    total: Decimal | number;
   }[];
+  user: {
+    id: string;
+    name: string;
+    email: string;
+  };
 }
 
 export default function SalesPage() {
@@ -41,20 +49,18 @@ export default function SalesPage() {
   const [statusFilter, setStatusFilter] = useState<string>("");
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
-  const [paymentStatusFilter, setPaymentStatusFilter] = useState("");
 
   useEffect(() => {
     const fetchSales = async () => {
       setLoading(true);
       try {
-        const response = await fetch("../actions/sales");
-        const data = await response.json();
+        const result = await getSales();
 
-        if (!response.ok) {
-          throw new Error(data.error || "Erro ao buscar vendas");
+        if (result.error) {
+          throw new Error(result.error);
         }
 
-        setSales(data.sales || []);
+        setSales(result.sales || []);
       } catch (err) {
         console.error("Erro ao buscar vendas:", err);
         setError("Ocorreu um erro ao carregar as vendas.");
@@ -95,53 +101,30 @@ export default function SalesPage() {
     );
   };
 
-  const getPaymentStatusLabel = (status: string) => {
-    const statusMap: Record<string, { label: string; color: string }> = {
-      PENDING: { label: "Pendente", color: "bg-yellow-100 text-yellow-800" },
-      PAID: { label: "Pago", color: "bg-green-100 text-green-800" },
-      PARTIAL: { label: "Parcial", color: "bg-blue-100 text-blue-800" },
-      REFUNDED: { label: "Reembolsado", color: "bg-red-100 text-red-800" },
-    };
-    return (
-      statusMap[status] || { label: status, color: "bg-gray-100 text-gray-800" }
-    );
-  };
-
   const filteredSales = sales.filter((sale) => {
     // Filtro de texto (cliente ou ID)
     const matchesSearch =
       searchTerm === "" ||
-      sale.customer.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      sale.customer?.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       sale.id.toLowerCase().includes(searchTerm.toLowerCase());
 
     // Filtro de status
     const matchesStatus = statusFilter === "" || sale.status === statusFilter;
 
-    // Filtro de status de pagamento
-    const matchesPaymentStatus =
-      paymentStatusFilter === "" || sale.paymentStatus === paymentStatusFilter;
-
     // Filtro de data inicial
-    const saleDate = new Date(sale.orderDate);
+    const saleDate = new Date(sale.saleDate);
     const matchesStartDate = !startDate || saleDate >= new Date(startDate);
 
     // Filtro de data final
     const matchesEndDate =
       !endDate || saleDate <= new Date(`${endDate}T23:59:59`);
 
-    return (
-      matchesSearch &&
-      matchesStatus &&
-      matchesPaymentStatus &&
-      matchesStartDate &&
-      matchesEndDate
-    );
+    return matchesSearch && matchesStatus && matchesStartDate && matchesEndDate;
   });
 
   const clearFilters = () => {
     setSearchTerm("");
     setStatusFilter("");
-    setPaymentStatusFilter("");
     setStartDate("");
     setEndDate("");
   };
@@ -215,23 +198,6 @@ export default function SalesPage() {
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Pagamento
-            </label>
-            <select
-              value={paymentStatusFilter}
-              onChange={(e) => setPaymentStatusFilter(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded"
-            >
-              <option value="">Todos</option>
-              <option value="PENDING">Pendente</option>
-              <option value="PAID">Pago</option>
-              <option value="PARTIAL">Parcial</option>
-              <option value="REFUNDED">Reembolsado</option>
-            </select>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
               Data Inicial
             </label>
             <input
@@ -255,11 +221,7 @@ export default function SalesPage() {
           </div>
         </div>
 
-        {(searchTerm ||
-          statusFilter ||
-          paymentStatusFilter ||
-          startDate ||
-          endDate) && (
+        {(searchTerm || statusFilter || startDate || endDate) && (
           <div className="mt-4 flex justify-end">
             <button
               onClick={clearFilters}
@@ -275,11 +237,7 @@ export default function SalesPage() {
       {filteredSales.length === 0 ? (
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8 text-center">
           <p className="text-gray-500">
-            {searchTerm ||
-            statusFilter ||
-            paymentStatusFilter ||
-            startDate ||
-            endDate
+            {searchTerm || statusFilter || startDate || endDate
               ? "Nenhuma venda encontrada com os filtros aplicados."
               : "Não há vendas registradas."}
           </p>
@@ -298,9 +256,6 @@ export default function SalesPage() {
                   </th>
                   <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Status
-                  </th>
-                  <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Pagamento
                   </th>
                   <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Valor
@@ -321,11 +276,11 @@ export default function SalesPage() {
                         #{sale.id.substring(0, 8)}
                       </div>
                       <div className="text-xs text-gray-500">
-                        {sale.customer.name}
+                        {sale.customer?.name}
                       </div>
                     </td>
                     <td className="px-4 py-4 whitespace-nowrap text-center text-sm text-gray-500">
-                      {formatDate(sale.orderDate)}
+                      {formatDate(sale.saleDate)}
                     </td>
                     <td className="px-4 py-4 whitespace-nowrap text-center">
                       <span
@@ -334,15 +289,6 @@ export default function SalesPage() {
                         }`}
                       >
                         {getStatusLabel(sale.status).label}
-                      </span>
-                    </td>
-                    <td className="px-4 py-4 whitespace-nowrap text-center">
-                      <span
-                        className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                          getPaymentStatusLabel(sale.paymentStatus).color
-                        }`}
-                      >
-                        {getPaymentStatusLabel(sale.paymentStatus).label}
                       </span>
                     </td>
                     <td className="px-4 py-4 whitespace-nowrap text-right text-sm font-medium">

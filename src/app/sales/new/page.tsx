@@ -4,7 +4,12 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Decimal } from "@prisma/client/runtime/library";
+import { PaymentMethod } from "@prisma/client";
 import { Button } from "@/components/ui/button";
+import { getCustomers } from "@/actions/customers";
+import { getProducts } from "@/actions/products";
+import { createSale } from "@/actions/sales";
+import { getUsers } from "@/actions/users";
 
 // Tipos
 interface Customer {
@@ -18,6 +23,12 @@ interface Product {
   sku: string;
   currentStock: number;
   sellingPrice?: number | Decimal;
+}
+
+interface User {
+  id: string;
+  name: string;
+  email: string;
 }
 
 interface SaleItem {
@@ -34,13 +45,15 @@ export default function NewSale() {
   const router = useRouter();
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
+  const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
   // Estado do formulário
   const [customerId, setCustomerId] = useState("");
-  const [paymentMethod, setPaymentMethod] = useState("DINHEIRO");
+  const [userId, setUserId] = useState("");
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("CASH");
   const [paymentStatus, setPaymentStatus] = useState("PENDING");
   const [notes, setNotes] = useState("");
   const [items, setItems] = useState<SaleItem[]>([]);
@@ -51,25 +64,27 @@ export default function NewSale() {
   const [unitPrice, setUnitPrice] = useState(0);
   const [stockWarning, setStockWarning] = useState("");
 
-  
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
       try {
-        // Buscar clientes e produtos do backend
-        const [customersRes, productsRes] = await Promise.all([
-          fetch("../actions/customers").then((res) => res.json()),
-          fetch("../actions/products").then((res) => res.json()),
-        ]);
+        const [customersResult, productsResult, usersResult] =
+          await Promise.all([getCustomers(), getProducts(), getUsers()]);
 
-        if (customersRes.error) throw new Error(customersRes.error);
-        if (productsRes.error) throw new Error(productsRes.error);
+        if (customersResult.error) throw new Error(customersResult.error);
+        if (productsResult.error) throw new Error(productsResult.error);
+        if (usersResult.error) throw new Error(usersResult.error);
 
-        setCustomers(customersRes.customers || []);
-        setProducts(productsRes.products || []);
+        setCustomers(customersResult.customers || []);
+        setProducts(productsResult.products || []);
+        setUsers(usersResult.users || []);
+
+        if (usersResult.users && usersResult.users.length > 0) {
+          setUserId(usersResult.users[0].id);
+        }
       } catch (err) {
         console.error("Erro ao carregar dados:", err);
-        setError("Ocorreu um erro ao carregar clientes e produtos.");
+        setError("Ocorreu um erro ao carregar dados.");
       } finally {
         setLoading(false);
       }
@@ -200,6 +215,11 @@ export default function NewSale() {
       return;
     }
 
+    if (!userId) {
+      setError("Selecione um usuário.");
+      return;
+    }
+
     if (items.length === 0) {
       setError("Adicione pelo menos um item à venda.");
       return;
@@ -209,8 +229,8 @@ export default function NewSale() {
     try {
       const saleData = {
         customerId,
+        userId,
         paymentMethod,
-        paymentStatus,
         notes: notes || undefined,
         items: items.map((item) => ({
           productId: item.productId,
@@ -219,21 +239,16 @@ export default function NewSale() {
         })),
       };
 
-      const response = await fetch("/api/sales", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(saleData),
-      });
+      const result = await createSale(saleData);
 
-      const result = await response.json(); 
+      if (result.error) {
+        throw new Error(result.error);
+      }
 
-      if (!response.ok) {
-        throw new Error(result.error || "Erro ao criar venda");
-      } 
+      if (!result.sale) {
+        throw new Error("Venda criada, mas nenhuma informação foi retornada.");
+      }
 
-      // Redirecionar para a página da venda criada
       router.push(`/sales/${result.sale.id}`);
     } catch (err: unknown) {
       console.error("Erro ao submeter formulário:", err);
@@ -242,7 +257,7 @@ export default function NewSale() {
       );
     } finally {
       setSubmitting(false);
-    }  
+    }
   };
 
   if (loading) {
@@ -257,8 +272,9 @@ export default function NewSale() {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      
-      <h1 className="text-2xl font-bold text-gray-800 mt-2 text-center mb-6">Nova Venda</h1>
+      <h1 className="text-2xl font-bold text-gray-800 mt-2 text-center mb-6">
+        Nova Venda
+      </h1>
 
       {error && (
         <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-4">
@@ -295,20 +311,40 @@ export default function NewSale() {
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
+                Usuário <span className="text-red-500">*</span>
+              </label>
+              <select
+                value={userId}
+                onChange={(e) => setUserId(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded"
+                required
+              >
+                <option value="">Selecione um usuário</option>
+                {users.map((user) => (
+                  <option key={user.id} value={user.id}>
+                    {user.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
                 Método de Pagamento
               </label>
               <select
                 value={paymentMethod}
-                onChange={(e) => setPaymentMethod(e.target.value)}
+                onChange={(e) =>
+                  setPaymentMethod(e.target.value as PaymentMethod)
+                }
                 className="w-full px-3 py-2 border border-gray-300 rounded"
               >
-                <option value="DINHEIRO">Dinheiro</option>
+                <option value="CASH">Dinheiro</option>
+                <option value="CREDIT_CARD">Cartão de Crédito</option>
+                <option value="DEBIT_CARD">Cartão de Débito</option>
+                <option value="BANK_TRANSFER">Transferência Bancária</option>
                 <option value="PIX">PIX</option>
-                <option value="CARTAO_CREDITO">Cartão de Crédito</option>
-                <option value="CARTAO_DEBITO">Cartão de Débito</option>
-                <option value="BOLETO">Boleto</option>
-                <option value="TRANSFERENCIA">Transferência Bancária</option>
-                <option value="PRAZO">A Prazo</option>
+                <option value="INVOICE">A Prazo</option>
               </select>
             </div>
 

@@ -2,16 +2,22 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import { getSuppliers } from "@/actions/suppliers";
 
 interface Supplier {
   id: string;
   companyName: string;
-  contactName?: string;
-  email?: string;
-  phone?: string;
-  city?: string;
-  state?: string;
+  contactName: string | null;
+  email: string | null;
+  phone: string | null;
+  city: string | null;
+  state: string | null;
   isActive: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+  address: string | null;
+  postalCode: string | null;
+  taxId: string | null;
 }
 
 export default function SuppliersPage() {
@@ -27,14 +33,13 @@ export default function SuppliersPage() {
     const fetchSuppliers = async () => {
       setLoading(true);
       try {
-        const response = await fetch("../actions/suppliers");
-        const data = await response.json();
+        const result = await getSuppliers();
 
-        if (!response.ok) {
-          throw new Error(data.error || "Erro ao buscar fornecedores");
+        if (result.error) {
+          throw new Error(result.error);
         }
 
-        setSuppliers(data.suppliers || []);
+        setSuppliers(result.suppliers || []);
       } catch (err) {
         console.error("Erro ao buscar fornecedores:", err);
         setError("Ocorreu um erro ao carregar os fornecedores.");

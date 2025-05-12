@@ -8,11 +8,10 @@ import { Decimal } from "@prisma/client/runtime/library";
 export async function getProducts(options?: {
   query?: string;
   categoryId?: string;
-  supplierId?: string;
   lowStock?: boolean;
 }) {
   try {
-    const { query, categoryId, supplierId, lowStock } = options || {};
+    const { query, categoryId, lowStock } = options || {};
 
     const products = await prisma.product.findMany({
       where: {
@@ -27,8 +26,7 @@ export async function getProducts(options?: {
             }
           : {}),
         ...(categoryId ? { categoryId } : {}),
-        ...(supplierId ? { supplierId } : {}),
-        ...(lowStock
+        ...(lowStock === true
           ? { currentStock: { lte: prisma.product.fields.minimumStock } }
           : {}),
       },
@@ -76,11 +74,11 @@ export async function getProductById(id: string) {
 export async function createProduct(data: {
   sku: string;
   name: string;
-  description?: string;
+  description: string;
   categoryId: string;
   supplierId?: string;
-  purchasePrice: number | Decimal;
-  sellingPrice: number | Decimal;
+  purchasePrice: number;
+  sellingPrice: number;
   currentStock: number;
   minimumStock: number;
   unit: string;
@@ -89,50 +87,34 @@ export async function createProduct(data: {
 }) {
   try {
     // Verificar se o SKU já existe
-    const existingSku = await prisma.product.findUnique({
+    const existingProduct = await prisma.product.findUnique({
       where: { sku: data.sku },
     });
 
-    if (existingSku) {
-      return { error: "SKU já está em uso" };
+    if (existingProduct) {
+      return { error: "Já existe um produto com este SKU" };
     }
 
-    // Criar o produto com uma transação para também registrar o histórico de preços
-    const product = await prisma.$transaction(async (tx) => {
-      // Criar o produto
-      const newProduct = await tx.product.create({
-        data: {
-          ...data,
-          purchasePrice: new Decimal(data.purchasePrice.toString()),
-          sellingPrice: new Decimal(data.sellingPrice.toString()),
-        },
-      });
-
-      // Registrar o histórico de preços inicial
-      await tx.priceHistory.create({
-        data: {
-          productId: newProduct.id,
-          purchasePrice: new Decimal(data.purchasePrice.toString()),
-          sellingPrice: new Decimal(data.sellingPrice.toString()),
-          notes: "Preço inicial do produto",
-        },
-      });
-
-      // Registrar a entrada inicial no estoque, se houver
-      if (data.currentStock > 0) {
-        await tx.stockMovement.create({
-          data: {
-            productId: newProduct.id,
-            quantity: data.currentStock,
-            type: "ADJUSTMENT",
-            userId: "system", // Idealmente, deveria ser o ID do usuário atual
-            notes: "Estoque inicial",
-          },
-        });
-      }
-
-      return newProduct;
+    const product = await prisma.product.create({
+      data: {
+        ...data,
+        purchasePrice: data.purchasePrice,
+        sellingPrice: data.sellingPrice,
+      },
     });
+
+    // Registrar a entrada inicial no estoque, se houver
+    if (data.currentStock > 0) {
+      await prisma.stockMovement.create({
+        data: {
+          productId: product.id,
+          quantity: data.currentStock,
+          type: "ADJUSTMENT",
+          notes: "Estoque inicial",
+          userId: "system", // Idealmente, deveria ser o ID do usuário atual
+        },
+      });
+    }
 
     revalidatePath("/inventory");
     return { product };
@@ -299,7 +281,6 @@ export async function getLowStockProducts() {
       },
       include: {
         category: true,
-        supplier: true,
       },
       orderBy: { currentStock: "asc" },
     });
@@ -307,7 +288,7 @@ export async function getLowStockProducts() {
     return { products };
   } catch (error) {
     console.error("Error fetching low stock products:", error);
-    return { error: "Falha ao buscar produtos com baixo estoque" };
+    return { error: "Falha ao buscar produtos com estoque baixo" };
   }
 }
 
@@ -322,5 +303,68 @@ export async function getCategories() {
   } catch (error) {
     console.error("Error fetching categories:", error);
     return { error: "Falha ao buscar categorias" };
+  }
+}
+
+// Função para criar uma nova categoria
+export async function createCategory(data: {
+  name: string;
+  description?: string;
+}) {
+  try {
+    const category = await prisma.category.create({
+      data,
+    });
+
+    revalidatePath("/inventory/categories");
+    return { success: true, category };
+  } catch (error) {
+    console.error("Error creating category:", error);
+    return { error: "Falha ao criar categoria" };
+  }
+}
+
+// Função para atualizar uma categoria
+export async function updateCategory(
+  id: string,
+  data: { name: string; description?: string }
+) {
+  try {
+    const category = await prisma.category.update({
+      where: { id },
+      data,
+    });
+
+    revalidatePath("/inventory/categories");
+    return { success: true, category };
+  } catch (error) {
+    console.error("Error updating category:", error);
+    return { error: "Falha ao atualizar categoria" };
+  }
+}
+
+// Função para deletar uma categoria
+export async function deleteCategory(id: string) {
+  try {
+    // Verificar se existem produtos associados a esta categoria
+    const productsCount = await prisma.product.count({
+      where: { categoryId: id },
+    });
+
+    if (productsCount > 0) {
+      return {
+        error: `Não é possível excluir esta categoria pois existem ${productsCount} produtos associados a ela.`,
+      };
+    }
+
+    await prisma.category.delete({
+      where: { id },
+    });
+
+    revalidatePath("/inventory/categories");
+    return { success: true };
+  } catch (error) {
+    console.error("Error deleting category:", error);
+    return { error: "Falha ao excluir categoria" };
   }
 }

@@ -2,28 +2,12 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { getCategories } from "@/actions/products";
-
-// Observe que precisaremos implementar estas ações para categorias
-// Normalmente estariam em um arquivo de actions separado
-const createCategory = async (data: { name: string; description?: string }) => {
-  // Implementação da chamada de API
-  return { success: true, category: { id: "new-id", ...data } };
-};
-
-const updateCategory = async (
-  id: string,
-  data: { name: string; description?: string }
-) => {
-  // Implementação da chamada de API
-  return { success: true, category: { id, ...data } };
-};
-
-const deleteCategory = async (id: string) => {
-  // Implementação da chamada de API que usará o id: DELETE /api/categories/{id}
-  console.log(`Seria deletada a categoria com ID: ${id}`);
-  return { success: true };
-};
+import {
+  getCategories,
+  createCategory,
+  updateCategory,
+  deleteCategory,
+} from "@/actions/products";
 
 interface Category {
   id: string;

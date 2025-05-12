@@ -3,6 +3,8 @@
 import { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
 import { Decimal } from "@prisma/client/runtime/library";
+import { getInventoryReport } from "@/actions/reports";
+import { getCategories } from "@/actions/products";
 
 interface Product {
   id: string;
@@ -61,16 +63,16 @@ export default function InventoryReport() {
     const fetchData = async () => {
       setLoading(true);
       try {
-        const [productsRes, categoriesRes] = await Promise.all([
-          fetch("../actions/products").then((res) => res.json()),
-          fetch("../actions/categories").then((res) => res.json()),
+        const [inventoryResult, categoriesResult] = await Promise.all([
+          getInventoryReport(),
+          getCategories(),
         ]);
 
-        if (productsRes.error) throw new Error(productsRes.error);
-        if (categoriesRes.error) throw new Error(categoriesRes.error);
+        if (inventoryResult.error) throw new Error(inventoryResult.error);
+        if (categoriesResult.error) throw new Error(categoriesResult.error);
 
-        setProducts(productsRes.products || []);
-        setCategories(categoriesRes.categories || []);
+        setProducts(inventoryResult.products || []);
+        setCategories(categoriesResult.categories || []);
       } catch (err) {
         console.error("Erro ao buscar dados:", err);
         setError("Ocorreu um erro ao carregar os dados do relatório.");
