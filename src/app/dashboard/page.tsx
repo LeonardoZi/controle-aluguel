@@ -2,7 +2,12 @@
 
 import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
-import { getSalesReport } from "@/actions/reports";
+import {
+  getSalesReport,
+  getTopSellingProducts,
+  groupSalesByDate,
+  groupSalesByPaymentMethod,
+} from "@/actions/reports";
 import { getLowStockProducts } from "@/actions/products";
 import { getPurchaseOrders } from "@/actions/purchases";
 import {
@@ -97,11 +102,36 @@ export default function DashboardPage() {
       startDate.setDate(endDate.getDate() - 30);
 
       // Buscar dados de vendas
-      const salesResult = await getSalesReport(startDate, endDate);
+      const salesResult = await getSalesReport({ startDate, endDate });
       if (salesResult.error) {
         setError(salesResult.error);
       } else {
-        setSalesData(salesResult as SalesReport);
+        // Get the sales data
+        const sales = salesResult.sales || [];
+
+        // Use the utility functions to process the data
+        const salesByDate = await groupSalesByDate(sales);
+        const salesByPaymentMethod = await groupSalesByPaymentMethod(sales);
+        const topProducts = await getTopSellingProducts(startDate, endDate);
+
+        // Calculate totals
+        const totalSales = sales.length;
+        const totalRevenue = sales.reduce(
+          (sum, sale) => sum + Number(sale.totalAmount),
+          0
+        );
+
+        // Build the complete SalesReport object
+        const reportData: SalesReport = {
+          sales,
+          totalSales,
+          totalRevenue,
+          salesByDate,
+          salesByPaymentMethod,
+          topProducts,
+        };
+
+        setSalesData(reportData);
       }
 
       // Buscar produtos com estoque baixo
@@ -143,10 +173,15 @@ export default function DashboardPage() {
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="flex items-center mb-6">
-        <Link href="/" className="text-blue-600 hover:underline flex-1 mt-5 mb-6">
+        <Link
+          href="/"
+          className="text-blue-600 hover:underline flex-1 mt-5 mb-6"
+        >
           ← Voltar
         </Link>
-        <h1 className="text-2xl font-bold text-gray-800 mb-4 text-center flex-1">Dashboard</h1>
+        <h1 className="text-2xl font-bold text-gray-800 mb-4 text-center flex-1">
+          Dashboard
+        </h1>
         <div className="flex-1"></div>
       </div>
 
@@ -292,7 +327,6 @@ export default function DashboardPage() {
                   </p>
                 </div>
               )}
-
             </div>
 
             {/* Produtos com Estoque Baixo */}
@@ -359,7 +393,6 @@ export default function DashboardPage() {
                   </p>
                 </div>
               )}
-
             </div>
           </div>
 
