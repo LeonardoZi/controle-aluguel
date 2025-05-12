@@ -17,7 +17,7 @@ async function getStats() {
           isActive: true,
         },
       }),
-      // Vendas do mês atual
+      // Vendas do mês atual.
       prisma.sale.aggregate({
         where: {
           saleDate: {
