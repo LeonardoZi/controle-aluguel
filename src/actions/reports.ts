@@ -76,7 +76,7 @@ export async function getSalesReport(options?: {
  * @param sales Lista de vendas a serem agrupadas
  * @returns Array de objetos com data, total e contagem de vendas
  */
-export function groupSalesByDate(sales: SaleWithRelations[]) {
+export async function groupSalesByDate(sales: SaleWithRelations[]) {
   const salesByDate: { [date: string]: { total: number; count: number } } = {};
 
   sales.forEach((sale) => {
@@ -102,7 +102,7 @@ export function groupSalesByDate(sales: SaleWithRelations[]) {
  * @param sales Lista de vendas a serem agrupadas
  * @returns Array de objetos com método, total e contagem de vendas
  */
-export function groupSalesByPaymentMethod(sales: SaleWithRelations[]) {
+export async function groupSalesByPaymentMethod(sales: SaleWithRelations[]) {
   const salesByMethod: { [method: string]: { total: number; count: number } } =
     {};
 
