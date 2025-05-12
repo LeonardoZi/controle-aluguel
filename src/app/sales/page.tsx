@@ -47,7 +47,7 @@ export default function SalesPage() {
     const fetchSales = async () => {
       setLoading(true);
       try {
-        const response = await fetch("/api/sales");
+        const response = await fetch("../actions/sales");
         const data = await response.json();
 
         if (!response.ok) {

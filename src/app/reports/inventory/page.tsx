@@ -62,8 +62,8 @@ export default function InventoryReport() {
       setLoading(true);
       try {
         const [productsRes, categoriesRes] = await Promise.all([
-          fetch("/api/products").then((res) => res.json()),
-          fetch("/api/categories").then((res) => res.json()),
+          fetch("../actions/products").then((res) => res.json()),
+          fetch("../actions/categories").then((res) => res.json()),
         ]);
 
         if (productsRes.error) throw new Error(productsRes.error);

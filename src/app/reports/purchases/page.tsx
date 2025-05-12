@@ -66,8 +66,8 @@ export default function PurchasesReport() {
       setLoading(true);
       try {
         const [purchasesRes, suppliersRes] = await Promise.all([
-          fetch("/api/reports/purchases").then((res) => res.json()),
-          fetch("/api/suppliers").then((res) => res.json()),
+          fetch("../actions/reports/purchases").then((res) => res.json()),
+          fetch("../actions/suppliers").then((res) => res.json()),
         ]);
 
         if (purchasesRes.error) throw new Error(purchasesRes.error);

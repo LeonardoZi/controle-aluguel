@@ -42,7 +42,7 @@ export default function PurchasesPage() {
     const fetchPurchases = async () => {
       setLoading(true);
       try {
-        const response = await fetch("/api/purchases");
+        const response = await fetch("../actions/purchases");
         const data = await response.json();
 
         if (!response.ok) {

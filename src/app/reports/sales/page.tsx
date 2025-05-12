@@ -87,9 +87,9 @@ export default function SalesReport() {
       setLoading(true);
       try {
         const [salesRes, customersRes, productsRes] = await Promise.all([
-          fetch("/api/reports/sales").then((res) => res.json()),
-          fetch("/api/customers").then((res) => res.json()),
-          fetch("/api/products").then((res) => res.json()),
+          fetch("../actions/reports/sales").then((res) => res.json()),
+          fetch("../actions/customers").then((res) => res.json()),
+          fetch("../actions/products").then((res) => res.json()),
         ]);
 
         if (salesRes.error) throw new Error(salesRes.error);

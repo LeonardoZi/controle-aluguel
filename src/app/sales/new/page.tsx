@@ -51,14 +51,15 @@ export default function NewSale() {
   const [unitPrice, setUnitPrice] = useState(0);
   const [stockWarning, setStockWarning] = useState("");
 
+  
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
       try {
         // Buscar clientes e produtos do backend
         const [customersRes, productsRes] = await Promise.all([
-          fetch("/api/customers").then((res) => res.json()),
-          fetch("/api/products").then((res) => res.json()),
+          fetch("../actions/customers").then((res) => res.json()),
+          fetch("../actions/products").then((res) => res.json()),
         ]);
 
         if (customersRes.error) throw new Error(customersRes.error);
@@ -226,11 +227,11 @@ export default function NewSale() {
         body: JSON.stringify(saleData),
       });
 
-      const result = await response.json();
+      const result = await response.json(); 
 
       if (!response.ok) {
         throw new Error(result.error || "Erro ao criar venda");
-      }
+      } 
 
       // Redirecionar para a página da venda criada
       router.push(`/sales/${result.sale.id}`);
@@ -241,7 +242,7 @@ export default function NewSale() {
       );
     } finally {
       setSubmitting(false);
-    }
+    }  
   };
 
   if (loading) {

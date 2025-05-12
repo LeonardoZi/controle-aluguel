@@ -54,8 +54,8 @@ export default function NewPurchase() {
       try {
         // Buscar fornecedores e produtos do backend
         const [suppliersRes, productsRes] = await Promise.all([
-          fetch("/api/suppliers").then((res) => res.json()),
-          fetch("/api/products").then((res) => res.json()),
+          fetch("../actions/suppliers").then((res) => res.json()),
+          fetch("../actions/products").then((res) => res.json()),
         ]);
 
         if (suppliersRes.error) throw new Error(suppliersRes.error);
@@ -176,7 +176,7 @@ export default function NewPurchase() {
         })),
       };
 
-      const response = await fetch("/api/purchases", {
+      const response = await fetch("../actions/purchases", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
