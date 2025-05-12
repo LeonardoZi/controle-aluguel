@@ -96,7 +96,7 @@ export default function DashboardPage() {
     setError("");
 
     try {
-      // Definir o intervalo de datas (últimos 30 dias)
+      // Definir o intervalo de datas (últimos 30 dias).
       const endDate = new Date();
       const startDate = new Date();
       startDate.setDate(endDate.getDate() - 30);
