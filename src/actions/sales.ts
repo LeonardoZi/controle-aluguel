@@ -45,19 +45,32 @@ export async function getSales(options?: {
             email: true,
           },
         },
-        items: {
-          include: {
-            product: true,
-          },
-        },
+        items: true,
       },
       orderBy: { saleDate: "desc" },
     });
 
-    return { sales };
+    // Converter objetos Decimal para números antes de passar para o cliente
+    const serializedSales = sales.map(sale => ({
+      ...sale,
+      totalAmount: Number(sale.totalAmount),
+      discount: sale.discount ? Number(sale.discount) : 0,
+      items: sale.items.map(item => ({
+        ...item,
+        unitPrice: Number(item.unitPrice),
+        total: Number(item.total),
+        discount: item.discount ? Number(item.discount) : 0,
+      })),
+      // Converter datas para strings ISO para evitar problemas de serialização
+      saleDate: sale.saleDate.toISOString(),
+      createdAt: sale.createdAt.toISOString(),
+      updatedAt: sale.updatedAt.toISOString()
+    }));
+
+    return { sales: serializedSales };
   } catch (error) {
     console.error("Error fetching sales:", error);
-    return { error: "Falha ao buscar vendas" };
+    return { error: "Failed to fetch sales" };
   }
 }
 
@@ -87,7 +100,29 @@ export async function getSaleById(id: string) {
       return { error: "Venda não encontrada" };
     }
 
-    return { sale };
+    // Serialize all Decimal objects to numbers
+    const serializedSale = {
+      ...sale,
+      totalAmount: Number(sale.totalAmount),
+      discount: sale.discount ? Number(sale.discount) : 0,
+      items: sale.items.map(item => ({
+        ...item,
+        unitPrice: Number(item.unitPrice),
+        discount: item.discount ? Number(item.discount) : 0,
+        total: Number(item.total),
+        product: item.product ? {
+          ...item.product,
+          purchasePrice: item.product.purchasePrice ? Number(item.product.purchasePrice) : 0,
+          sellingPrice: item.product.sellingPrice ? Number(item.product.sellingPrice) : 0,
+        } : null,
+      })),
+      // Converter datas para strings ISO
+      saleDate: sale.saleDate.toISOString(),
+      createdAt: sale.createdAt.toISOString(),
+      updatedAt: sale.updatedAt.toISOString()
+    };
+
+    return { sale: serializedSale };
   } catch (error) {
     console.error("Error fetching sale:", error);
     return { error: "Falha ao buscar venda" };
@@ -208,8 +243,24 @@ export async function createSale(data: {
       return newSale;
     });
 
+    // Serialize the sale object before returning it
+    const serializedSale = {
+      ...sale,
+      totalAmount: Number(sale.totalAmount),
+      discount: sale.discount ? Number(sale.discount) : 0,
+      items: sale.items.map(item => ({
+        ...item,
+        unitPrice: Number(item.unitPrice),
+        discount: item.discount ? Number(item.discount) : 0,
+        total: Number(item.total),
+      })),
+      saleDate: sale.saleDate.toISOString(),
+      createdAt: sale.createdAt.toISOString(),
+      updatedAt: sale.updatedAt.toISOString()
+    };
+
     revalidatePath("/sales");
-    return { sale };
+    return { sale: serializedSale };
   } catch (error) {
     console.error("Error creating sale:", error);
     return { error: "Falha ao criar venda" };

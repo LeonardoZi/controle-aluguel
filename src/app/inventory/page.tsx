@@ -40,7 +40,7 @@ export default function InventoryPage() {
         if (result.error) {
           setError(result.error);
         } else {
-          setProducts(result.products || []);
+          setProducts((result.products || []) as unknown as ProductData[]);
         }
       } catch (err) {
         console.error("Erro ao buscar produtos:", err);
@@ -48,9 +48,7 @@ export default function InventoryPage() {
       } finally {
         setLoading(false);
       }
-    };
-
-    fetchProducts();
+    };    fetchProducts();
   }, [searchTerm, showLowStock]);
 
   const handleSearch = (term: string) => {

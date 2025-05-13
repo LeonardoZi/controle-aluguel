@@ -4,6 +4,52 @@ import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 import { Decimal } from "@prisma/client/runtime/library";
 
+// Interfaces para tipagem
+interface PriceHistory {
+  id: string;
+  productId: string;
+  purchasePrice: Decimal | number;
+  sellingPrice: Decimal | number;
+  effectiveDate: Date;
+  notes?: string;
+  createdAt: Date;
+}
+
+interface Product {
+  id: string;
+  sku: string;
+  name: string;
+  description?: string;
+  categoryId: string;
+  supplierId?: string;
+  purchasePrice: Decimal | number;
+  sellingPrice: Decimal | number;
+  currentStock: number;
+  minimumStock: number;
+  unit: string;
+  location?: string;
+  barcode?: string;
+  isActive: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+  category?: any;
+  supplier?: any;
+  priceHistory?: PriceHistory[];
+}
+
+// Função auxiliar para serializar objetos Decimal
+function serializeProduct(product: Product): Product {
+  return {
+    ...product,
+    purchasePrice: typeof product.purchasePrice === 'object' 
+      ? Number(product.purchasePrice.toString()) 
+      : product.purchasePrice,
+    sellingPrice: typeof product.sellingPrice === 'object' 
+      ? Number(product.sellingPrice.toString()) 
+      : product.sellingPrice
+  };
+}
+
 // Função para buscar produtos com filtros opcionais
 export async function getProducts(options?: {
   query?: string;
@@ -37,7 +83,10 @@ export async function getProducts(options?: {
       orderBy: { name: "asc" },
     });
 
-    return { products };
+    // Serializar os objetos Decimal para números
+    const serializedProducts = products.map((product: any) => serializeProduct(product));
+
+    return { products: serializedProducts };
   } catch (error) {
     console.error("Error fetching products:", error);
     return { error: "Falha ao buscar produtos" };
@@ -63,7 +112,23 @@ export async function getProductById(id: string) {
       return { error: "Produto não encontrado" };
     }
 
-    return { product };
+    // Serializar os objetos Decimal para números
+    const serializedProduct = serializeProduct(product as unknown as Product);
+    
+    // Também serializar o histórico de preços se existir
+    if (serializedProduct.priceHistory) {
+      serializedProduct.priceHistory = serializedProduct.priceHistory.map((ph: PriceHistory) => ({
+        ...ph,
+        purchasePrice: typeof ph.purchasePrice === 'object' 
+          ? Number(ph.purchasePrice.toString()) 
+          : ph.purchasePrice,
+        sellingPrice: typeof ph.sellingPrice === 'object' 
+          ? Number(ph.sellingPrice.toString()) 
+          : ph.sellingPrice
+      }));
+    }
+
+    return { product: serializedProduct };
   } catch (error) {
     console.error("Error fetching product:", error);
     return { error: "Falha ao buscar produto" };
@@ -76,55 +141,57 @@ export async function createProduct(data: {
   name: string;
   description: string;
   categoryId: string;
-  supplierId?: string;
+  supplierId: string; // This might be empty
   purchasePrice: number;
   sellingPrice: number;
   currentStock: number;
   minimumStock: number;
   unit: string;
-  location?: string;
-  barcode?: string;
+  location: string;
+  barcode: string;
+  userId?: string; // Add this parameter for the user creating the product
 }) {
   try {
-    // Verificar se o SKU já existe
-    const existingProduct = await prisma.product.findUnique({
-      where: { sku: data.sku },
-    });
-
-    if (existingProduct) {
-      return { error: "Já existe um produto com este SKU" };
+    // Validate required fields
+    if (!data.sku || !data.name) {
+      return { error: "SKU e nome são obrigatórios" };
     }
+
+    // Convert empty supplierId to null
+    const supplierId = data.supplierId ? data.supplierId : null;
 
     const product = await prisma.product.create({
       data: {
         ...data,
+        supplierId, // Use the converted value
         purchasePrice: data.purchasePrice,
         sellingPrice: data.sellingPrice,
+        currentStock: data.currentStock,
+        minimumStock: data.minimumStock,
       },
     });
 
-    // Registrar a entrada inicial no estoque, se houver
-    if (data.currentStock > 0) {
+    // If you can't get a user ID, you could make the stock movement creation conditional
+    if (data.currentStock > 0 && data.userId) {
       await prisma.stockMovement.create({
         data: {
           productId: product.id,
           quantity: data.currentStock,
-          type: "ADJUSTMENT",
+          type: "INITIAL",
+          reference: product.id,
+          userId: data.userId,
           notes: "Estoque inicial",
-          userId: "system", // Idealmente, deveria ser o ID do usuário atual
         },
       });
     }
 
     revalidatePath("/inventory");
-    return { product };
+    return { product: serializeProduct(product as unknown as Product) };
   } catch (error) {
     console.error("Error creating product:", error);
     return { error: "Falha ao criar produto" };
   }
-}
-
-// Função para atualizar um produto
+}// Função para atualizar um produto
 export async function updateProduct(
   id: string,
   data: {
@@ -195,7 +262,7 @@ export async function updateProduct(
 
     revalidatePath("/inventory");
     revalidatePath(`/inventory/${id}`);
-    return { product };
+    return { product: serializeProduct(product as unknown as Product) };
   } catch (error) {
     console.error("Error updating product:", error);
     return { error: "Falha ao atualizar produto" };
@@ -271,24 +338,75 @@ export async function deleteProduct(id: string) {
   }
 }
 
+// Add this utility function at the top of the file
+function serializeDecimal(data: any): any {
+  if (data === null || data === undefined) {
+    return data;
+  }
+  
+  // Handle Decimal objects
+  if (typeof data === 'object' && data !== null && typeof data.toJSON === 'function') {
+    return Number(data);
+  }
+  
+  // Handle Date objects
+  if (data instanceof Date) {
+    return data.toISOString();
+  }
+  
+  // Handle arrays
+  if (Array.isArray(data)) {
+    return data.map(item => serializeDecimal(item));
+  }
+  
+  // Handle objects
+  if (typeof data === 'object') {
+    const result: any = {};
+    for (const key in data) {
+      result[key] = serializeDecimal(data[key]);
+    }
+    return result;
+  }
+  
+  // Return primitive values as is
+  return data;
+}
+
 // Função para obter relatório de produtos com baixo estoque
 export async function getLowStockProducts() {
   try {
     const products = await prisma.product.findMany({
       where: {
         isActive: true,
-        currentStock: { lte: prisma.product.fields.minimumStock },
+
+        minimumStock: {
+          gt: 0,
+        },
+        currentStock: {
+          lte: prisma.product.fields.minimumStock,
+        },
       },
       include: {
         category: true,
       },
-      orderBy: { currentStock: "asc" },
+
+      orderBy: [
+        {
+          currentStock: "asc",
+        },
+      ],
     });
 
-    return { products };
+
+
+    // Serialize all data to convert Decimal objects to numbers
+    const serializedProducts = serializeDecimal(products);
+
+    return { products: serializedProducts };
   } catch (error) {
     console.error("Error fetching low stock products:", error);
-    return { error: "Falha ao buscar produtos com estoque baixo" };
+
+    return { error: "Failed to fetch low stock products" };
   }
 }
 

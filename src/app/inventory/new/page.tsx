@@ -67,13 +67,9 @@ export default function NewProductPage() {
 
       if (result.error) {
         setError(result.error);
-      } else if (result.product) {
-        // Redirecionar para a página de detalhes do produto criado
-        router.push(`/inventory/${result.product.id}`);
       } else {
-        // Caso de sucesso mas sem ID do produto (improvável, mas possível)
-        setError("Produto criado, mas não foi possível obter o ID.");
-        router.push("/inventory"); // Redireciona para a lista de produtos
+        // Redirect to inventory page on success instead of product details
+        router.push("/inventory");
       }
     } catch (err) {
       setError("Ocorreu um erro ao criar o produto. Tente novamente.");

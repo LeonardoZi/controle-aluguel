@@ -248,6 +248,7 @@ enum MovementType {
   RETURN_SUPPLIER // Devolução para fornecedor
   TRANSFER        // Transferência entre locais
   LOSS            // Perdas/Avarias
+  INITIAL         // Inicialização do estoque
 }
 
 // Histórico de preços
