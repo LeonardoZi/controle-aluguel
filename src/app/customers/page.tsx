@@ -175,14 +175,14 @@ export default function CustomersPage() {
                           : "-"}
                       </span>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                    {/* <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                       <Link
                         href={`/customers/${customer.id}`}
                         className="text-blue-600 hover:text-blue-900 mr-4"
                       >
                         Detalhes
                       </Link>
-                    </td>
+                    </td> */}
                   </tr>
                 ))}
               </tbody>

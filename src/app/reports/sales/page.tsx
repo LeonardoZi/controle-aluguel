@@ -796,14 +796,14 @@ export default function SalesReport() {
                     <td className="px-4 py-4 whitespace-nowrap text-center text-sm text-gray-500">
                       {sale.paymentMethod || "-"}
                     </td>
-                    <td className="px-4 py-4 whitespace-nowrap text-center text-sm font-medium">
+                    {/* <td className="px-4 py-4 whitespace-nowrap text-center text-sm font-medium">
                       <Link
                         href={`/sales/${sale.id}`}
                         className="text-blue-600 hover:text-blue-900"
                       >
                         Detalhes
                       </Link>
-                    </td>
+                    </td> */}
                   </tr>
                 ))}
               </tbody>

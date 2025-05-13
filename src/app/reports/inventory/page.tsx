@@ -511,14 +511,14 @@ export default function InventoryReport() {
                           product.lastPurchaseDate || product.lastSaleDate
                         )}
                       </td>
-                      <td className="px-4 py-4 whitespace-nowrap text-center text-sm font-medium">
+                      {/* <td className="px-4 py-4 whitespace-nowrap text-center text-sm font-medium">
                         <Link
                           href={`/products/${product.id}`}
                           className="text-blue-600 hover:text-blue-900"
                         >
                           Detalhes
                         </Link>
-                      </td>
+                      </td> */}
                     </tr>
                   );
                 })}

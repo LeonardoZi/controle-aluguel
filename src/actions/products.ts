@@ -3,6 +3,8 @@
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 import { Decimal } from "@prisma/client/runtime/library";
+// Import the Prisma-generated enum
+import { MovementType } from "@prisma/client";
 
 // Interfaces para tipagem
 interface PriceHistory {
@@ -13,6 +15,18 @@ interface PriceHistory {
   effectiveDate: Date;
   notes?: string;
   createdAt: Date;
+}
+
+interface Category {
+  id: string;
+  name: string;
+  description?: string;
+}
+
+interface Supplier {
+  id: string;
+  name: string;
+  // Add other relevant supplier fields
 }
 
 interface Product {
@@ -32,8 +46,8 @@ interface Product {
   isActive: boolean;
   createdAt: Date;
   updatedAt: Date;
-  category?: any;
-  supplier?: any;
+  category?: Category;
+  supplier?: Supplier;
   priceHistory?: PriceHistory[];
 }
 
@@ -41,12 +55,14 @@ interface Product {
 function serializeProduct(product: Product): Product {
   return {
     ...product,
-    purchasePrice: typeof product.purchasePrice === 'object' 
-      ? Number(product.purchasePrice.toString()) 
-      : product.purchasePrice,
-    sellingPrice: typeof product.sellingPrice === 'object' 
-      ? Number(product.sellingPrice.toString()) 
-      : product.sellingPrice
+    purchasePrice:
+      typeof product.purchasePrice === "object"
+        ? Number(product.purchasePrice.toString())
+        : product.purchasePrice,
+    sellingPrice:
+      typeof product.sellingPrice === "object"
+        ? Number(product.sellingPrice.toString())
+        : product.sellingPrice,
   };
 }
 
@@ -84,7 +100,9 @@ export async function getProducts(options?: {
     });
 
     // Serializar os objetos Decimal para números
-    const serializedProducts = products.map((product: any) => serializeProduct(product));
+    const serializedProducts = products.map((product) =>
+      serializeProduct(product as unknown as Product)
+    );
 
     return { products: serializedProducts };
   } catch (error) {
@@ -114,18 +132,22 @@ export async function getProductById(id: string) {
 
     // Serializar os objetos Decimal para números
     const serializedProduct = serializeProduct(product as unknown as Product);
-    
+
     // Também serializar o histórico de preços se existir
     if (serializedProduct.priceHistory) {
-      serializedProduct.priceHistory = serializedProduct.priceHistory.map((ph: PriceHistory) => ({
-        ...ph,
-        purchasePrice: typeof ph.purchasePrice === 'object' 
-          ? Number(ph.purchasePrice.toString()) 
-          : ph.purchasePrice,
-        sellingPrice: typeof ph.sellingPrice === 'object' 
-          ? Number(ph.sellingPrice.toString()) 
-          : ph.sellingPrice
-      }));
+      serializedProduct.priceHistory = serializedProduct.priceHistory.map(
+        (ph: PriceHistory) => ({
+          ...ph,
+          purchasePrice:
+            typeof ph.purchasePrice === "object"
+              ? Number(ph.purchasePrice.toString())
+              : ph.purchasePrice,
+          sellingPrice:
+            typeof ph.sellingPrice === "object"
+              ? Number(ph.sellingPrice.toString())
+              : ph.sellingPrice,
+        })
+      );
     }
 
     return { product: serializedProduct };
@@ -177,7 +199,7 @@ export async function createProduct(data: {
         data: {
           productId: product.id,
           quantity: data.currentStock,
-          type: "INITIAL",
+          type: "INITIAL" as MovementType,
           reference: product.id,
           userId: data.userId,
           notes: "Estoque inicial",
@@ -191,7 +213,9 @@ export async function createProduct(data: {
     console.error("Error creating product:", error);
     return { error: "Falha ao criar produto" };
   }
-}// Função para atualizar um produto
+}
+
+// Função para atualizar um produto
 export async function updateProduct(
   id: string,
   data: {
@@ -306,7 +330,7 @@ export async function adjustStock(
         data: {
           productId: id,
           quantity,
-          type: "ADJUSTMENT",
+          type: "ADJUSTMENT" as MovementType,
           userId,
           notes,
         },
@@ -338,36 +362,41 @@ export async function deleteProduct(id: string) {
   }
 }
 
-// Add this utility function at the top of the file
-function serializeDecimal(data: any): any {
+// Fix the serializeDecimal function typing (around line 342-375)
+function serializeDecimal<T>(data: T): unknown {
   if (data === null || data === undefined) {
     return data;
   }
-  
+
   // Handle Decimal objects
-  if (typeof data === 'object' && data !== null && typeof data.toJSON === 'function') {
-    return Number(data);
+  if (
+    typeof data === "object" &&
+    data !== null &&
+    "toJSON" in data &&
+    typeof data.toJSON === "function"
+  ) {
+    return Number(data.toString());
   }
-  
+
   // Handle Date objects
   if (data instanceof Date) {
     return data.toISOString();
   }
-  
+
   // Handle arrays
   if (Array.isArray(data)) {
-    return data.map(item => serializeDecimal(item));
+    return data.map((item) => serializeDecimal(item));
   }
-  
+
   // Handle objects
-  if (typeof data === 'object') {
-    const result: any = {};
+  if (typeof data === "object" && data !== null) {
+    const result: Record<string, unknown> = {};
     for (const key in data) {
-      result[key] = serializeDecimal(data[key]);
+      result[key] = serializeDecimal((data as Record<string, unknown>)[key]);
     }
     return result;
   }
-  
+
   // Return primitive values as is
   return data;
 }
@@ -396,8 +425,6 @@ export async function getLowStockProducts() {
         },
       ],
     });
-
-
 
     // Serialize all data to convert Decimal objects to numbers
     const serializedProducts = serializeDecimal(products);

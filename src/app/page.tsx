@@ -566,7 +566,7 @@ export default async function Home() {
             <h2 className="text-xl font-semibold mb-4">Acesso Rápido</h2>
             <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-6">
               <div className="flex flex-col gap-4">
-                <Link
+                {/* <Link
                   href="/dashboard"
                   className="btn-primary flex items-center justify-center gap-2 px-5 py-3"
                 >
@@ -586,7 +586,7 @@ export default async function Home() {
                     <path d="M9 21V9" />
                   </svg>
                   Dashboard Completo
-                </Link>
+                </Link> */}
 
                 <Link
                   href="/sales/new"

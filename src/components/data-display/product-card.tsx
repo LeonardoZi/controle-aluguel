@@ -77,7 +77,6 @@ const Button = ({
 
 // Ícones simples em vez de usar lucide-react
 const ShoppingCart = () => <span>🛒</span>;
-const Eye = () => <span>👁️</span>;
 
 interface ProductCardProps {
   product: Product;
@@ -89,7 +88,6 @@ interface ProductCardProps {
 export function ProductCard({
   product,
   onAddToCart,
-  onViewDetails,
   compact = false,
 }: ProductCardProps) {
   const { name, price, imageUrl, sku, stock, stockThreshold, description } =
@@ -144,7 +142,7 @@ export function ProductCard({
       </CardContent>
 
       <CardFooter className="p-4 pt-0 flex gap-2">
-        {onViewDetails && (
+        {/* {onViewDetails && (
           <Button
             variant="outline"
             size="sm"
@@ -154,7 +152,7 @@ export function ProductCard({
             <Eye />
             <span className="ml-2">Detalhes</span>
           </Button>
-        )}
+        )} */}
 
         {onAddToCart && (
           <Button

@@ -262,7 +262,7 @@ export default function SuppliersPage() {
                       )}
                     </td>
                     <td className="px-4 py-4 whitespace-nowrap text-center text-sm font-medium">
-                      <div className="flex justify-center gap-2">
+                      {/* <div className="flex justify-center gap-2">
                         <Link
                           href={`/suppliers/${supplier.id}`}
                           className="text-blue-600 hover:text-blue-900"
@@ -276,7 +276,7 @@ export default function SuppliersPage() {
                         >
                           Editar
                         </Link>
-                      </div>
+                      </div> */}
                     </td>
                   </tr>
                 ))}
