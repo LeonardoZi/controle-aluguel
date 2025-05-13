@@ -249,7 +249,7 @@ export default function NewSale() {
         throw new Error("Venda criada, mas nenhuma informação foi retornada.");
       }
 
-      router.push(`/sales/${result.sale.id}`);
+      router.push(`/sales`);
     } catch (err: unknown) {
       console.error("Erro ao submeter formulário:", err);
       setError(

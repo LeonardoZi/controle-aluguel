@@ -54,7 +54,9 @@ model Supplier {
   address         String?
   city            String?
   state           String?
+  country         String?
   postalCode      String?
+  notes           String?
   taxId           String?        // CNPJ
   createdAt       DateTime       @default(now())
   updatedAt       DateTime       @updatedAt

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { createSupplier } from "@/actions/suppliers";
 
 interface SupplierFormData {
   companyName: string;
@@ -93,22 +94,31 @@ export default function NewSupplier() {
     setError("");
 
     try {
-      const response = await fetch("/api/suppliers", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(formData),
-      });
+      // Prepare the data object to match the server action's expected parameters
+      const supplierData = {
+        companyName: formData.companyName,
+        contactName: formData.contactName,
+        email: formData.email,
+        phone: formData.phone,
+        address: formData.address,
+        city: formData.city,
+        state: formData.state,
+        postalCode: formData.postalCode,
+        country: formData.country, // Note: this is not in your server action parameters
+        taxId: formData.taxId,
+        notes: formData.notes,     // Note: this is not in your server action parameters
+        isActive: formData.isActive // Note: this is not in your server action parameters
+      };
 
-      const data = await response.json();
+      // Call the server action directly
+      const result = await createSupplier(supplierData);
 
-      if (!response.ok) {
-        throw new Error(data.error || "Erro ao criar fornecedor");
+      if (result.error) {
+        throw new Error(result.error);
       }
 
       // Redirecionar para a página do fornecedor criado
-      router.push(`/suppliers/${data.supplier.id}`);
+      router.push('/suppliers');
     } catch (err: unknown) {
       console.error("Erro ao submeter formulário:", err);
       setError(
@@ -123,11 +133,9 @@ export default function NewSupplier() {
 
   return (
     <div className="container mx-auto px-4 py-8">
-
-        <h1 className="text-2xl font-bold text-gray-800 mb-6 text-center">
-          Novo Fornecedor
-        </h1>
-
+      <h1 className="text-2xl font-bold text-gray-800 mb-6 text-center">
+        Novo Fornecedor
+      </h1>
 
       {error && (
         <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-4">

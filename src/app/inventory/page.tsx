@@ -171,11 +171,11 @@ export default function InventoryPage() {
             searchable={false}
             pagination={true}
             itemsPerPage={15}
-            onRowClick={(product) => {
-              if (product.id && typeof product.id === "string") {
-                window.location.href = `/inventory/${product.id}`;
-              }
-            }}
+            // onRowClick={(product) => {
+            //   if (product.id && typeof product.id === "string") {
+            //     window.location.href = `/inventory/${product.id}`;
+            //   }
+            // }}
           />
         )}
       </div>
