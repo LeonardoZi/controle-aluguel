@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 
-// Function to fetch statistics
+
 async function getStats() {
   try {
     const now = new Date();
