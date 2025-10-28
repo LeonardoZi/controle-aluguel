@@ -4,121 +4,90 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { createProduct, getCategories } from "@/actions/products";
-import { useEffect } from "react";
+import { createProduct } from "@/actions/products";
 
 export default function NewProductPage() {
   const router = useRouter();
-  const [loading, setLoading] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
-  const [categories, setCategories] = useState<
-    Array<{ id: string; name: string }>
-  >([]);
 
-  const [formData, setFormData] = useState({
-    sku: "",
-    name: "",
-    description: "",
-    categoryId: "",
-    supplierId: "",
-    purchasePrice: "0",
-    sellingPrice: "0",
-    currentStock: "0",
-    minimumStock: "0",
-    unit: "un",
-    location: "",
-    barcode: "",
-  });
-
-  useEffect(() => {
-    // Carregar categorias quando o componente montar
-    async function loadCategories() {
-      const result = await getCategories();
-      if (result.categories) {
-        setCategories(result.categories);
-      }
-    }
-
-    loadCategories();
-  }, []);
-
-  const handleChange = (
-    e: React.ChangeEvent<
-      HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
-    >
-  ) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
-  };
+  // Form state
+  const [name, setName] = useState("");
+  const [description, setDescription] = useState("");
+  const [precoUnitario, setPrecoUnitario] = useState("");
+  const [currentStock, setCurrentStock] = useState("0");
+  const [unit, setUnit] = useState("un");
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
-    setError("");
 
+    if (!name) {
+      setError("Nome é obrigatório.");
+      return;
+    }
+
+    if (!precoUnitario || parseFloat(precoUnitario) <= 0) {
+      setError("Preço unitário deve ser maior que zero.");
+      return;
+    }
+
+    setSubmitting(true);
     try {
-      const result = await createProduct({
-        ...formData,
-        purchasePrice: parseFloat(formData.purchasePrice),
-        sellingPrice: parseFloat(formData.sellingPrice),
-        currentStock: parseInt(formData.currentStock, 10),
-        minimumStock: parseInt(formData.minimumStock, 10),
-      });
+      const productData = {
+        name,
+        description: description || undefined,
+        precoUnitario: parseFloat(precoUnitario),
+        currentStock: parseInt(currentStock) || 0,
+        unit,
+      };
+
+      const result = await createProduct(productData);
 
       if (result.error) {
-        setError(result.error);
-      } else {
-        // Redirect to inventory page on success instead of product details
-        router.push("/inventory");
+        throw new Error(result.error);
       }
-    } catch (err) {
-      setError("Ocorreu um erro ao criar o produto. Tente novamente.");
-      console.error(err);
+
+      router.push("/inventory");
+    } catch (err: unknown) {
+      console.error("Erro ao criar produto:", err);
+      setError(
+        err instanceof Error ? err.message : "Ocorreu um erro ao criar o produto."
+      );
     } finally {
-      setLoading(false);
+      setSubmitting(false);
     }
   };
 
   return (
     <div className="container mx-auto px-4 py-8">
+      <h1 className="text-2xl font-bold text-gray-800 mt-2 text-center mb-6">
+        Novo Produto
+      </h1>
 
-      <h1 className="text-2xl font-bold text-gray-800 text-center mb-6">Novo Produto</h1>
+      {error && (
+        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-4">
+          {error}
+        </div>
+      )}
 
+      <form onSubmit={handleSubmit}>
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-8">
+          <h2 className="text-lg font-semibold mb-4 text-gray-800">
+            Informações do Produto
+          </h2>
 
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-        {error && (
-          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-4">
-            {error}
-          </div>
-        )}
-
-        <form onSubmit={handleSubmit}>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
+            <div className="md:col-span-2">
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                SKU *
+                Nome <span className="text-red-500">*</span>
               </label>
               <input
                 type="text"
-                name="sku"
-                value={formData.sku}
-                onChange={handleChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded"
                 required
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Nome *
-              </label>
-              <input
-                type="text"
-                name="name"
-                value={formData.name}
-                onChange={handleChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                required
+                placeholder="Ex: Fio de Cobre 2.5mm"
               />
             </div>
 
@@ -127,151 +96,85 @@ export default function NewProductPage() {
                 Descrição
               </label>
               <textarea
-                name="description"
-                value={formData.description}
-                onChange={handleChange}
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded"
                 rows={3}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                placeholder="Descrição detalhada do produto..."
               />
             </div>
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Categoria *
+                Preço Unitário (R$) <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="number"
+                min="0.01"
+                step="0.01"
+                value={precoUnitario}
+                onChange={(e) => setPrecoUnitario(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded"
+                required
+                placeholder="0.00"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Unidade de Medida
               </label>
               <select
-                name="categoryId"
-                value={formData.categoryId}
-                onChange={handleChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                required
+                value={unit}
+                onChange={(e) => setUnit(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded"
               >
-                <option value="">Selecione uma categoria</option>
-                {categories.map((category) => (
-                  <option key={category.id} value={category.id}>
-                    {category.name}
-                  </option>
-                ))}
+                <option value="un">Unidade (un)</option>
+                <option value="m">Metro (m)</option>
+                <option value="cm">Centímetro (cm)</option>
+                <option value="kg">Quilograma (kg)</option>
+                <option value="g">Grama (g)</option>
+                <option value="l">Litro (l)</option>
+                <option value="ml">Mililitro (ml)</option>
+                <option value="cx">Caixa (cx)</option>
+                <option value="pc">Peça (pc)</option>
+                <option value="rolo">Rolo</option>
               </select>
             </div>
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Código de Barras
-              </label>
-              <input
-                type="text"
-                name="barcode"
-                value={formData.barcode}
-                onChange={handleChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Preço de Compra *
+                Estoque Inicial
               </label>
               <input
                 type="number"
-                name="purchasePrice"
-                value={formData.purchasePrice}
-                onChange={handleChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md"
                 min="0"
-                step="0.01"
-                required
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Preço de Venda *
-              </label>
-              <input
-                type="number"
-                name="sellingPrice"
-                value={formData.sellingPrice}
-                onChange={handleChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                min="0"
-                step="0.01"
-                required
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Estoque Atual *
-              </label>
-              <input
-                type="number"
-                name="currentStock"
-                value={formData.currentStock}
-                onChange={handleChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                min="0"
-                required
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Estoque Mínimo *
-              </label>
-              <input
-                type="number"
-                name="minimumStock"
-                value={formData.minimumStock}
-                onChange={handleChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                min="0"
-                required
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Unidade *
-              </label>
-              <input
-                type="text"
-                name="unit"
-                value={formData.unit}
-                onChange={handleChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                placeholder="ex: un, kg, m, caixa"
-                required
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Localização
-              </label>
-              <input
-                type="text"
-                name="location"
-                value={formData.location}
-                onChange={handleChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                placeholder="ex: Prateleira A3, Depósito 2"
+                step="1"
+                value={currentStock}
+                onChange={(e) => setCurrentStock(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded"
+                placeholder="0"
               />
             </div>
           </div>
+        </div>
 
-          <div className="mt-6 flex justify-end space-x-4">
-            <Link href="/inventory">
-              <Button variant="outline" type="button">
-                Cancelar
-              </Button>
-            </Link>
-            <Button type="submit" loading={loading} disabled={loading}>
-              {loading ? "Salvando..." : "Salvar Produto"}
+        {/* Action Buttons */}
+        <div className="flex justify-end gap-4">
+          <Link href="/inventory">
+            <Button variant="outline" type="button">
+              Cancelar
             </Button>
-          </div>
-        </form>
-      </div>
+          </Link>
+          <button
+            type="submit"
+            disabled={submitting}
+            className="bg-green-500 hover:bg-green-600 text-white px-6 py-2 rounded disabled:bg-gray-400"
+          >
+            {submitting ? "Salvando..." : "Salvar Produto"}
+          </button>
+        </div>
+      </form>
     </div>
   );
 }

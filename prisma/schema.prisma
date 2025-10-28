@@ -29,13 +29,11 @@ model Product {
   id           String       @id @default(cuid())
   name         String
   description  String?
-  // Renomeado de 'price' para 'precoUnitario' para maior clareza
   precoUnitario Decimal     @db.Decimal(10, 2)
   currentStock Int          @default(0)
   unit         String       @default("un")
   createdAt    DateTime     @default(now())
   updatedAt    DateTime     @updatedAt
-  
   itensDeVenda ItensVenda[]
 
   @@index([name])
@@ -50,7 +48,7 @@ model Customer {
   city       String?
   state      String?
   postalCode String?
-  taxId      String?  // CPF ou CNPJ
+  taxId      String?
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
   isActive   Boolean  @default(true)
@@ -73,7 +71,6 @@ model Sale {
   notes                   String?
   createdAt               DateTime   @default(now())
   updatedAt               DateTime   @updatedAt
-
   itens                   ItensVenda[]
 
   @@index([customerId])
@@ -82,8 +79,6 @@ model Sale {
 
 model ItensVenda {
   id                      String  @id @default(cuid())
-  
-  // CORRIGIDO: A relação que estava quebrada agora aponta para o modelo 'Sale'
   saleId                  String
   sale                    Sale    @relation(fields: [saleId], references: [id])
   produtoId               String

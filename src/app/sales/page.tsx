@@ -3,38 +3,42 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { Decimal } from "@prisma/client/runtime/library";
-import { getSales } from "@/actions/sales";
-import { processReturn } from "@/actions/returns";
+import { getSales, updateOverdueSales } from "@/actions/sales";
 
-// Tipos
-type OrderStatus =
-  | "PENDING"
-  | "PROCESSING"
-  | "SHIPPED"
-  | "DELIVERED"
-  | "COMPLETED"
-  | "CANCELLED";
+// Types
+type SaleStatus = "ATIVO" | "ATRASADO" | "CONCLUIDO" | "CANCELADO";
 
 interface Customer {
   id: string;
   name: string;
 }
 
+interface Product {
+  id: string;
+  name: string;
+  unit: string;
+  precoUnitario: number | Decimal;
+}
+
+interface SaleItem {
+  id: string;
+  produtoId: string;
+  produto: Product;
+  quantidadeRetirada: number;
+  quantidadeDevolvida: number | null;
+  precoUnitarioNoMomento: number | Decimal;
+}
+
 interface Sale {
   id: string;
-  customerId: string | null;
-  customer: Customer | null;
-  saleDate: string | Date;
-  status: OrderStatus;
-  totalAmount: Decimal | number;
-  paymentMethod: string;
-  items: {
-    id: string;
-    quantity: number;
-    productId: string;
-    unitPrice: Decimal | number;
-    total: Decimal | number;
-  }[];
+  customerId: string;
+  customer: Customer;
+  dataRetirada: string | Date;
+  dataDevolucaoPrevista: string | Date;
+  status: SaleStatus;
+  totalAmount: Decimal | number | null;
+  notes?: string | null;
+  itens: SaleItem[];
   user: {
     id: string;
     name: string;
@@ -50,12 +54,14 @@ export default function SalesPage() {
   const [statusFilter, setStatusFilter] = useState<string>("");
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
-  const [openDropdown, setOpenDropdown] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchSales = async () => {
       setLoading(true);
       try {
+        // Update overdue sales first
+        await updateOverdueSales();
+
         const result = await getSales();
 
         if (result.error) {
@@ -74,33 +80,8 @@ export default function SalesPage() {
     fetchSales();
   }, []);
 
-  // Controla o dropdown
-  const toggleDropdown = (e: React.MouseEvent, saleId: string) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setOpenDropdown((prevState) => (prevState === saleId ? null : saleId));
-  };
-
-  // Fecha o dropdown quando clicar fora dele
-  useEffect(() => {
-    const handleClickOutside = () => {
-      if (openDropdown !== null) {
-        setOpenDropdown(null);
-      }
-    };
-
-    // Adiciona o listener com um pequeno atraso para evitar que ele seja acionado imediatamente
-    const timeoutId = setTimeout(() => {
-      document.addEventListener("click", handleClickOutside);
-    }, 100);
-
-    return () => {
-      clearTimeout(timeoutId);
-      document.removeEventListener("click", handleClickOutside);
-    };
-  }, [openDropdown]);
-
-  const formatCurrency = (value: Decimal | number) => {
+  const formatCurrency = (value: Decimal | number | null) => {
+    if (value === null) return "R$ 0,00";
     return new Intl.NumberFormat("pt-BR", {
       style: "currency",
       currency: "BRL",
@@ -112,38 +93,45 @@ export default function SalesPage() {
     return new Intl.DateTimeFormat("pt-BR").format(new Date(date));
   };
 
-  const getStatusLabel = (status: OrderStatus) => {
-    const statusMap: Record<OrderStatus, { label: string; color: string }> = {
-      PENDING: { label: "Pendente", color: "bg-yellow-100 text-yellow-800" },
-      PROCESSING: {
-        label: "Em Processamento",
-        color: "bg-blue-100 text-blue-800",
-      },
-      SHIPPED: { label: "Enviado", color: "bg-indigo-100 text-indigo-800" },
-      DELIVERED: { label: "Entregue", color: "bg-purple-100 text-purple-800" },
-      COMPLETED: { label: "Concluído", color: "bg-green-100 text-green-800" },
-      CANCELLED: { label: "Cancelado", color: "bg-red-100 text-red-800" },
+  const getStatusLabel = (status: SaleStatus) => {
+    const statusMap: Record<SaleStatus, { label: string; color: string }> = {
+      ATIVO: { label: "Ativo", color: "bg-blue-100 text-blue-800" },
+      ATRASADO: { label: "Atrasado", color: "bg-red-100 text-red-800" },
+      CONCLUIDO: { label: "Concluído", color: "bg-green-100 text-green-800" },
+      CANCELADO: { label: "Cancelado", color: "bg-gray-100 text-gray-800" },
     };
     return (
       statusMap[status] || { label: status, color: "bg-gray-100 text-gray-800" }
     );
   };
 
+  const isOverdue = (dataDevolucaoPrevista: string | Date, status: SaleStatus) => {
+    if (status === "CONCLUIDO" || status === "CANCELADO") return false;
+    return new Date(dataDevolucaoPrevista) < new Date();
+  };
+
+  const calculatePendingReturn = (itens: SaleItem[]) => {
+    return itens.reduce((total, item) => {
+      const pendente = item.quantidadeRetirada - (item.quantidadeDevolvida || 0);
+      return total + pendente;
+    }, 0);
+  };
+
   const filteredSales = sales.filter((sale) => {
-    // Filtro de texto (cliente ou ID)
+    // Text filter (customer or ID)
     const matchesSearch =
       searchTerm === "" ||
       sale.customer?.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       sale.id.toLowerCase().includes(searchTerm.toLowerCase());
 
-    // Filtro de status
+    // Status filter
     const matchesStatus = statusFilter === "" || sale.status === statusFilter;
 
-    // Filtro de data inicial
-    const saleDate = new Date(sale.saleDate);
+    // Start date filter
+    const saleDate = new Date(sale.dataRetirada);
     const matchesStartDate = !startDate || saleDate >= new Date(startDate);
 
-    // Filtro de data final
+    // End date filter
     const matchesEndDate =
       !endDate || saleDate <= new Date(`${endDate}T23:59:59`);
 
@@ -155,61 +143,6 @@ export default function SalesPage() {
     setStatusFilter("");
     setStartDate("");
     setEndDate("");
-  };
-
-  const handleOptionClick = async (
-    e: React.MouseEvent,
-    saleId: string,
-    option: string
-  ) => {
-    e.stopPropagation();
-    setOpenDropdown(null);
-
-    // Buscar a venda selecionada
-    const selectedSale = sales.find((sale) => sale.id === saleId);
-    if (!selectedSale) {
-      return;
-    }
-
-    if (option === "Devolução") {
-      // Exibir diálogo de confirmação
-      if (
-        confirm(
-          `Deseja processar uma devolução para a venda #${saleId.substring(
-            0,
-            8
-          )}?`
-        )
-      ) {
-        // Aqui você pode abrir um modal para seleção de itens e quantidades
-        // Para este exemplo, vamos considerar a devolução do primeiro item
-        if (selectedSale.items && selectedSale.items.length > 0) {
-          const item = selectedSale.items[0];
-          const result = await processReturn({
-            saleId,
-            userId: selectedSale.user.id,
-            items: [
-              {
-                saleItemId: item.id,
-                quantity: item.quantity,
-                reason: "Devolução solicitada pelo cliente",
-              },
-            ],
-            notes: "Devolução processada via página de vendas",
-          });
-
-          if (result.error) {
-            alert(`Erro ao processar devolução: ${result.error}`);
-          } else {
-            alert(`Devolução processada com sucesso!`);
-            // Recarregar os dados
-            window.location.reload();
-          }
-        } else {
-          alert("Não há itens para devolução nesta venda.");
-        }
-      }
-    }
   };
 
   if (loading) {
@@ -228,13 +161,15 @@ export default function SalesPage() {
         <Link href="/" className="text-blue-600 hover:underline mr-4">
           ← Voltar
         </Link>
-        <h1 className="text-2xl font-bold text-gray-800">Vendas</h1>
+        <h1 className="text-2xl font-bold text-gray-800">
+          Vendas e Aluguéis
+        </h1>
 
         <Link
           href="/sales/new"
           className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded"
         >
-          Nova Venda
+          Nova Venda/Aluguel
         </Link>
       </div>
 
@@ -244,9 +179,9 @@ export default function SalesPage() {
         </div>
       )}
 
-      {/* Filtros */}
+      {/* Filters */}
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 mb-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Buscar
@@ -270,12 +205,10 @@ export default function SalesPage() {
               className="w-full px-3 py-2 border border-gray-300 rounded"
             >
               <option value="">Todos</option>
-              <option value="PENDING">Pendente</option>
-              <option value="PROCESSING">Em Processamento</option>
-              <option value="SHIPPED">Enviado</option>
-              <option value="DELIVERED">Entregue</option>
-              <option value="COMPLETED">Concluído</option>
-              <option value="CANCELLED">Cancelado</option>
+              <option value="ATIVO">Ativo</option>
+              <option value="ATRASADO">Atrasado</option>
+              <option value="CONCLUIDO">Concluído</option>
+              <option value="CANCELADO">Cancelado</option>
             </select>
           </div>
 
@@ -316,7 +249,7 @@ export default function SalesPage() {
         )}
       </div>
 
-      {/* Lista de Vendas */}
+      {/* Sales List */}
       {filteredSales.length === 0 ? (
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8 text-center">
           <p className="text-gray-500">
@@ -335,16 +268,19 @@ export default function SalesPage() {
                     ID/Cliente
                   </th>
                   <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Data
+                    Data Retirada
+                  </th>
+                  <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Prazo Devolução
                   </th>
                   <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Status
                   </th>
                   <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Valor
+                    Valor Atual
                   </th>
                   <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Itens
+                    Pendente Devolução
                   </th>
                   <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Ações
@@ -352,119 +288,122 @@ export default function SalesPage() {
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {filteredSales.map((sale) => (
-                  <tr key={sale.id} className="hover:bg-gray-50">
-                    <td className="px-4 py-4 whitespace-nowrap">
-                      <div className="text-sm font-medium text-gray-900">
-                        #{sale.id.substring(0, 8)}
-                      </div>
-                      <div className="text-xs text-gray-500">
-                        {sale.customer?.name}
-                      </div>
-                    </td>
-                    <td className="px-4 py-4 whitespace-nowrap text-center text-sm text-gray-500">
-                      {formatDate(sale.saleDate)}
-                    </td>
-                    <td className="px-4 py-4 whitespace-nowrap text-center">
-                      <span
-                        className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                          getStatusLabel(sale.status).color
-                        }`}
-                      >
-                        {getStatusLabel(sale.status).label}
-                      </span>
-                    </td>
-                    <td className="px-4 py-4 whitespace-nowrap text-right text-sm font-medium">
-                      {formatCurrency(sale.totalAmount)}
-                    </td>
-                    <td className="px-4 py-4 whitespace-nowrap text-center text-sm text-gray-500">
-                      {sale.items.length} item(ns)
-                    </td>
-                    <td className="px-4 py-4 whitespace-nowrap text-center text-sm font-medium">
-                      <div className="relative inline-block text-left">
-                        <button
-                          onClick={(e) => toggleDropdown(e, sale.id)}
-                          className="inline-flex justify-center w-full rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none"
-                          id={`options-menu-${sale.id}`}
-                          aria-expanded="true"
-                          aria-haspopup="true"
-                        >
-                          Opções
-                          <svg
-                            className="-mr-1 ml-2 h-5 w-5"
-                            xmlns="http://www.w3.org/2000/svg"
-                            viewBox="0 0 20 20"
-                            fill="currentColor"
-                            aria-hidden="true"
-                          >
-                            <path
-                              fillRule="evenodd"
-                              d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
-                              clipRule="evenodd"
-                            />
-                          </svg>
-                        </button>
+                {filteredSales.map((sale) => {
+                  const pendingReturn = calculatePendingReturn(sale.itens);
+                  const overdueStatus = isOverdue(
+                    sale.dataDevolucaoPrevista,
+                    sale.status
+                  );
 
-                        {openDropdown === sale.id && (
-                          <div
-                            className="origin-top-right absolute right-0 mt-2 w-36 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 divide-y divide-gray-100 focus:outline-none z-10"
-                            role="menu"
-                            aria-orientation="vertical"
-                            aria-labelledby={`options-menu-${sale.id}`}
-                            onClick={(e) => e.stopPropagation()}
-                          >
-                            <div className="py-1" role="none">
-                              <button
-                                onClick={(e) =>
-                                  handleOptionClick(e, sale.id, "Devolução")
-                                }
-                                className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900"
-                                role="menuitem"
-                              >
-                                Devolução
-                              </button>
-                            </div>
-                          </div>
+                  return (
+                    <tr
+                      key={sale.id}
+                      className={`hover:bg-gray-50 ${
+                        overdueStatus ? "bg-red-50" : ""
+                      }`}
+                    >
+                      <td className="px-4 py-4 whitespace-nowrap">
+                        <div className="text-sm font-medium text-gray-900">
+                          #{sale.id.substring(0, 8)}
+                        </div>
+                        <div className="text-xs text-gray-500">
+                          {sale.customer?.name}
+                        </div>
+                      </td>
+                      <td className="px-4 py-4 whitespace-nowrap text-center text-sm text-gray-500">
+                        {formatDate(sale.dataRetirada)}
+                      </td>
+                      <td className="px-4 py-4 whitespace-nowrap text-center text-sm">
+                        <div
+                          className={
+                            overdueStatus ? "text-red-600 font-semibold" : ""
+                          }
+                        >
+                          {formatDate(sale.dataDevolucaoPrevista)}
+                        </div>
+                        {overdueStatus && (
+                          <div className="text-xs text-red-500">Vencido!</div>
                         )}
-                      </div>
-                    </td>
-                  </tr>
-                ))}
+                      </td>
+                      <td className="px-4 py-4 whitespace-nowrap text-center">
+                        <span
+                          className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                            getStatusLabel(sale.status).color
+                          }`}
+                        >
+                          {getStatusLabel(sale.status).label}
+                        </span>
+                      </td>
+                      <td className="px-4 py-4 whitespace-nowrap text-right text-sm font-medium">
+                        {formatCurrency(sale.totalAmount)}
+                      </td>
+                      <td className="px-4 py-4 whitespace-nowrap text-center text-sm">
+                        {pendingReturn > 0 ? (
+                          <span className="text-orange-600 font-semibold">
+                            {pendingReturn} item(ns)
+                          </span>
+                        ) : (
+                          <span className="text-green-600">Completo</span>
+                        )}
+                      </td>
+                      <td className="px-4 py-4 whitespace-nowrap text-center text-sm font-medium">
+                        <Link
+                          href={`/sales/${sale.id}`}
+                          className="text-blue-600 hover:text-blue-900 mr-3"
+                        >
+                          Ver Detalhes
+                        </Link>
+                        {(sale.status === "ATIVO" ||
+                          sale.status === "ATRASADO") && (
+                          <Link
+                            href={`/sales/${sale.id}/return`}
+                            className="text-green-600 hover:text-green-900"
+                          >
+                            Processar Devolução
+                          </Link>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
         </div>
       )}
 
-      {/* Resumo */}
+      {/* Summary */}
       {filteredSales.length > 0 && (
         <div className="mt-4 bg-white rounded-lg shadow-sm border border-gray-200 p-4">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-center">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 text-center">
             <div>
               <span className="text-sm text-gray-500">Total de Vendas:</span>
               <p className="text-lg font-semibold">{filteredSales.length}</p>
             </div>
             <div>
-              <span className="text-sm text-gray-500">Valor Total:</span>
-              <p className="text-lg font-semibold">
-                {formatCurrency(
-                  filteredSales.reduce(
-                    (sum, sale) => sum + Number(sale.totalAmount),
-                    0
-                  )
-                )}
+              <span className="text-sm text-gray-500">Vendas Ativas:</span>
+              <p className="text-lg font-semibold text-blue-600">
+                {
+                  filteredSales.filter(
+                    (s) => s.status === "ATIVO" || s.status === "ATRASADO"
+                  ).length
+                }
               </p>
             </div>
             <div>
-              <span className="text-sm text-gray-500">Média por Venda:</span>
+              <span className="text-sm text-gray-500">Vendas Atrasadas:</span>
+              <p className="text-lg font-semibold text-red-600">
+                {filteredSales.filter((s) => s.status === "ATRASADO").length}
+              </p>
+            </div>
+            <div>
+              <span className="text-sm text-gray-500">Receita Total:</span>
               <p className="text-lg font-semibold">
                 {formatCurrency(
-                  filteredSales.length > 0
-                    ? filteredSales.reduce(
-                        (sum, sale) => sum + Number(sale.totalAmount),
-                        0
-                      ) / filteredSales.length
-                    : 0
+                  filteredSales.reduce(
+                    (sum, sale) => sum + Number(sale.totalAmount || 0),
+                    0
+                  )
                 )}
               </p>
             </div>

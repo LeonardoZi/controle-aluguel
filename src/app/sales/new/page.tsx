@@ -4,14 +4,13 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Decimal } from "@prisma/client/runtime/library";
-import { PaymentMethod } from "@prisma/client";
 import { Button } from "@/components/ui/button";
 import { getCustomers } from "@/actions/customers";
 import { getProducts } from "@/actions/products";
 import { createSale } from "@/actions/sales";
 import { getUsers } from "@/actions/users";
 
-// Tipos
+// Types
 interface Customer {
   id: string;
   name: string;
@@ -20,9 +19,10 @@ interface Customer {
 interface Product {
   id: string;
   name: string;
-  sku: string;
+  description?: string | null;
   currentStock: number;
-  sellingPrice?: number | Decimal;
+  precoUnitario: number | Decimal;
+  unit: string;
 }
 
 interface User {
@@ -32,15 +32,14 @@ interface User {
 }
 
 interface SaleItem {
-  id: string; // ID temporário para manipulação na interface
-  productId: string;
-  product: Product;
-  quantity: number;
-  unitPrice: number;
+  id: string; // Temporary ID for UI manipulation
+  produtoId: string;
+  produto: Product;
+  quantidadeRetirada: number;
+  precoUnitario: number;
   subtotal: number;
 }
 
-// Página de Nova Venda
 export default function NewSale() {
   const router = useRouter();
   const [customers, setCustomers] = useState<Customer[]>([]);
@@ -50,15 +49,14 @@ export default function NewSale() {
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
-  // Estado do formulário
+  // Form state
   const [customerId, setCustomerId] = useState("");
   const [userId, setUserId] = useState("");
-  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("CASH");
-  const [paymentStatus, setPaymentStatus] = useState("PENDING");
+  const [dataDevolucaoPrevista, setDataDevolucaoPrevista] = useState("");
   const [notes, setNotes] = useState("");
   const [items, setItems] = useState<SaleItem[]>([]);
 
-  // Estados para adicionar produtos
+  // States for adding products
   const [selectedProductId, setSelectedProductId] = useState("");
   const [quantity, setQuantity] = useState(1);
   const [unitPrice, setUnitPrice] = useState(0);
@@ -82,6 +80,13 @@ export default function NewSale() {
         if (usersResult.users && usersResult.users.length > 0) {
           setUserId(usersResult.users[0].id);
         }
+
+        // Set default return date to 7 days from now
+        const defaultReturnDate = new Date();
+        defaultReturnDate.setDate(defaultReturnDate.getDate() + 7);
+        setDataDevolucaoPrevista(
+          defaultReturnDate.toISOString().split("T")[0]
+        );
       } catch (err) {
         console.error("Erro ao carregar dados:", err);
         setError("Ocorreu um erro ao carregar dados.");
@@ -93,19 +98,19 @@ export default function NewSale() {
     fetchData();
   }, []);
 
-  // Atualiza o preço unitário quando um produto é selecionado
+  // Update unit price when a product is selected
   useEffect(() => {
     if (selectedProductId) {
       const product = products.find((p) => p.id === selectedProductId);
       if (product) {
-        setUnitPrice(Number(product.sellingPrice || 0));
+        setUnitPrice(Number(product.precoUnitario || 0));
 
-        // Verificar estoque
+        // Check stock
         if (product.currentStock <= 0) {
           setStockWarning(`Atenção: Produto sem estoque disponível!`);
         } else if (product.currentStock < quantity) {
           setStockWarning(
-            `Atenção: Apenas ${product.currentStock} unidades disponíveis!`
+            `Atenção: Apenas ${product.currentStock} ${product.unit} disponíveis!`
           );
         } else {
           setStockWarning("");
@@ -120,7 +125,7 @@ export default function NewSale() {
     }
   }, [selectedProductId, quantity, products]);
 
-  // Adicionar item à venda
+  // Add item to sale
   const handleAddItem = () => {
     if (!selectedProductId || quantity <= 0 || unitPrice <= 0) {
       setError("Selecione um produto, quantidade e preço válidos.");
@@ -133,54 +138,54 @@ export default function NewSale() {
       return;
     }
 
-    // Verificar estoque
+    // Check stock
     if (product.currentStock < quantity) {
       setError(
-        `Quantidade excede o estoque disponível (${product.currentStock} unidades).`
+        `Quantidade excede o estoque disponível (${product.currentStock} ${product.unit}).`
       );
       return;
     }
 
-    // Verificar se o produto já está no pedido
+    // Check if product already in order
     const existingItemIndex = items.findIndex(
-      (item) => item.productId === selectedProductId
+      (item) => item.produtoId === selectedProductId
     );
 
     if (existingItemIndex >= 0) {
-      // Verificar estoque total
+      // Check total stock
       const existingItem = items[existingItemIndex];
-      const totalQuantity = existingItem.quantity + quantity;
+      const totalQuantity = existingItem.quantidadeRetirada + quantity;
 
       if (product.currentStock < totalQuantity) {
         setError(
-          `Quantidade total excede o estoque disponível (${product.currentStock} unidades).`
+          `Quantidade total excede o estoque disponível (${product.currentStock} ${product.unit}).`
         );
         return;
       }
 
-      // Atualizar item existente
+      // Update existing item
       const updatedItems = [...items];
       updatedItems[existingItemIndex] = {
         ...existingItem,
-        quantity: totalQuantity,
-        unitPrice: unitPrice,
+        quantidadeRetirada: totalQuantity,
+        precoUnitario: unitPrice,
         subtotal: totalQuantity * unitPrice,
       };
       setItems(updatedItems);
     } else {
-      // Adicionar novo item
+      // Add new item
       const newItem: SaleItem = {
-        id: Date.now().toString(), // ID temporário
-        productId: selectedProductId,
-        product,
-        quantity,
-        unitPrice,
+        id: Date.now().toString(), // Temporary ID
+        produtoId: selectedProductId,
+        produto: product,
+        quantidadeRetirada: quantity,
+        precoUnitario: unitPrice,
         subtotal: quantity * unitPrice,
       };
       setItems([...items, newItem]);
     }
 
-    // Resetar campos
+    // Reset fields
     setSelectedProductId("");
     setQuantity(1);
     setUnitPrice(0);
@@ -188,17 +193,17 @@ export default function NewSale() {
     setStockWarning("");
   };
 
-  // Remover item da venda
+  // Remove item from sale
   const handleRemoveItem = (itemId: string) => {
     setItems(items.filter((item) => item.id !== itemId));
   };
 
-  // Calcular total da venda
+  // Calculate total
   const calculateTotal = () => {
     return items.reduce((sum, item) => sum + item.subtotal, 0);
   };
 
-  // Formatar valor como moeda
+  // Format currency
   const formatCurrency = (value: number | Decimal) => {
     return new Intl.NumberFormat("pt-BR", {
       style: "currency",
@@ -206,7 +211,7 @@ export default function NewSale() {
     }).format(Number(value));
   };
 
-  // Enviar formulário
+  // Submit form
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -220,6 +225,11 @@ export default function NewSale() {
       return;
     }
 
+    if (!dataDevolucaoPrevista) {
+      setError("Defina o prazo de devolução.");
+      return;
+    }
+
     if (items.length === 0) {
       setError("Adicione pelo menos um item à venda.");
       return;
@@ -230,12 +240,12 @@ export default function NewSale() {
       const saleData = {
         customerId,
         userId,
-        paymentMethod,
+        dataDevolucaoPrevista: new Date(dataDevolucaoPrevista),
         notes: notes || undefined,
         items: items.map((item) => ({
-          productId: item.productId,
-          quantity: item.quantity,
-          unitPrice: item.unitPrice,
+          produtoId: item.produtoId,
+          quantidadeRetirada: item.quantidadeRetirada,
+          precoUnitarioNoMomento: item.precoUnitario,
         })),
       };
 
@@ -273,8 +283,16 @@ export default function NewSale() {
   return (
     <div className="container mx-auto px-4 py-8">
       <h1 className="text-2xl font-bold text-gray-800 mt-2 text-center mb-6">
-        Nova Venda
+        Nova Venda/Aluguel
       </h1>
+
+      <div className="bg-blue-50 border border-blue-200 text-blue-700 px-4 py-3 rounded mb-6">
+        <p className="text-sm">
+          <strong>Sistema de Venda com Devolução:</strong> O cliente retira os
+          produtos e tem um prazo para devolver o que não usar. O valor final
+          será calculado apenas pela quantidade efetivamente utilizada.
+        </p>
+      </div>
 
       {error && (
         <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-4">
@@ -283,7 +301,7 @@ export default function NewSale() {
       )}
 
       <form onSubmit={handleSubmit}>
-        {/* Informações básicas */}
+        {/* Basic Information */}
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-8">
           <h2 className="text-lg font-semibold mb-4 text-gray-800">
             Informações da Venda
@@ -330,37 +348,19 @@ export default function NewSale() {
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Método de Pagamento
+                Prazo de Devolução <span className="text-red-500">*</span>
               </label>
-              <select
-                value={paymentMethod}
-                onChange={(e) =>
-                  setPaymentMethod(e.target.value as PaymentMethod)
-                }
+              <input
+                type="date"
+                value={dataDevolucaoPrevista}
+                onChange={(e) => setDataDevolucaoPrevista(e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded"
-              >
-                <option value="CASH">Dinheiro</option>
-                <option value="CREDIT_CARD">Cartão de Crédito</option>
-                <option value="DEBIT_CARD">Cartão de Débito</option>
-                <option value="BANK_TRANSFER">Transferência Bancária</option>
-                <option value="PIX">PIX</option>
-                <option value="INVOICE">A Prazo</option>
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Status do Pagamento
-              </label>
-              <select
-                value={paymentStatus}
-                onChange={(e) => setPaymentStatus(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded"
-              >
-                <option value="PENDING">Pendente</option>
-                <option value="PAID">Pago</option>
-                <option value="PARTIAL">Parcial</option>
-              </select>
+                required
+                min={new Date().toISOString().split("T")[0]}
+              />
+              <p className="mt-1 text-xs text-gray-500">
+                Data limite para devolução dos produtos não utilizados
+              </p>
             </div>
 
             <div className="md:col-span-2">
@@ -378,10 +378,10 @@ export default function NewSale() {
           </div>
         </div>
 
-        {/* Adicionar Itens */}
+        {/* Add Items */}
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-8">
           <h2 className="text-lg font-semibold mb-4 text-gray-800">
-            Adicionar Itens
+            Adicionar Produtos
           </h2>
 
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
@@ -401,8 +401,9 @@ export default function NewSale() {
                     value={product.id}
                     disabled={product.currentStock <= 0}
                   >
-                    {product.name} ({product.sku}) - {product.currentStock} em
-                    estoque
+                    {product.name} - {product.currentStock} {product.unit} em
+                    estoque - {formatCurrency(product.precoUnitario)}/
+                    {product.unit}
                   </option>
                 ))}
               </select>
@@ -418,8 +419,9 @@ export default function NewSale() {
               <input
                 type="number"
                 min="1"
+                step="0.01"
                 value={quantity}
-                onChange={(e) => setQuantity(parseInt(e.target.value))}
+                onChange={(e) => setQuantity(parseFloat(e.target.value) || 1)}
                 className="w-full px-3 py-2 border border-gray-300 rounded"
               />
             </div>
@@ -445,20 +447,20 @@ export default function NewSale() {
               onClick={handleAddItem}
               className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded"
             >
-              Adicionar Item
+              Adicionar Produto
             </button>
           </div>
         </div>
 
-        {/* Lista de Itens */}
+        {/* Items List */}
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-8">
           <h2 className="text-lg font-semibold mb-4 text-gray-800">
-            Itens da Venda ({items.length})
+            Produtos da Venda ({items.length})
           </h2>
 
           {items.length === 0 ? (
             <div className="text-center py-8 text-gray-500">
-              Nenhum item adicionado à venda.
+              Nenhum produto adicionado à venda.
             </div>
           ) : (
             <div className="overflow-x-auto">
@@ -487,17 +489,17 @@ export default function NewSale() {
                     <tr key={item.id} className="hover:bg-gray-50">
                       <td className="px-4 py-3 whitespace-nowrap">
                         <div className="text-sm font-medium text-gray-900">
-                          {item.product.name}
+                          {item.produto.name}
                         </div>
                         <div className="text-xs text-gray-500">
-                          {item.product.sku}
+                          {item.produto.description}
                         </div>
                       </td>
-                      <td className="px-4 py-3 whitespace-nowrap text-center text-sm">
-                        {item.quantity}
+                      <td className="px-4 py-4 whitespace-nowrap text-center text-sm">
+                        {item.quantidadeRetirada} {item.produto.unit}
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap text-right text-sm">
-                        {formatCurrency(item.unitPrice)}
+                        {formatCurrency(item.precoUnitario)}/{item.produto.unit}
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap text-right text-sm font-medium">
                         {formatCurrency(item.subtotal)}
@@ -520,7 +522,7 @@ export default function NewSale() {
                       colSpan={3}
                       className="px-4 py-3 text-right text-sm font-medium"
                     >
-                      Total da Venda:
+                      Total Estimado (se tudo for usado):
                     </td>
                     <td className="px-4 py-3 text-right text-sm font-bold">
                       {formatCurrency(calculateTotal())}
@@ -531,9 +533,19 @@ export default function NewSale() {
               </table>
             </div>
           )}
+
+          {items.length > 0 && (
+            <div className="mt-4 p-4 bg-yellow-50 border border-yellow-200 rounded">
+              <p className="text-sm text-yellow-800">
+                <strong>Importante:</strong> O valor final será calculado
+                apenas pela quantidade efetivamente utilizada. O cliente pode
+                devolver o que não usar até {formatDate(dataDevolucaoPrevista)}.
+              </p>
+            </div>
+          )}
         </div>
 
-        {/* Botões de Ação */}
+        {/* Action Buttons */}
         <div className="flex justify-end gap-4">
           <Link href="/sales">
             <Button variant="outline" type="button">
@@ -551,4 +563,9 @@ export default function NewSale() {
       </form>
     </div>
   );
+}
+
+function formatDate(dateString: string) {
+  if (!dateString) return "";
+  return new Intl.DateTimeFormat("pt-BR").format(new Date(dateString));
 }

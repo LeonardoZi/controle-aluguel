@@ -3,106 +3,39 @@
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 import { Decimal } from "@prisma/client/runtime/library";
-// Import the Prisma-generated enum
-import { MovementType } from "@prisma/client";
 
-// Interfaces para tipagem
-interface PriceHistory {
-  id: string;
-  productId: string;
-  purchasePrice: Decimal | number;
-  sellingPrice: Decimal | number;
-  effectiveDate: Date;
-  notes?: string;
-  createdAt: Date;
-}
-
-interface Category {
-  id: string;
-  name: string;
-  description?: string;
-}
-
-interface Supplier {
-  id: string;
-  name: string;
-  // Add other relevant supplier fields
-}
-
-interface Product {
-  id: string;
-  sku: string;
-  name: string;
-  description?: string;
-  categoryId: string;
-  supplierId?: string;
-  purchasePrice: Decimal | number;
-  sellingPrice: Decimal | number;
-  currentStock: number;
-  minimumStock: number;
-  unit: string;
-  location?: string;
-  barcode?: string;
-  isActive: boolean;
-  createdAt: Date;
-  updatedAt: Date;
-  category?: Category;
-  supplier?: Supplier;
-  priceHistory?: PriceHistory[];
-}
-
-// Função auxiliar para serializar objetos Decimal
-function serializeProduct(product: Product): Product {
-  return {
-    ...product,
-    purchasePrice:
-      typeof product.purchasePrice === "object"
-        ? Number(product.purchasePrice.toString())
-        : product.purchasePrice,
-    sellingPrice:
-      typeof product.sellingPrice === "object"
-        ? Number(product.sellingPrice.toString())
-        : product.sellingPrice,
-  };
-}
-
-// Função para buscar produtos com filtros opcionais
+// Get products with optional filters
 export async function getProducts(options?: {
   query?: string;
-  categoryId?: string;
   lowStock?: boolean;
 }) {
   try {
-    const { query, categoryId, lowStock } = options || {};
+    const { query, lowStock } = options || {};
 
     const products = await prisma.product.findMany({
       where: {
-        isActive: true,
         ...(query
           ? {
               OR: [
                 { name: { contains: query, mode: "insensitive" } },
-                { sku: { contains: query, mode: "insensitive" } },
                 { description: { contains: query, mode: "insensitive" } },
               ],
             }
           : {}),
-        ...(categoryId ? { categoryId } : {}),
         ...(lowStock === true
-          ? { currentStock: { lte: prisma.product.fields.minimumStock } }
+          ? { currentStock: { lte: 10 } }
           : {}),
-      },
-      include: {
-        category: true,
-        supplier: true,
       },
       orderBy: { name: "asc" },
     });
 
-    // Serializar os objetos Decimal para números
-    const serializedProducts = products.map((product) =>
-      serializeProduct(product as unknown as Product)
-    );
+    // Serialize Decimal objects to numbers
+    const serializedProducts = products.map((product) => ({
+      ...product,
+      precoUnitario: Number(product.precoUnitario),
+      createdAt: product.createdAt.toISOString(),
+      updatedAt: product.updatedAt.toISOString(),
+    }));
 
     return { products: serializedProducts };
   } catch (error) {
@@ -111,16 +44,25 @@ export async function getProducts(options?: {
   }
 }
 
-// Função para buscar um produto pelo ID
+// Get a single product by ID
 export async function getProductById(id: string) {
   try {
     const product = await prisma.product.findUnique({
       where: { id },
       include: {
-        category: true,
-        supplier: true,
-        priceHistory: {
-          orderBy: { effectiveDate: "desc" },
+        itensDeVenda: {
+          include: {
+            sale: {
+              include: {
+                customer: true,
+              },
+            },
+          },
+          orderBy: {
+            sale: {
+              dataRetirada: "desc",
+            },
+          },
           take: 10,
         },
       },
@@ -130,25 +72,30 @@ export async function getProductById(id: string) {
       return { error: "Produto não encontrado" };
     }
 
-    // Serializar os objetos Decimal para números
-    const serializedProduct = serializeProduct(product as unknown as Product);
-
-    // Também serializar o histórico de preços se existir
-    if (serializedProduct.priceHistory) {
-      serializedProduct.priceHistory = serializedProduct.priceHistory.map(
-        (ph: PriceHistory) => ({
-          ...ph,
-          purchasePrice:
-            typeof ph.purchasePrice === "object"
-              ? Number(ph.purchasePrice.toString())
-              : ph.purchasePrice,
-          sellingPrice:
-            typeof ph.sellingPrice === "object"
-              ? Number(ph.sellingPrice.toString())
-              : ph.sellingPrice,
-        })
-      );
-    }
+    // Serialize Decimal objects
+    const serializedProduct = {
+      ...product,
+      precoUnitario: Number(product.precoUnitario),
+      createdAt: product.createdAt.toISOString(),
+      updatedAt: product.updatedAt.toISOString(),
+      itensDeVenda: product.itensDeVenda.map((item) => ({
+        ...item,
+        precoUnitarioNoMomento: Number(item.precoUnitarioNoMomento),
+        sale: {
+          ...item.sale,
+          totalAmount: item.sale.totalAmount ? Number(item.sale.totalAmount) : null,
+          dataRetirada: item.sale.dataRetirada.toISOString(),
+          dataDevolucaoPrevista: item.sale.dataDevolucaoPrevista.toISOString(),
+          createdAt: item.sale.createdAt.toISOString(),
+          updatedAt: item.sale.updatedAt.toISOString(),
+          customer: {
+            ...item.sale.customer,
+            createdAt: item.sale.customer.createdAt.toISOString(),
+            updatedAt: item.sale.customer.updatedAt.toISOString(),
+          },
+        },
+      })),
+    };
 
     return { product: serializedProduct };
   } catch (error) {
@@ -157,83 +104,62 @@ export async function getProductById(id: string) {
   }
 }
 
-// Função para criar um novo produto
+// Create a new product
 export async function createProduct(data: {
-  sku: string;
   name: string;
-  description: string;
-  categoryId: string;
-  supplierId: string; // This might be empty
-  purchasePrice: number;
-  sellingPrice: number;
-  currentStock: number;
-  minimumStock: number;
-  unit: string;
-  location: string;
-  barcode: string;
-  userId?: string; // Add this parameter for the user creating the product
+  description?: string;
+  precoUnitario: number;
+  currentStock?: number;
+  unit?: string;
 }) {
   try {
     // Validate required fields
-    if (!data.sku || !data.name) {
-      return { error: "SKU e nome são obrigatórios" };
+    if (!data.name) {
+      return { error: "Nome é obrigatório" };
     }
 
-    // Convert empty supplierId to null
-    const supplierId = data.supplierId ? data.supplierId : null;
+    if (!data.precoUnitario || data.precoUnitario <= 0) {
+      return { error: "Preço unitário deve ser maior que zero" };
+    }
 
     const product = await prisma.product.create({
       data: {
-        ...data,
-        supplierId, // Use the converted value
-        purchasePrice: data.purchasePrice,
-        sellingPrice: data.sellingPrice,
-        currentStock: data.currentStock,
-        minimumStock: data.minimumStock,
+        name: data.name,
+        description: data.description || null,
+        precoUnitario: new Decimal(data.precoUnitario),
+        currentStock: data.currentStock || 0,
+        unit: data.unit || "un",
       },
     });
 
-    // If you can't get a user ID, you could make the stock movement creation conditional
-    if (data.currentStock > 0 && data.userId) {
-      await prisma.stockMovement.create({
-        data: {
-          productId: product.id,
-          quantity: data.currentStock,
-          type: "INITIAL" as MovementType,
-          reference: product.id,
-          userId: data.userId,
-          notes: "Estoque inicial",
-        },
-      });
-    }
+    const serializedProduct = {
+      ...product,
+      precoUnitario: Number(product.precoUnitario),
+      createdAt: product.createdAt.toISOString(),
+      updatedAt: product.updatedAt.toISOString(),
+    };
 
     revalidatePath("/inventory");
-    return { product: serializeProduct(product as unknown as Product) };
+    return { product: serializedProduct };
   } catch (error) {
     console.error("Error creating product:", error);
     return { error: "Falha ao criar produto" };
   }
 }
 
-// Função para atualizar um produto
+// Update a product
 export async function updateProduct(
   id: string,
   data: {
     name?: string;
     description?: string;
-    categoryId?: string;
-    supplierId?: string;
-    purchasePrice?: number | Decimal;
-    sellingPrice?: number | Decimal;
-    minimumStock?: number;
+    precoUnitario?: number | Decimal;
+    currentStock?: number;
     unit?: string;
-    location?: string;
-    barcode?: string;
-    isActive?: boolean;
   }
 ) {
   try {
-    // Verificar se o produto existe
+    // Check if product exists
     const existingProduct = await prisma.product.findUnique({
       where: { id },
     });
@@ -242,66 +168,44 @@ export async function updateProduct(
       return { error: "Produto não encontrado" };
     }
 
-    // Verificar se há alteração de preço
-    const priceChange =
-      (data.purchasePrice !== undefined &&
-        !existingProduct.purchasePrice.equals(
-          new Decimal(data.purchasePrice.toString())
-        )) ||
-      (data.sellingPrice !== undefined &&
-        !existingProduct.sellingPrice.equals(
-          new Decimal(data.sellingPrice.toString())
-        ));
-
-    // Atualizar o produto com uma transação para também atualizar o histórico de preços se necessário
-    const product = await prisma.$transaction(async (tx) => {
-      // Atualizar o produto
-      const updatedProduct = await tx.product.update({
-        where: { id },
-        data: {
-          ...data,
-          ...(data.purchasePrice
-            ? { purchasePrice: new Decimal(data.purchasePrice.toString()) }
-            : {}),
-          ...(data.sellingPrice
-            ? { sellingPrice: new Decimal(data.sellingPrice.toString()) }
-            : {}),
-        },
-      });
-
-      // Registrar o histórico de preços se houver alteração
-      if (priceChange) {
-        await tx.priceHistory.create({
-          data: {
-            productId: updatedProduct.id,
-            purchasePrice: updatedProduct.purchasePrice,
-            sellingPrice: updatedProduct.sellingPrice,
-            notes: "Atualização de preço",
-          },
-        });
-      }
-
-      return updatedProduct;
+    // Update the product
+    const product = await prisma.product.update({
+      where: { id },
+      data: {
+        ...(data.name !== undefined ? { name: data.name } : {}),
+        ...(data.description !== undefined ? { description: data.description } : {}),
+        ...(data.precoUnitario !== undefined
+          ? { precoUnitario: new Decimal(data.precoUnitario.toString()) }
+          : {}),
+        ...(data.currentStock !== undefined ? { currentStock: data.currentStock } : {}),
+        ...(data.unit !== undefined ? { unit: data.unit } : {}),
+      },
     });
+
+    const serializedProduct = {
+      ...product,
+      precoUnitario: Number(product.precoUnitario),
+      createdAt: product.createdAt.toISOString(),
+      updatedAt: product.updatedAt.toISOString(),
+    };
 
     revalidatePath("/inventory");
     revalidatePath(`/inventory/${id}`);
-    return { product: serializeProduct(product as unknown as Product) };
+    return { product: serializedProduct };
   } catch (error) {
     console.error("Error updating product:", error);
     return { error: "Falha ao atualizar produto" };
   }
 }
 
-// Função para ajustar o estoque de um produto
+// Adjust product stock
 export async function adjustStock(
   id: string,
   quantity: number,
-  notes: string,
-  userId: string
+  notes: string
 ) {
   try {
-    // Buscar o produto atual
+    // Get current product
     const product = await prisma.product.findUnique({
       where: { id },
     });
@@ -310,32 +214,18 @@ export async function adjustStock(
       return { error: "Produto não encontrado" };
     }
 
-    // Calcular o novo estoque
+    // Calculate new stock
     const newStock = product.currentStock + quantity;
 
     if (newStock < 0) {
       return { error: "Estoque não pode ser negativo" };
     }
 
-    // Atualizar o estoque e registrar o movimento em uma transação
-    await prisma.$transaction([
-      // Atualizar o estoque
-      prisma.product.update({
-        where: { id },
-        data: { currentStock: newStock },
-      }),
-
-      // Registrar o movimento
-      prisma.stockMovement.create({
-        data: {
-          productId: id,
-          quantity,
-          type: "ADJUSTMENT" as MovementType,
-          userId,
-          notes,
-        },
-      }),
-    ]);
+    // Update stock
+    await prisma.product.update({
+      where: { id },
+      data: { currentStock: newStock },
+    });
 
     revalidatePath("/inventory");
     revalidatePath(`/inventory/${id}`);
@@ -346,12 +236,22 @@ export async function adjustStock(
   }
 }
 
-// Função para desativar um produto (soft delete)
+// Delete a product (hard delete since we simplified the schema)
 export async function deleteProduct(id: string) {
   try {
-    await prisma.product.update({
+    // Check if product is used in any sales
+    const salesCount = await prisma.itensVenda.count({
+      where: { produtoId: id },
+    });
+
+    if (salesCount > 0) {
+      return {
+        error: `Não é possível excluir este produto pois ele está associado a ${salesCount} venda(s).`,
+      };
+    }
+
+    await prisma.product.delete({
       where: { id },
-      data: { isActive: false },
     });
 
     revalidatePath("/inventory");
@@ -362,63 +262,15 @@ export async function deleteProduct(id: string) {
   }
 }
 
-// Fix the serializeDecimal function typing (around line 342-375)
-function serializeDecimal<T>(data: T): unknown {
-  if (data === null || data === undefined) {
-    return data;
-  }
-
-  // Handle Decimal objects
-  if (
-    typeof data === "object" &&
-    data !== null &&
-    "toJSON" in data &&
-    typeof data.toJSON === "function"
-  ) {
-    return Number(data.toString());
-  }
-
-  // Handle Date objects
-  if (data instanceof Date) {
-    return data.toISOString();
-  }
-
-  // Handle arrays
-  if (Array.isArray(data)) {
-    return data.map((item) => serializeDecimal(item));
-  }
-
-  // Handle objects
-  if (typeof data === "object" && data !== null) {
-    const result: Record<string, unknown> = {};
-    for (const key in data) {
-      result[key] = serializeDecimal((data as Record<string, unknown>)[key]);
-    }
-    return result;
-  }
-
-  // Return primitive values as is
-  return data;
-}
-
-// Função para obter relatório de produtos com baixo estoque
+// Get low stock products report
 export async function getLowStockProducts() {
   try {
     const products = await prisma.product.findMany({
       where: {
-        isActive: true,
-
-        minimumStock: {
-          gt: 0,
-        },
         currentStock: {
-          lte: prisma.product.fields.minimumStock,
+          lte: 10,
         },
       },
-      include: {
-        category: true,
-      },
-
       orderBy: [
         {
           currentStock: "asc",
@@ -426,90 +278,17 @@ export async function getLowStockProducts() {
       ],
     });
 
-    // Serialize all data to convert Decimal objects to numbers
-    const serializedProducts = serializeDecimal(products);
+    // Serialize Decimal objects
+    const serializedProducts = products.map((product) => ({
+      ...product,
+      precoUnitario: Number(product.precoUnitario),
+      createdAt: product.createdAt.toISOString(),
+      updatedAt: product.updatedAt.toISOString(),
+    }));
 
     return { products: serializedProducts };
   } catch (error) {
     console.error("Error fetching low stock products:", error);
-
     return { error: "Failed to fetch low stock products" };
-  }
-}
-
-// Função para buscar todas as categorias
-export async function getCategories() {
-  try {
-    const categories = await prisma.category.findMany({
-      orderBy: { name: "asc" },
-    });
-
-    return { categories };
-  } catch (error) {
-    console.error("Error fetching categories:", error);
-    return { error: "Falha ao buscar categorias" };
-  }
-}
-
-// Função para criar uma nova categoria
-export async function createCategory(data: {
-  name: string;
-  description?: string;
-}) {
-  try {
-    const category = await prisma.category.create({
-      data,
-    });
-
-    revalidatePath("/inventory/categories");
-    return { success: true, category };
-  } catch (error) {
-    console.error("Error creating category:", error);
-    return { error: "Falha ao criar categoria" };
-  }
-}
-
-// Função para atualizar uma categoria
-export async function updateCategory(
-  id: string,
-  data: { name: string; description?: string }
-) {
-  try {
-    const category = await prisma.category.update({
-      where: { id },
-      data,
-    });
-
-    revalidatePath("/inventory/categories");
-    return { success: true, category };
-  } catch (error) {
-    console.error("Error updating category:", error);
-    return { error: "Falha ao atualizar categoria" };
-  }
-}
-
-// Função para deletar uma categoria
-export async function deleteCategory(id: string) {
-  try {
-    // Verificar se existem produtos associados a esta categoria
-    const productsCount = await prisma.product.count({
-      where: { categoryId: id },
-    });
-
-    if (productsCount > 0) {
-      return {
-        error: `Não é possível excluir esta categoria pois existem ${productsCount} produtos associados a ela.`,
-      };
-    }
-
-    await prisma.category.delete({
-      where: { id },
-    });
-
-    revalidatePath("/inventory/categories");
-    return { success: true };
-  } catch (error) {
-    console.error("Error deleting category:", error);
-    return { error: "Falha ao excluir categoria" };
   }
 }
