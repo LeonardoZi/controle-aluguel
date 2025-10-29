@@ -1,13 +1,13 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { CustomerForm } from "@/components/forms/customer-form";
+import { CustomerForm, CustomerFormValues } from "@/components/forms/customer-form";
 import { createCustomer } from "@/actions/customers";
 
 export default function NewCustomerPage() {
   const router = useRouter();
 
-  const handleSubmit = async (data: any) => {
+  const handleSubmit = async (data: CustomerFormValues) => {
     try {
       const customerData = {
         name: data.name,

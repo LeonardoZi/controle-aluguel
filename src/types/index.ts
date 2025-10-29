@@ -1,10 +1,13 @@
-import { 
-  Product, 
-  Sale, 
-  ItensVenda, 
-  Customer, 
+import {
+  Product,
+  Sale,
+  ItensVenda,
+  Customer,
   User,
 } from "@prisma/client";
+
+// Re-export Prisma types
+export type { Product, Sale, ItensVenda, Customer, User };
 
 export type SerializedProduct = Omit<Product, 'createdAt' | 'updatedAt' | 'precoUnitario'> & {
   createdAt: string;

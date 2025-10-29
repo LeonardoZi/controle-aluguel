@@ -286,14 +286,6 @@ export default function NewSale() {
         Nova Venda/Aluguel
       </h1>
 
-      <div className="bg-blue-50 border border-blue-200 text-blue-700 px-4 py-3 rounded mb-6">
-        <p className="text-sm">
-          <strong>Sistema de Venda com Devolução:</strong> O cliente retira os
-          produtos e tem um prazo para devolver o que não usar. O valor final
-          será calculado apenas pela quantidade efetivamente utilizada.
-        </p>
-      </div>
-
       {error && (
         <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-4">
           {error}

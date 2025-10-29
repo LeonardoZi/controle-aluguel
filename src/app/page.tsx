@@ -412,11 +412,11 @@ export default async function Home() {
               </Link>
 
               <Link
-                href="/settings"
+                href="/dashboard"
                 className="card group bg-white flex flex-col justify-between min-h-[180px]"
               >
                 <div>
-                  <div className="h-10 w-10 bg-gray-100 rounded-lg flex items-center justify-center text-gray-600 mb-3">
+                  <div className="h-10 w-10 bg-purple-100 rounded-lg flex items-center justify-center text-purple-600 mb-3">
                     <svg
                       xmlns="http://www.w3.org/2000/svg"
                       width="20"
@@ -428,18 +428,20 @@ export default async function Home() {
                       strokeLinecap="round"
                       strokeLinejoin="round"
                     >
-                      <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"></path>
-                      <circle cx="12" cy="12" r="3"></circle>
+                      <rect width="7" height="9" x="3" y="3" rx="1"></rect>
+                      <rect width="7" height="5" x="14" y="3" rx="1"></rect>
+                      <rect width="7" height="9" x="14" y="12" rx="1"></rect>
+                      <rect width="7" height="5" x="3" y="16" rx="1"></rect>
                     </svg>
                   </div>
-                  <h2 className="text-xl font-semibold mb-2 group-hover:text-gray-600 transition-colors">
-                    Configurações (TROCAR PRA RELATÓRIOS)
+                  <h2 className="text-xl font-semibold mb-2 group-hover:text-purple-600 transition-colors">
+                    Dashboard
                   </h2>
                   <p className="text-sm text-gray-600">
                     Visualize análises e estatísticas do seu negócio.
                   </p>
                 </div>
-                <span className="text-gray-600 text-sm flex items-center gap-1 mt-3">
+                <span className="text-purple-600 text-sm flex items-center gap-1 mt-3">
                   Acessar
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
@@ -530,17 +532,6 @@ export default async function Home() {
                   Novo Produto
                 </Link>
 
-                <div className="mt-4 pt-4 border-t border-gray-200">
-                  <h3 className="text-sm font-medium text-gray-500 mb-3">
-                    INFORMAÇÕES
-                  </h3>
-                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                    <p className="text-sm text-blue-800">
-                      <strong>Como funciona:</strong> Cliente retira produtos (ex: 10m de fio), 
-                      usa o necessário e devolve o restante dentro do prazo. Paga apenas o que usou.
-                    </p>
-                  </div>
-                </div>
               </div>
             </div>
           </div>
