@@ -9,7 +9,6 @@ import { useState, useCallback } from "react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { cn } from "@/lib/utils";
 
-// Schema de validação
 const customerSchema = z.object({
   name: z
     .string()
@@ -90,7 +89,6 @@ export function CustomerForm({
     onSubmit,
   });
 
-  // Função para buscar CEP
   const searchCep = useCallback(async (cep: string) => {
     const cepNumbers = cep.replace(/\D/g, "");
 
@@ -108,7 +106,6 @@ export function CustomerForm({
 
       if (data.erro) {
         setCepError("CEP não encontrado");
-        // Limpa os campos mas mantém o CEP e número/complemento
         const currentAddress = form.values.address;
         form.setValue("address", {
           ...currentAddress,
@@ -118,7 +115,6 @@ export function CustomerForm({
           state: "",
         });
       } else {
-        // Atualiza cada campo individualmente mantendo os outros valores
         const currentAddress = form.values.address;
         form.setValue("address", {
           zipCode: currentAddress.zipCode,
@@ -139,17 +135,14 @@ export function CustomerForm({
     }
   }, [form]);
 
-  // Handler para mudança do CEP
   const handleCepChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     
-    // Atualiza o campo CEP diretamente
     form.setValue("address", {
       ...form.values.address,
       zipCode: value,
     });
     
-    // Busca automaticamente quando atingir 8 dígitos
     const numbers = value.replace(/\D/g, "");
     if (numbers.length === 8) {
       searchCep(value);
@@ -179,7 +172,6 @@ export function CustomerForm({
 
   return (
     <form onSubmit={form.handleSubmit} className="space-y-6">
-      {/* Informações Básicas */}
       <div className="space-y-4">
         <h3 className="text-lg font-medium">Informações Básicas</h3>
 
@@ -429,7 +421,6 @@ export function CustomerForm({
         </div>
       </div>
 
-      {/* Observações e Status */}
       <div className="space-y-4">
         <div>
           <label htmlFor="notes" className="block text-sm font-medium mb-1">

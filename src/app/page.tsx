@@ -15,25 +15,20 @@ async function getStats() {
       monthRevenue,
       lowStockCount,
     ] = await Promise.all([
-      // Total active products
       prisma.product.count(),
-      // Total active customers
       prisma.customer.count({
         where: { isActive: true },
       }),
-      // Active sales (rentals)
       prisma.sale.count({
         where: {
           status: { in: ["ATIVO", "ATRASADO"] },
         },
       }),
-      // Overdue sales
       prisma.sale.count({
         where: {
           status: "ATRASADO",
         },
       }),
-      // Revenue from completed sales this month
       prisma.sale.aggregate({
         where: {
           status: "CONCLUIDO",
@@ -45,7 +40,6 @@ async function getStats() {
           totalAmount: true,
         },
       }),
-      // Products with low stock
       prisma.product.count({
         where: {
           currentStock: {
@@ -81,8 +75,7 @@ export default async function Home() {
 
   return (
     <div className="min-h-screen bg-gray-50 font-[family-name:var(--font-geist-sans)] text-gray-900">
-      {/* Hero Section */}
-      <div className="bg-white py-6 border-b border-gray-100 shadow-sm">
+      <div className="bg-white py-4 border-b border-gray-100 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="max-w-4xl">
             <div className="flex items-center gap-3 mb-4">
@@ -105,26 +98,105 @@ export default async function Home() {
                 </svg>
               </div>
               <span className="text-blue-600 font-medium tracking-wide text-sm uppercase">
-                Sistema de Vendas e Aluguel
+                Sistema de Vendas
               </span>
             </div>
 
             <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-gray-800 mb-4 leading-tight">
-              Venda e Aluguel de{" "}
-              <span className="text-blue-600">Materiais Elétricos</span>
+              Venda e Aluguel de Materiais
             </h1>
 
-            <p className="text-lg text-gray-600">
-              Sistema flexível onde o cliente retira produtos e paga apenas pelo que usar
-            </p>
           </div>
         </div>
       </div>
 
-      {/* Main Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Quick Stats Section */}
         <div className="grid grid-cols-2 lg:grid-cols-6 gap-4 mb-10">
+
+          <div className="bg-white rounded-lg p-6 shadow-sm border border-gray-100">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-500">Receita Mês</p>
+                <h3 className="text-2xl font-bold mt-1">
+                  {new Intl.NumberFormat("pt-BR", {
+                    style: "currency",
+                    currency: "BRL",
+                  }).format(Number(stats.monthRevenue))}
+                </h3>
+              </div>
+              <div className="h-12 w-12 bg-green-50 rounded-lg flex items-center justify-center text-green-500">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="24"
+                  height="24"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="M12 2v20"></path>
+                  <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+                </svg>
+              </div>
+            </div>
+          </div>
+
+                    <div className="bg-white rounded-lg p-6 shadow-sm border border-gray-100">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-500">Vendas Ativas</p>
+                <h3 className="text-2xl font-bold mt-1">
+                  {stats.activeSales}
+                </h3>
+              </div>
+              <div className="h-12 w-12 bg-green-50 rounded-lg flex items-center justify-center text-green-500">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="24"
+                  height="24"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path>
+                  <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path>
+                </svg>
+              </div>
+            </div>
+          </div>
+
+                    <div className="bg-white rounded-lg p-6 shadow-sm border border-gray-100">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-500">Atrasadas</p>
+                <h3 className="text-2xl font-bold mt-1 text-red-600">
+                  {stats.overdueSales}
+                </h3>
+              </div>
+              <div className="h-12 w-12 bg-red-50 rounded-lg flex items-center justify-center text-red-500">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="24"
+                  height="24"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <circle cx="12" cy="12" r="10"></circle>
+                  <polyline points="12 6 12 12 16 14"></polyline>
+                </svg>
+              </div>
+            </div>
+          </div>
+
           <div className="bg-white rounded-lg p-6 shadow-sm border border-gray-100">
             <div className="flex items-center justify-between">
               <div>
@@ -183,115 +255,9 @@ export default async function Home() {
             </div>
           </div>
 
-          <div className="bg-white rounded-lg p-6 shadow-sm border border-gray-100">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-500">Vendas Ativas</p>
-                <h3 className="text-2xl font-bold mt-1">
-                  {stats.activeSales}
-                </h3>
-              </div>
-              <div className="h-12 w-12 bg-green-50 rounded-lg flex items-center justify-center text-green-500">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="24"
-                  height="24"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path>
-                  <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path>
-                </svg>
-              </div>
-            </div>
-          </div>
 
-          <div className="bg-white rounded-lg p-6 shadow-sm border border-gray-100">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-500">Atrasadas</p>
-                <h3 className="text-2xl font-bold mt-1 text-red-600">
-                  {stats.overdueSales}
-                </h3>
-              </div>
-              <div className="h-12 w-12 bg-red-50 rounded-lg flex items-center justify-center text-red-500">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="24"
-                  height="24"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <circle cx="12" cy="12" r="10"></circle>
-                  <polyline points="12 6 12 12 16 14"></polyline>
-                </svg>
-              </div>
-            </div>
-          </div>
 
-          <div className="bg-white rounded-lg p-6 shadow-sm border border-gray-100">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-500">Receita Mês</p>
-                <h3 className="text-2xl font-bold mt-1">
-                  {new Intl.NumberFormat("pt-BR", {
-                    style: "currency",
-                    currency: "BRL",
-                  }).format(Number(stats.monthRevenue))}
-                </h3>
-              </div>
-              <div className="h-12 w-12 bg-green-50 rounded-lg flex items-center justify-center text-green-500">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="24"
-                  height="24"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <path d="M12 2v20"></path>
-                  <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
-                </svg>
-              </div>
-            </div>
-          </div>
 
-          <div className="bg-white rounded-lg p-6 shadow-sm border border-gray-100">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-500">Estoque Baixo</p>
-                <h3 className="text-2xl font-bold mt-1">
-                  {stats.lowStockCount}
-                </h3>
-              </div>
-              <div className="h-12 w-12 bg-amber-50 rounded-lg flex items-center justify-center text-amber-500">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="24"
-                  height="24"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <path d="m8 3 4 8 5-5 5 15H2L8 3z"></path>
-                </svg>
-              </div>
-            </div>
-          </div>
         </div>
 
         {/* Main Sections */}
@@ -322,10 +288,10 @@ export default async function Home() {
                     </svg>
                   </div>
                   <h2 className="text-xl font-semibold mb-2 group-hover:text-green-600 transition-colors">
-                    Vendas e Aluguéis
+                    Vendas
                   </h2>
                   <p className="text-sm text-gray-600">
-                    Registre vendas com devolução. Cliente paga apenas o que usar.
+                    Registre e monitore as vendas.
                   </p>
                 </div>
                 <span className="text-green-600 text-sm flex items-center gap-1 mt-3">
@@ -467,10 +433,10 @@ export default async function Home() {
                     </svg>
                   </div>
                   <h2 className="text-xl font-semibold mb-2 group-hover:text-gray-600 transition-colors">
-                    Configurações
+                    Configurações (TROCAR PRA RELATÓRIOS)
                   </h2>
                   <p className="text-sm text-gray-600">
-                    Configure o sistema e usuários.
+                    Visualize análises e estatísticas do seu negócio.
                   </p>
                 </div>
                 <span className="text-gray-600 text-sm flex items-center gap-1 mt-3">
@@ -587,28 +553,6 @@ export default async function Home() {
           <div className="flex flex-col sm:flex-row justify-between items-center">
             <div className="text-sm text-gray-500 mb-4 sm:mb-0">
               © 2024 Sistema de Vendas e Aluguel - Todos os direitos reservados
-            </div>
-            <div className="flex gap-6">
-              <Link
-                href="/settings"
-                className="flex items-center gap-2 hover:text-blue-600 text-gray-600 text-sm"
-              >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="16"
-                  height="16"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"></path>
-                  <circle cx="12" cy="12" r="3"></circle>
-                </svg>
-                Configurações
-              </Link>
             </div>
           </div>
         </div>

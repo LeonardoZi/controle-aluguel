@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { CustomerForm } from "@/components/forms/customer-form"; // ajuste o caminho
+import { CustomerForm } from "@/components/forms/customer-form";
 import { createCustomer } from "@/actions/customers";
 
 export default function NewCustomerPage() {
@@ -9,7 +9,6 @@ export default function NewCustomerPage() {
 
   const handleSubmit = async (data: any) => {
     try {
-      // Transformar os dados do formato do form para o formato esperado pela action
       const customerData = {
         name: data.name,
         taxId: data.document,
