@@ -2,7 +2,6 @@
 
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
-import { CustomerType } from "@prisma/client";
 
 export async function getCustomers(query?: string) {
   try {
@@ -55,7 +54,6 @@ export async function createCustomer(data: {
   state?: string;
   postalCode?: string;
   taxId?: string;
-  type: CustomerType;
 }) {
   try {
     const customer = await prisma.customer.create({
@@ -81,7 +79,6 @@ export async function updateCustomer(
     state?: string;
     postalCode?: string;
     taxId?: string;
-    type?: CustomerType;
     isActive?: boolean;
   }
 ) {
@@ -121,13 +118,13 @@ export async function getCustomerSales(customerId: string) {
     const sales = await prisma.sale.findMany({
       where: { customerId },
       include: {
-        items: {
+        itens: {
           include: {
-            product: true,
+            produto: true,
           },
         },
       },
-      orderBy: { saleDate: "desc" },
+      orderBy: { dataRetirada: "desc" },
     });
 
     return { sales };
