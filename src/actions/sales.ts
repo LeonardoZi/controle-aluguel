@@ -4,18 +4,14 @@ import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 import { Decimal } from "@prisma/client/runtime/library";
 import type { Prisma } from "@prisma/client";
-
-// Type alias for SaleStatus
 type SaleStatus = "ATIVO" | "ATRASADO" | "CONCLUIDO" | "CANCELADO";
 
-// Input type for creating a sale/rental
 type CreateSaleItemInput = {
   produtoId: string;
   quantidadeRetirada: number;
   precoUnitarioNoMomento?: number | Decimal;
 };
 
-// Get all sales with optional filters
 export async function getSales(options?: {
   status?: SaleStatus;
   customerId?: string;
@@ -39,7 +35,6 @@ export async function getSales(options?: {
               },
             }
           : {}),
-        // Filter for overdue sales
         ...(isOverdue
           ? {
               dataDevolucaoPrevista: { lt: now },
@@ -65,15 +60,14 @@ export async function getSales(options?: {
       orderBy: { dataRetirada: "desc" },
     });
 
-    // Serialize Decimal and Date objects
-    const serializedSales = sales.map((sale: any) => ({
+    const serializedSales = sales.map((sale) => ({
       ...sale,
       totalAmount: sale.totalAmount ? Number(sale.totalAmount) : null,
       dataRetirada: sale.dataRetirada.toISOString(),
       dataDevolucaoPrevista: sale.dataDevolucaoPrevista.toISOString(),
       createdAt: sale.createdAt.toISOString(),
       updatedAt: sale.updatedAt.toISOString(),
-      itens: sale.itens.map((item: any) => ({
+      itens: sale.itens.map((item) => ({
         ...item,
         precoUnitarioNoMomento: Number(item.precoUnitarioNoMomento),
         produto: {
@@ -98,7 +92,6 @@ export async function getSales(options?: {
   }
 }
 
-// Get a single sale by ID
 export async function getSaleById(id: string) {
   try {
     const sale = await prisma.sale.findUnique({
@@ -124,7 +117,6 @@ export async function getSaleById(id: string) {
       return { error: "Sale not found" };
     }
 
-    // Serialize objects
     const serializedSale = {
       ...sale,
       totalAmount: sale.totalAmount ? Number(sale.totalAmount) : null,
@@ -132,7 +124,7 @@ export async function getSaleById(id: string) {
       dataDevolucaoPrevista: sale.dataDevolucaoPrevista.toISOString(),
       createdAt: sale.createdAt.toISOString(),
       updatedAt: sale.updatedAt.toISOString(),
-      itens: sale.itens.map((item: any) => ({
+      itens: sale.itens.map((item) => ({
         ...item,
         precoUnitarioNoMomento: Number(item.precoUnitarioNoMomento),
         produto: {
@@ -156,7 +148,6 @@ export async function getSaleById(id: string) {
   }
 }
 
-// Create a new sale/rental
 export async function createSale(data: {
   customerId: string;
   userId: string;
@@ -176,9 +167,8 @@ export async function createSale(data: {
       where: { id: { in: productIds } },
     });
 
-    // Verify stock availability
     for (const item of data.items) {
-      const product = products.find((p: any) => p.id === item.produtoId);
+    const product = products.find((p) => p.id === item.produtoId);
       if (!product) {
         return { error: `Produto com ID ${item.produtoId} não encontrado` };
       }
@@ -190,9 +180,8 @@ export async function createSale(data: {
       }
     }
 
-    // Calculate total amount
     const itemsWithPrices = data.items.map((item) => {
-      const product = products.find((p: any) => p.id === item.produtoId);
+      const product = products.find((p) => p.id === item.produtoId);
       const precoUnitario = item.precoUnitarioNoMomento
         ? new Decimal(item.precoUnitarioNoMomento.toString())
         : product!.precoUnitario;
@@ -209,7 +198,6 @@ export async function createSale(data: {
       new Decimal(0)
     );
 
-    // Create sale in a transaction
     const sale = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       // Create the sale
       const newSale = await tx.sale.create({
@@ -247,7 +235,6 @@ export async function createSale(data: {
         },
       });
 
-      // Update product stock
       for (const item of data.items) {
         await tx.product.update({
           where: { id: item.produtoId },
@@ -258,7 +245,6 @@ export async function createSale(data: {
       return newSale;
     });
 
-    // Serialize the sale object
     const serializedSale = {
       ...sale,
       totalAmount: sale.totalAmount ? Number(sale.totalAmount) : null,
@@ -266,7 +252,7 @@ export async function createSale(data: {
       dataDevolucaoPrevista: sale.dataDevolucaoPrevista.toISOString(),
       createdAt: sale.createdAt.toISOString(),
       updatedAt: sale.updatedAt.toISOString(),
-      itens: sale.itens.map((item: any) => ({
+      itens: sale.itens.map((item) => ({
         ...item,
         precoUnitarioNoMomento: Number(item.precoUnitarioNoMomento),
         produto: {
@@ -291,7 +277,6 @@ export async function createSale(data: {
   }
 }
 
-// Process product return
 export async function processReturn(data: {
   saleId: string;
   userId: string;
@@ -321,9 +306,8 @@ export async function processReturn(data: {
       return { error: "Não é possível processar devolução para esta venda" };
     }
 
-    // Validate return items
     for (const returnItem of data.items) {
-      const saleItem = sale.itens.find((item: any) => item.id === returnItem.itemId);
+  const saleItem = sale.itens.find((item) => item.id === returnItem.itemId);
       if (!saleItem) {
         return { error: `Item ${returnItem.itemId} não encontrado na venda` };
       }
@@ -338,11 +322,10 @@ export async function processReturn(data: {
       }
     }
 
-    // Process return in a transaction
     const updatedSale = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       // Update each item with returned quantity
       for (const returnItem of data.items) {
-        const saleItem = sale.itens.find((item: any) => item.id === returnItem.itemId);
+  const saleItem = sale.itens.find((item) => item.id === returnItem.itemId);
         if (!saleItem) continue;
 
         await tx.itensVenda.update({
@@ -369,7 +352,7 @@ export async function processReturn(data: {
       });
 
       // Calculate new total based on actual usage (retirada - devolvida)
-      const newTotal = updatedItems.reduce((sum: Decimal, item: any) => {
+      const newTotal = updatedItems.reduce((sum: Decimal, item) => {
         const quantidadeUsada =
           item.quantidadeRetirada - (item.quantidadeDevolvida || 0);
         const itemTotal = new Decimal(item.precoUnitarioNoMomento).mul(
@@ -380,7 +363,7 @@ export async function processReturn(data: {
 
       // Check if all items are fully returned
       const allReturned = updatedItems.every(
-        (item: any) => item.quantidadeDevolvida === item.quantidadeRetirada
+        (item) => item.quantidadeDevolvida === item.quantidadeRetirada
       );
 
       // Update sale status and total
@@ -413,7 +396,6 @@ export async function processReturn(data: {
       return updatedSale;
     });
 
-    // Serialize the updated sale
     const serializedSale = {
       ...updatedSale,
       totalAmount: updatedSale.totalAmount ? Number(updatedSale.totalAmount) : null,
@@ -421,7 +403,7 @@ export async function processReturn(data: {
       dataDevolucaoPrevista: updatedSale.dataDevolucaoPrevista.toISOString(),
       createdAt: updatedSale.createdAt.toISOString(),
       updatedAt: updatedSale.updatedAt.toISOString(),
-      itens: updatedSale.itens.map((item: any) => ({
+      itens: updatedSale.itens.map((item) => ({
         ...item,
         precoUnitarioNoMomento: Number(item.precoUnitarioNoMomento),
         produto: {
@@ -448,7 +430,6 @@ export async function processReturn(data: {
   }
 }
 
-// Cancel a sale
 export async function cancelSale(id: string) {
   try {
     const sale = await prisma.sale.findUnique({
@@ -468,7 +449,6 @@ export async function cancelSale(id: string) {
       return { error: "Não é possível cancelar uma venda concluída" };
     }
 
-    // Cancel sale and return all products to stock
     await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       // Update sale status
       await tx.sale.update({
@@ -506,7 +486,6 @@ export async function cancelSale(id: string) {
   }
 }
 
-// Update overdue sales status (should be run periodically)
 export async function updateOverdueSales() {
   try {
     const now = new Date();
@@ -529,7 +508,6 @@ export async function updateOverdueSales() {
   }
 }
 
-// Complete a sale manually (mark as finished)
 export async function completeSale(id: string) {
   try {
     const sale = await prisma.sale.findUnique({
@@ -549,12 +527,11 @@ export async function completeSale(id: string) {
       return { error: "Venda já está concluída" };
     }
 
-    // Recalculate total based on actual usage
     const updatedItems = await prisma.itensVenda.findMany({
       where: { saleId: id },
     });
 
-    const finalTotal = updatedItems.reduce((sum: Decimal, item: any) => {
+    const finalTotal = updatedItems.reduce((sum: Decimal, item) => {
       const quantidadeUsada =
         item.quantidadeRetirada - (item.quantidadeDevolvida || 0);
       const itemTotal = new Decimal(item.precoUnitarioNoMomento).mul(
@@ -581,7 +558,6 @@ export async function completeSale(id: string) {
   }
 }
 
-// Get sales summary/statistics
 export async function getSalesSummary(options?: {
   startDate?: Date;
   endDate?: Date;
@@ -632,9 +608,9 @@ export async function getSalesSummary(options?: {
       },
     });
 
-    const pendingReturns = salesWithPendingReturns.reduce((count: number, sale: any) => {
+    const pendingReturns = salesWithPendingReturns.reduce((count: number, sale) => {
       const hasUnreturnedItems = sale.itens.some(
-        (item: any) =>
+        (item) =>
           (item.quantidadeDevolvida || 0) < item.quantidadeRetirada
       );
       return count + (hasUnreturnedItems ? 1 : 0);
