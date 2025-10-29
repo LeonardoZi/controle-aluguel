@@ -47,7 +47,7 @@ const customerSchema = z.object({
   isActive: z.boolean().default(true),
 });
 
-type CustomerFormValues = z.infer<typeof customerSchema>;
+export type CustomerFormValues = z.infer<typeof customerSchema>;
 
 interface CustomerFormProps {
   initialData?: Partial<CustomerFormValues>;

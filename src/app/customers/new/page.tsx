@@ -1,14 +1,18 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { CustomerForm } from "@/components/forms/customer-form";
+import { CustomerForm, CustomerFormValues } from "@/components/forms/customer-form";
 import { createCustomer } from "@/actions/customers";
 
 export default function NewCustomerPage() {
   const router = useRouter();
 
+<<<<<<< HEAD
   const handleSubmit = async (data: any) => {
     console.log("📝 handleSubmit chamado com:", data);
+=======
+  const handleSubmit = async (data: CustomerFormValues) => {
+>>>>>>> 17e4b066997bd550614b5c8f5d06111260d9397b
     try {
       const customerData = {
         name: data.name,
