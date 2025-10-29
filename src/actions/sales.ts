@@ -60,7 +60,7 @@ export async function getSales(options?: {
       orderBy: { dataRetirada: "desc" },
     });
 
-    const serializedSales = sales.map((sale) => ({
+  const serializedSales = sales.map((sale) => ({
       ...sale,
       totalAmount: sale.totalAmount ? Number(sale.totalAmount) : null,
       dataRetirada: sale.dataRetirada.toISOString(),
@@ -127,18 +127,22 @@ export async function getSaleById(id: string) {
       itens: sale.itens.map((item) => ({
         ...item,
         precoUnitarioNoMomento: Number(item.precoUnitarioNoMomento),
-        produto: {
-          ...item.produto,
-          precoUnitario: Number(item.produto.precoUnitario),
-          createdAt: item.produto.createdAt.toISOString(),
-          updatedAt: item.produto.updatedAt.toISOString(),
-        },
+        produto: item.produto
+          ? {
+              ...item.produto,
+              precoUnitario: Number(item.produto.precoUnitario),
+              createdAt: item.produto.createdAt.toISOString(),
+              updatedAt: item.produto.updatedAt.toISOString(),
+            }
+          : undefined,
       })),
-      customer: {
-        ...sale.customer,
-        createdAt: sale.customer.createdAt.toISOString(),
-        updatedAt: sale.customer.updatedAt.toISOString(),
-      },
+      customer: sale.customer
+        ? {
+            ...sale.customer,
+            createdAt: sale.customer.createdAt.toISOString(),
+            updatedAt: sale.customer.updatedAt.toISOString(),
+          }
+        : undefined,
     };
 
     return { sale: serializedSale };
@@ -352,7 +356,7 @@ export async function processReturn(data: {
       });
 
       // Calculate new total based on actual usage (retirada - devolvida)
-      const newTotal = updatedItems.reduce((sum: Decimal, item) => {
+  const newTotal = updatedItems.reduce((sum: Decimal, item) => {
         const quantidadeUsada =
           item.quantidadeRetirada - (item.quantidadeDevolvida || 0);
         const itemTotal = new Decimal(item.precoUnitarioNoMomento).mul(
@@ -406,12 +410,14 @@ export async function processReturn(data: {
       itens: updatedSale.itens.map((item) => ({
         ...item,
         precoUnitarioNoMomento: Number(item.precoUnitarioNoMomento),
-        produto: {
-          ...item.produto,
-          precoUnitario: Number(item.produto.precoUnitario),
-          createdAt: item.produto.createdAt.toISOString(),
-          updatedAt: item.produto.updatedAt.toISOString(),
-        },
+        produto: item.produto
+          ? {
+              ...item.produto,
+              precoUnitario: Number(item.produto.precoUnitario),
+              createdAt: item.produto.createdAt.toISOString(),
+              updatedAt: item.produto.updatedAt.toISOString(),
+            }
+          : undefined,
       })),
       customer: {
         ...updatedSale.customer,
@@ -531,7 +537,7 @@ export async function completeSale(id: string) {
       where: { saleId: id },
     });
 
-    const finalTotal = updatedItems.reduce((sum: Decimal, item) => {
+  const finalTotal = updatedItems.reduce((sum: Decimal, item) => {
       const quantidadeUsada =
         item.quantidadeRetirada - (item.quantidadeDevolvida || 0);
       const itemTotal = new Decimal(item.precoUnitarioNoMomento).mul(
