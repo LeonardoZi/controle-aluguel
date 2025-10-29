@@ -201,8 +201,7 @@ export async function updateProduct(
 // Adjust product stock
 export async function adjustStock(
   id: string,
-  quantity: number,
-  notes: string
+  quantity: number
 ) {
   try {
     // Get current product

@@ -142,7 +142,12 @@ export async function getSaleById(id: string) {
             createdAt: sale.customer.createdAt.toISOString(),
             updatedAt: sale.customer.updatedAt.toISOString(),
           }
-        : undefined,
+        : {
+            id: '',
+            name: '',
+            email: '',
+            phone: '',
+          },
     };
 
     return { sale: serializedSale };

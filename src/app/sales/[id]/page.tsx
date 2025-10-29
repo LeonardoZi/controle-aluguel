@@ -87,13 +87,6 @@ export default function SaleDetailsPage() {
     }).format(Number(value));
   };
 
-  const formatDate = (date?: string | Date) => {
-    if (!date) return "-";
-    return new Intl.DateTimeFormat("pt-BR", {
-      dateStyle: "long",
-      timeStyle: "short",
-    }).format(new Date(date));
-  };
 
   const formatDateShort = (date?: string | Date) => {
     if (!date) return "-";
