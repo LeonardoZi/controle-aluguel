@@ -8,6 +8,7 @@ export default function NewCustomerPage() {
   const router = useRouter();
 
   const handleSubmit = async (data: any) => {
+    console.log("📝 handleSubmit chamado com:", data);
     try {
       const customerData = {
         name: data.name,

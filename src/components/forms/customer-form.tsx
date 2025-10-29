@@ -9,6 +9,7 @@ import { useState, useCallback } from "react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { cn } from "@/lib/utils";
 
+// Schema de validação
 const customerSchema = z.object({
   name: z
     .string()
@@ -82,13 +83,29 @@ export function CustomerForm({
 
   const [isFetchingCep, setIsFetchingCep] = useState(false);
   const [cepError, setCepError] = useState<string | null>(null);
+  const [localCep, setLocalCep] = useState(defaultValues.address.zipCode || "");
+
+  // Sincroniza localCep apenas quando initialData muda
+  useState(() => {
+    if (initialData?.address?.zipCode) {
+      setLocalCep(initialData.address.zipCode);
+    }
+  });
 
   const form = useForm<CustomerFormValues>({
     initialValues: defaultValues,
     validationSchema: customerSchema as z.ZodType<CustomerFormValues>,
-    onSubmit,
+    onSubmit: async (values) => {
+      console.log("✅ Form validation passed! Submitting:", values);
+      try {
+        await onSubmit(values);
+      } catch (error) {
+        console.error("❌ Error in onSubmit:", error);
+      }
+    },
   });
 
+  // Função para buscar CEP
   const searchCep = useCallback(async (cep: string) => {
     const cepNumbers = cep.replace(/\D/g, "");
 
@@ -106,25 +123,19 @@ export function CustomerForm({
 
       if (data.erro) {
         setCepError("CEP não encontrado");
-        const currentAddress = form.values.address;
-        form.setValue("address", {
-          ...currentAddress,
-          street: "",
-          neighborhood: "",
-          city: "",
-          state: "",
-        });
       } else {
-        const currentAddress = form.values.address;
-        form.setValue("address", {
-          zipCode: currentAddress.zipCode,
-          number: currentAddress.number,
-          complement: currentAddress.complement,
+        // Atualiza apenas os campos retornados pela API, preservando os demais
+        const updatedAddress = {
+          ...form.values.address,
+          zipCode: cep, // Mantém o CEP original
           street: data.logradouro || "",
           neighborhood: data.bairro || "",
           city: data.localidade || "",
           state: data.uf || "",
-        });
+        };
+        form.setValue("address", updatedAddress);
+        // Mantém o CEP no estado local também
+        setLocalCep(cep);
         setCepError(null);
       }
     } catch (error) {
@@ -135,19 +146,34 @@ export function CustomerForm({
     }
   }, [form]);
 
+  // Handler para mudança do CEP
   const handleCepChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     
-    form.setValue("address", {
-      ...form.values.address,
-      zipCode: value,
-    });
+    // Atualiza o estado local imediatamente
+    setLocalCep(value);
     
+    // Busca automaticamente quando atingir 8 dígitos
     const numbers = value.replace(/\D/g, "");
     if (numbers.length === 8) {
       searchCep(value);
     }
   };
+
+  // Handler genérico para campos de endereço
+  const handleAddressChange = (field: keyof CustomerFormValues["address"]) => 
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      form.setValue("address", {
+        ...form.values.address,
+        [field]: e.target.value,
+      });
+    };
+
+  // Handler para campos de texto simples
+  const handleFieldChange = (field: keyof Omit<CustomerFormValues, "address" | "isActive">) =>
+    (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+      form.setValue(field, e.target.value);
+    };
 
   type AddressField = keyof CustomerFormValues["address"];
 
@@ -172,6 +198,7 @@ export function CustomerForm({
 
   return (
     <form onSubmit={form.handleSubmit} className="space-y-6">
+      {/* Informações Básicas */}
       <div className="space-y-4">
         <h3 className="text-lg font-medium">Informações Básicas</h3>
 
@@ -184,7 +211,7 @@ export function CustomerForm({
               id="name"
               name="name"
               value={form.values.name}
-              onChange={form.handleChange}
+              onChange={handleFieldChange("name")}
               onBlur={form.handleBlur}
               error={form.touched.name && form.errors.name}
               placeholder="Digite o nome completo"
@@ -206,7 +233,7 @@ export function CustomerForm({
               name="email"
               type="email"
               value={form.values.email}
-              onChange={form.handleChange}
+              onChange={handleFieldChange("email")}
               onBlur={form.handleBlur}
               placeholder="email@exemplo.com"
               className={cn(
@@ -228,7 +255,7 @@ export function CustomerForm({
               id="document"
               name="document"
               value={form.values.document}
-              onChange={form.handleChange}
+              onChange={handleFieldChange("document")}
               onBlur={form.handleBlur}
               placeholder="000.000.000-00"
               className={cn(
@@ -248,7 +275,7 @@ export function CustomerForm({
               id="phone"
               name="phone"
               value={form.values.phone}
-              onChange={form.handleChange}
+              onChange={handleFieldChange("phone")}
               onBlur={form.handleBlur}
               placeholder="(00) 00000-0000"
               className={cn(
@@ -271,15 +298,25 @@ export function CustomerForm({
             <label htmlFor="address.zipCode" className="block text-sm font-medium mb-1">
               CEP *
             </label>
-            <Input
+            <input
               id="address.zipCode"
               name="address.zipCode"
-              value={form.values.address.zipCode}
+              type="text"
+              inputMode="numeric"
+              value={localCep || ""}
               onChange={handleCepChange}
-              onBlur={form.handleBlur}
+              onBlur={(e) => {
+                // Atualiza o form ao sair do campo
+                const newAddress = { ...form.values.address };
+                newAddress.zipCode = localCep;
+                form.setValue("address", newAddress);
+                form.handleBlur(e);
+              }}
               placeholder="00000-000"
               disabled={isFetchingCep}
+              maxLength={9}
               className={cn(
+                "flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50",
                 hasAddressFieldError("zipCode") && "border-red-500"
               )}
             />
@@ -306,7 +343,7 @@ export function CustomerForm({
               id="address.street"
               name="address.street"
               value={form.values.address.street}
-              onChange={form.handleChange}
+              onChange={handleAddressChange("street")}
               onBlur={form.handleBlur}
               placeholder="Nome da rua"
               className={cn(hasAddressFieldError("street") && "border-red-500")}
@@ -327,7 +364,7 @@ export function CustomerForm({
                 id="address.number"
                 name="address.number"
                 value={form.values.address.number}
-                onChange={form.handleChange}
+                onChange={handleAddressChange("number")}
                 onBlur={form.handleBlur}
                 placeholder="Número"
                 className={cn(hasAddressFieldError("number") && "border-red-500")}
@@ -347,7 +384,7 @@ export function CustomerForm({
                 id="address.complement"
                 name="address.complement"
                 value={form.values.address.complement}
-                onChange={form.handleChange}
+                onChange={handleAddressChange("complement")}
                 onBlur={form.handleBlur}
                 placeholder="Apto, Bloco, etc."
               />
@@ -364,7 +401,7 @@ export function CustomerForm({
               id="address.neighborhood"
               name="address.neighborhood"
               value={form.values.address.neighborhood}
-              onChange={form.handleChange}
+              onChange={handleAddressChange("neighborhood")}
               onBlur={form.handleBlur}
               placeholder="Bairro"
               className={cn(hasAddressFieldError("neighborhood") && "border-red-500")}
@@ -385,7 +422,7 @@ export function CustomerForm({
                 id="address.city"
                 name="address.city"
                 value={form.values.address.city}
-                onChange={form.handleChange}
+                onChange={handleAddressChange("city")}
                 onBlur={form.handleBlur}
                 placeholder="Cidade"
                 className={cn(hasAddressFieldError("city") && "border-red-500")}
@@ -405,7 +442,7 @@ export function CustomerForm({
                 id="address.state"
                 name="address.state"
                 value={form.values.address.state}
-                onChange={form.handleChange}
+                onChange={handleAddressChange("state")}
                 onBlur={form.handleBlur}
                 placeholder="UF"
                 maxLength={2}
@@ -421,6 +458,7 @@ export function CustomerForm({
         </div>
       </div>
 
+      {/* Observações e Status */}
       <div className="space-y-4">
         <div>
           <label htmlFor="notes" className="block text-sm font-medium mb-1">
@@ -430,7 +468,7 @@ export function CustomerForm({
             id="notes"
             name="notes"
             value={form.values.notes || ""}
-            onChange={form.handleChange}
+            onChange={handleFieldChange("notes")}
             onBlur={form.handleBlur}
             placeholder="Informações adicionais sobre o cliente"
             rows={3}
