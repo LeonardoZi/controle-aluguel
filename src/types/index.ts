@@ -1,131 +1,39 @@
-// Type Definitions for Sales and Rental System
-import { Decimal } from "@prisma/client/runtime/library";
+// src/types/index.ts (ou o nome do seu arquivo de tipos)
 
-// Enum types matching Prisma schema
-export type UserRole = "ADMIN" | "MANAGER" | "EMPLOYEE";
-export type SaleStatus = "ATIVO" | "ATRASADO" | "CONCLUIDO" | "CANCELADO";
+// 1. IMPORTAMOS TUDO O QUE PRECISAMOS DIRETAMENTE DO PRISMA.
+//    Estes são os tipos "oficiais" e a nossa única fonte da verdade.
+import { 
+  Product, 
+  Sale, 
+  ItensVenda, 
+  Customer, 
+  User,
+} from "@prisma/client";
 
-// User types
-export interface User {
-  id: string;
-  name: string;
-  email: string;
-  role: UserRole;
-  isActive: boolean;
-  createdAt: Date;
-  updatedAt: Date;
-}
+// ==========================================================
+// SEÇÃO DE TIPOS CUSTOMIZADOS (Onde realmente agregamos valor)
+// ==========================================================
 
-// Product types
-export interface Product {
-  id: string;
-  name: string;
-  description?: string | null;
-  precoUnitario: Decimal | number;
-  currentStock: number;
-  unit: string;
-  createdAt: Date;
-  updatedAt: Date;
-}
+// Este tipo representa um Produto com as datas já convertidas para string (para o frontend)
+export type SerializedProduct = Omit<Product, 'createdAt' | 'updatedAt' | 'precoUnitario'> & {
+  createdAt: string;
+  updatedAt: string;
+  precoUnitario: number; // Decimal é convertido para number no frontend
+};
 
-// Customer types
-export interface Customer {
-  id: string;
-  name: string;
-  email?: string | null;
-  phone?: string | null;
-  address?: string | null;
-  city?: string | null;
-  state?: string | null;
-  postalCode?: string | null;
-  taxId?: string | null;
-  isActive: boolean;
-  createdAt: Date;
-  updatedAt: Date;
-}
+// Este é o tipo que sua variável 'items' na página de devolução deve usar.
+// Ele estende o 'ItensVenda' do Prisma, mas garante que o 'produto' dentro dele
+// seja do nosso novo tipo 'SerializedProduct'.
+export type ClientReturnItem = Omit<ItensVenda, 'produto'> & {
+  produto: SerializedProduct;
+  // Adicionamos as propriedades que você calcula no frontend
+  quantidadePendente: number;
+  quantidadeADevolver: number;
+};
 
-// Sale/Rental types
-export interface Sale {
-  id: string;
-  dataRetirada: Date;
-  dataDevolucaoPrevista: Date;
-  customerId: string;
-  customer?: Customer;
-  userId: string;
-  user?: User;
-  status: SaleStatus;
-  totalAmount?: Decimal | number | null;
-  notes?: string | null;
-  createdAt: Date;
-  updatedAt: Date;
-  itens: ItensVenda[];
-}
-
-export interface ItensVenda {
-  id: string;
-  saleId: string;
-  sale?: Sale;
-  produtoId: string;
-  produto?: Product;
-  quantidadeRetirada: number;
-  quantidadeDevolvida?: number | null;
-  precoUnitarioNoMomento: Decimal | number;
-}
-
-// Input types for creating sales
-export interface CreateSaleInput {
-  customerId: string;
-  userId: string;
-  dataDevolucaoPrevista: Date;
-  notes?: string;
-  items: CreateSaleItemInput[];
-}
-
-export interface CreateSaleItemInput {
-  produtoId: string;
-  quantidadeRetirada: number;
-  precoUnitarioNoMomento?: number;
-}
-
-// Input types for processing returns
-export interface ProcessReturnInput {
-  saleId: string;
-  userId: string;
-  items: ReturnItemInput[];
-  notes?: string;
-}
-
-export interface ReturnItemInput {
-  itemId: string;
-  quantidadeDevolvida: number;
-}
-
-// Extended types with relations
+// Este tipo representa uma Sale completa com os detalhes para exibição
 export interface SaleWithDetails extends Sale {
   customer: Customer;
   user: User;
-  itens: ItensVendaWithProduct[];
-}
-
-export interface ItensVendaWithProduct extends ItensVenda {
-  produto: Product;
-}
-
-// Summary types for reporting
-export interface SaleSummary {
-  totalSales: number;
-  activeSales: number;
-  overdueSales: number;
-  completedSales: number;
-  totalRevenue: number;
-  pendingReturns: number;
-}
-
-// Filter options
-export interface SaleFilterOptions {
-  status?: SaleStatus;
-  customerId?: string;
-  startDate?: Date;
-  endDate?: Date;
-  isOverdue?: boolean;
+  itens: (ItensVenda & { produto: Product })[]; // Um item de venda com seu produto
 }

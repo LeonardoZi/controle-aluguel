@@ -9,7 +9,7 @@ import { getSaleById } from "@/actions/sales";
 import { processReturn } from "@/actions/sales";
 import { getUsers } from "@/actions/users";
 
-// Types
+// Tipos locais que você já tinha
 interface Product {
   id: string;
   name: string;
@@ -86,31 +86,34 @@ export default function ProcessReturnPage() {
           throw new Error("Venda não encontrada");
         }
 
-        setSale(saleResult.sale);
+        setSale(saleResult.sale as Sale);
         setUsers(usersResult.users || []);
 
         if (usersResult.users && usersResult.users.length > 0) {
           setUserId(usersResult.users[0].id);
         }
 
-        // Initialize return items
-        const items: ReturnItem[] = saleResult.sale.itens.map((item) => {
-          const quantidadeDevolvida = item.quantidadeDevolvida || 0;
-          const quantidadePendente =
-            item.quantidadeRetirada - quantidadeDevolvida;
+        const items = saleResult.sale.itens
+          .filter(item => !!item.produto)
+          .map((item) => {
+            const quantidadeDevolvida = item.quantidadeDevolvida || 0;
+            const quantidadePendente = item.quantidadeRetirada - quantidadeDevolvida;
+            
+            return {
+              itemId: item.id,
+              produto: item.produto,
+              quantidadeRetirada: item.quantidadeRetirada,
+              quantidadeDevolvida,
+              quantidadePendente,
+              quantidadeADevolver: 0,
+              precoUnitario: Number(item.precoUnitarioNoMomento),
+            };
+          });
+        
+        // AQUI ESTÁ A CORREÇÃO SIMPLES:
+        // Dizemos ao TypeScript para tratar o array 'items' como o tipo 'ReturnItem[]'
+        setReturnItems(items as ReturnItem[]);
 
-          return {
-            itemId: item.id,
-            produto: item.produto,
-            quantidadeRetirada: item.quantidadeRetirada,
-            quantidadeDevolvida,
-            quantidadePendente,
-            quantidadeADevolver: 0,
-            precoUnitario: Number(item.precoUnitarioNoMomento),
-          };
-        });
-
-        setReturnItems(items);
       } catch (err) {
         console.error("Erro ao carregar dados:", err);
         setError(
@@ -257,7 +260,6 @@ export default function ProcessReturnPage() {
         Processar Devolução
       </h1>
 
-      {/* Sale Info */}
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
         <h2 className="text-lg font-semibold mb-4 text-gray-800">
           Informações da Venda
@@ -287,7 +289,6 @@ export default function ProcessReturnPage() {
       )}
 
       <form onSubmit={handleSubmit}>
-        {/* User Selection */}
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-8">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
@@ -324,7 +325,6 @@ export default function ProcessReturnPage() {
           </div>
         </div>
 
-        {/* Return Items */}
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-8">
           <h2 className="text-lg font-semibold mb-4 text-gray-800">
             Produtos para Devolução
@@ -442,7 +442,6 @@ export default function ProcessReturnPage() {
           </div>
         </div>
 
-        {/* Info Box */}
         <div className="bg-blue-50 border border-blue-200 text-blue-700 px-4 py-3 rounded mb-6">
           <p className="text-sm">
             <strong>Informação:</strong> Ao processar a devolução, os produtos
@@ -452,7 +451,6 @@ export default function ProcessReturnPage() {
           </p>
         </div>
 
-        {/* Action Buttons */}
         <div className="flex justify-end gap-4">
           <Link href="/sales">
             <Button variant="outline" type="button">
