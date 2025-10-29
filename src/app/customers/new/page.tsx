@@ -4,14 +4,13 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createCustomer } from "@/actions/customers";
-import { CustomerType } from "@prisma/client";
+
 
 export default function NewCustomerPage() {
   const router = useRouter();
 
   const [formData, setFormData] = useState({
     name: "",
-    type: "PERSON" as CustomerType,
     taxId: "",
     email: "",
     phone: "",
@@ -83,20 +82,7 @@ export default function NewCustomerPage() {
               />
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Tipo
-              </label>
-              <select
-                name="type"
-                value={formData.type}
-                onChange={handleInputChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md"
-              >
-                <option value="PERSON">Pessoa Física</option>
-                <option value="COMPANY">Pessoa Jurídica</option>
-              </select>
-            </div>
+
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">

@@ -6,7 +6,7 @@
 // import { getLowStockProducts } from "@/actions/products";
 // import { getPurchaseOrders } from "@/actions/purchases";
 // import {
-//   CustomerType,
+//
 //   PurchaseStatus,
 //   PaymentMethod,
 //   SaleStatus,
@@ -27,7 +27,7 @@
 // interface Customer {
 //   id: string;
 //   name: string;
-//   type: CustomerType;
+//
 // }
 
 // // Create interface for item in sale

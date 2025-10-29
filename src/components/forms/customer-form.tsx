@@ -1,13 +1,13 @@
 // Formulário de Cliente
 "use client";
 
-import { useState } from "react";
+
 import { z } from "zod";
 import { useForm } from "@/hooks/use-form";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Select } from "@/components/ui/select";
+
 import { Checkbox } from "@/components/ui/checkbox";
 import { cn } from "@/lib/utils";
 
@@ -30,7 +30,6 @@ const customerSchema = z.object({
     .string()
     .min(11, "CPF/CNPJ deve ter pelo menos 11 dígitos")
     .max(18, "CPF/CNPJ não pode exceder 18 caracteres"),
-  type: z.enum(["personal", "business"]),
   address: z.object({
     street: z.string().min(3, "Rua é obrigatória"),
     number: z.string().min(1, "Número é obrigatório"),
@@ -67,10 +66,7 @@ export function CustomerForm({
   onCancel,
   isLoading = false,
 }: CustomerFormProps) {
-  // Estado para controlar o tipo de cliente
-  const [customerType, setCustomerType] = useState<"personal" | "business">(
-    initialData?.type || "personal"
-  );
+
 
   // Valores iniciais do formulário
   const defaultValues: CustomerFormValues = {
@@ -78,7 +74,6 @@ export function CustomerForm({
     email: "",
     phone: "",
     document: "",
-    type: "personal",
     address: {
       street: "",
       number: "",
@@ -100,12 +95,7 @@ export function CustomerForm({
     onSubmit,
   });
 
-  // Handler para mudança de tipo de cliente
-  const handleTypeChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const newType = e.target.value as "personal" | "business";
-    form.setValue("type", newType);
-    setCustomerType(newType);
-  };
+
 
   // Definir um tipo para as chaves do objeto address
   type AddressField = keyof CustomerFormValues["address"];
@@ -180,35 +170,14 @@ export function CustomerForm({
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div>
-            <label htmlFor="type" className="block text-sm font-medium mb-1">
-              Tipo de Cliente *
-            </label>
-            <Select
-              id="type"
-              name="type"
-              value={form.values.type}
-              onChange={handleTypeChange}
-              onBlur={form.handleBlur}
-              className={cn(
-                form.touched.type && form.errors.type && "border-red-500"
-              )}
-            >
-              <option value="personal">Pessoa Física</option>
-              <option value="business">Pessoa Jurídica</option>
-            </Select>
-            {form.touched.type && form.errors.type && (
-              <p className="mt-1 text-sm text-red-500">{form.errors.type}</p>
-            )}
-          </div>
+
 
           <div>
             <label
               htmlFor="document"
               className="block text-sm font-medium mb-1"
             >
-              {customerType === "personal" ? "CPF *" : "CNPJ *"}
+              {"CPF/CNPJ *"}
             </label>
             <Input
               id="document"
@@ -217,7 +186,7 @@ export function CustomerForm({
               onChange={form.handleChange}
               onBlur={form.handleBlur}
               placeholder={
-                customerType === "personal"
+                true
                   ? "000.000.000-00"
                   : "00.000.000/0001-00"
               }
@@ -254,9 +223,7 @@ export function CustomerForm({
             )}
           </div>
         </div>
-      </div>
-
-      {/* Endereço */}
+  {/* Endereço */}
       <div className="space-y-4">
         <h3 className="text-lg font-medium">Endereço</h3>
 

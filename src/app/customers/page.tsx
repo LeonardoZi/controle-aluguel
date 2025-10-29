@@ -3,13 +3,13 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { getCustomers } from "@/actions/customers";
-import { CustomerType } from "@prisma/client";
+
+
 
 // Adicionar interface para o cliente
 interface CustomerData {
   id: string;
   name: string;
-  type: CustomerType;
   email?: string | null;
   phone?: string | null;
   address?: string | null;
@@ -62,9 +62,7 @@ export default function CustomersPage() {
       )
     : customers;
 
-  const getCustomerTypeLabel = (type: CustomerType) => {
-    return type === "PERSON" ? "Pessoa Física" : "Pessoa Jurídica";
-  };
+
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -121,9 +119,7 @@ export default function CustomersPage() {
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Nome
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Tipo
-                  </th>
+
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Email
                   </th>
@@ -151,11 +147,7 @@ export default function CustomersPage() {
                         </div>
                       )}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className="text-sm text-gray-500">
-                        {getCustomerTypeLabel(customer.type)}
-                      </span>
-                    </td>
+
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span className="text-sm text-gray-500">
                         {customer.email || "-"}
