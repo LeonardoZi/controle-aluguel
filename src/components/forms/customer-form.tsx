@@ -1,13 +1,11 @@
-// Formulário de Cliente
 "use client";
-
 
 import { z } from "zod";
 import { useForm } from "@/hooks/use-form";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-
+import { useState, useCallback } from "react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { cn } from "@/lib/utils";
 
@@ -49,10 +47,8 @@ const customerSchema = z.object({
   isActive: z.boolean().default(true),
 });
 
-// Tipo derivado do schema
 type CustomerFormValues = z.infer<typeof customerSchema>;
 
-// Props do componente
 interface CustomerFormProps {
   initialData?: Partial<CustomerFormValues>;
   onSubmit: (data: CustomerFormValues) => void | Promise<void>;
@@ -66,9 +62,6 @@ export function CustomerForm({
   onCancel,
   isLoading = false,
 }: CustomerFormProps) {
-
-
-  // Valores iniciais do formulário
   const defaultValues: CustomerFormValues = {
     name: "",
     email: "",
@@ -88,16 +81,81 @@ export function CustomerForm({
     ...initialData,
   };
 
-  // Hook de formulário
+  const [isFetchingCep, setIsFetchingCep] = useState(false);
+  const [cepError, setCepError] = useState<string | null>(null);
+
   const form = useForm<CustomerFormValues>({
     initialValues: defaultValues,
     validationSchema: customerSchema as z.ZodType<CustomerFormValues>,
     onSubmit,
   });
 
+  // Função para buscar CEP
+  const searchCep = useCallback(async (cep: string) => {
+    const cepNumbers = cep.replace(/\D/g, "");
 
+    if (cepNumbers.length !== 8) {
+      setCepError(null);
+      return;
+    }
 
-  // Definir um tipo para as chaves do objeto address
+    setIsFetchingCep(true);
+    setCepError(null);
+
+    try {
+      const response = await fetch(`https://viacep.com.br/ws/${cepNumbers}/json/`);
+      const data = await response.json();
+
+      if (data.erro) {
+        setCepError("CEP não encontrado");
+        // Limpa os campos mas mantém o CEP e número/complemento
+        const currentAddress = form.values.address;
+        form.setValue("address", {
+          ...currentAddress,
+          street: "",
+          neighborhood: "",
+          city: "",
+          state: "",
+        });
+      } else {
+        // Atualiza cada campo individualmente mantendo os outros valores
+        const currentAddress = form.values.address;
+        form.setValue("address", {
+          zipCode: currentAddress.zipCode,
+          number: currentAddress.number,
+          complement: currentAddress.complement,
+          street: data.logradouro || "",
+          neighborhood: data.bairro || "",
+          city: data.localidade || "",
+          state: data.uf || "",
+        });
+        setCepError(null);
+      }
+    } catch (error) {
+      console.error("Erro ao buscar CEP:", error);
+      setCepError("Erro ao buscar CEP. Tente novamente");
+    } finally {
+      setIsFetchingCep(false);
+    }
+  }, [form]);
+
+  // Handler para mudança do CEP
+  const handleCepChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    
+    // Atualiza o campo CEP diretamente
+    form.setValue("address", {
+      ...form.values.address,
+      zipCode: value,
+    });
+    
+    // Busca automaticamente quando atingir 8 dígitos
+    const numbers = value.replace(/\D/g, "");
+    if (numbers.length === 8) {
+      searchCep(value);
+    }
+  };
+
   type AddressField = keyof CustomerFormValues["address"];
 
   const hasAddressFieldError = (field: AddressField): boolean => {
@@ -114,7 +172,6 @@ export function CustomerForm({
   const getAddressFieldError = (field: AddressField): string => {
     if (form.errors.address && typeof form.errors.address === "object") {
       const error = form.errors.address[field];
-      // Verifica se o erro existe e o converte para string de forma segura
       return error !== undefined && error !== null ? String(error) : "";
     }
     return "";
@@ -170,14 +227,10 @@ export function CustomerForm({
           </div>
         </div>
 
-
-
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label
-              htmlFor="document"
-              className="block text-sm font-medium mb-1"
-            >
-              {"CPF/CNPJ *"}
+            <label htmlFor="document" className="block text-sm font-medium mb-1">
+              CPF/CNPJ *
             </label>
             <Input
               id="document"
@@ -185,21 +238,13 @@ export function CustomerForm({
               value={form.values.document}
               onChange={form.handleChange}
               onBlur={form.handleBlur}
-              placeholder={
-                true
-                  ? "000.000.000-00"
-                  : "00.000.000/0001-00"
-              }
+              placeholder="000.000.000-00"
               className={cn(
-                form.touched.document &&
-                  form.errors.document &&
-                  "border-red-500"
+                form.touched.document && form.errors.document && "border-red-500"
               )}
             />
             {form.touched.document && form.errors.document && (
-              <p className="mt-1 text-sm text-red-500">
-                {form.errors.document}
-              </p>
+              <p className="mt-1 text-sm text-red-500">{form.errors.document}</p>
             )}
           </div>
 
@@ -223,16 +268,46 @@ export function CustomerForm({
             )}
           </div>
         </div>
-  {/* Endereço */}
+      </div>
+
+      {/* Endereço */}
       <div className="space-y-4">
         <h3 className="text-lg font-medium">Endereço</h3>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label
-              htmlFor="address.street"
-              className="block text-sm font-medium mb-1"
-            >
+            <label htmlFor="address.zipCode" className="block text-sm font-medium mb-1">
+              CEP *
+            </label>
+            <Input
+              id="address.zipCode"
+              name="address.zipCode"
+              value={form.values.address.zipCode}
+              onChange={handleCepChange}
+              onBlur={form.handleBlur}
+              placeholder="00000-000"
+              disabled={isFetchingCep}
+              className={cn(
+                hasAddressFieldError("zipCode") && "border-red-500"
+              )}
+            />
+            {isFetchingCep && (
+              <p className="mt-1 text-sm text-blue-500">Buscando endereço...</p>
+            )}
+            {cepError && (
+              <p className="mt-1 text-sm text-red-500">{cepError}</p>
+            )}
+            {hasAddressFieldError("zipCode") && !cepError && (
+              <p className="mt-1 text-sm text-red-500">
+                {getAddressFieldError("zipCode")}
+              </p>
+            )}
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label htmlFor="address.street" className="block text-sm font-medium mb-1">
               Rua/Avenida *
             </label>
             <Input
@@ -253,10 +328,7 @@ export function CustomerForm({
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label
-                htmlFor="address.number"
-                className="block text-sm font-medium mb-1"
-              >
+              <label htmlFor="address.number" className="block text-sm font-medium mb-1">
                 Número *
               </label>
               <Input
@@ -266,9 +338,7 @@ export function CustomerForm({
                 onChange={form.handleChange}
                 onBlur={form.handleBlur}
                 placeholder="Número"
-                className={cn(
-                  hasAddressFieldError("number") && "border-red-500"
-                )}
+                className={cn(hasAddressFieldError("number") && "border-red-500")}
               />
               {hasAddressFieldError("number") && (
                 <p className="mt-1 text-sm text-red-500">
@@ -278,10 +348,7 @@ export function CustomerForm({
             </div>
 
             <div>
-              <label
-                htmlFor="address.complement"
-                className="block text-sm font-medium mb-1"
-              >
+              <label htmlFor="address.complement" className="block text-sm font-medium mb-1">
                 Complemento
               </label>
               <Input
@@ -298,10 +365,7 @@ export function CustomerForm({
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label
-              htmlFor="address.neighborhood"
-              className="block text-sm font-medium mb-1"
-            >
+            <label htmlFor="address.neighborhood" className="block text-sm font-medium mb-1">
               Bairro *
             </label>
             <Input
@@ -311,9 +375,7 @@ export function CustomerForm({
               onChange={form.handleChange}
               onBlur={form.handleBlur}
               placeholder="Bairro"
-              className={cn(
-                hasAddressFieldError("neighborhood") && "border-red-500"
-              )}
+              className={cn(hasAddressFieldError("neighborhood") && "border-red-500")}
             />
             {hasAddressFieldError("neighborhood") && (
               <p className="mt-1 text-sm text-red-500">
@@ -322,77 +384,47 @@ export function CustomerForm({
             )}
           </div>
 
-          <div>
-            <label
-              htmlFor="address.zipCode"
-              className="block text-sm font-medium mb-1"
-            >
-              CEP *
-            </label>
-            <Input
-              id="address.zipCode"
-              name="address.zipCode"
-              value={form.values.address.zipCode}
-              onChange={form.handleChange}
-              onBlur={form.handleBlur}
-              placeholder="00000-000"
-              className={cn(
-                hasAddressFieldError("zipCode") && "border-red-500"
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label htmlFor="address.city" className="block text-sm font-medium mb-1">
+                Cidade *
+              </label>
+              <Input
+                id="address.city"
+                name="address.city"
+                value={form.values.address.city}
+                onChange={form.handleChange}
+                onBlur={form.handleBlur}
+                placeholder="Cidade"
+                className={cn(hasAddressFieldError("city") && "border-red-500")}
+              />
+              {hasAddressFieldError("city") && (
+                <p className="mt-1 text-sm text-red-500">
+                  {getAddressFieldError("city")}
+                </p>
               )}
-            />
-            {hasAddressFieldError("zipCode") && (
-              <p className="mt-1 text-sm text-red-500">
-                {getAddressFieldError("zipCode")}
-              </p>
-            )}
-          </div>
-        </div>
+            </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <label
-              htmlFor="address.city"
-              className="block text-sm font-medium mb-1"
-            >
-              Cidade *
-            </label>
-            <Input
-              id="address.city"
-              name="address.city"
-              value={form.values.address.city}
-              onChange={form.handleChange}
-              onBlur={form.handleBlur}
-              placeholder="Cidade"
-              className={cn(hasAddressFieldError("city") && "border-red-500")}
-            />
-            {hasAddressFieldError("city") && (
-              <p className="mt-1 text-sm text-red-500">
-                {getAddressFieldError("city")}
-              </p>
-            )}
-          </div>
-
-          <div>
-            <label
-              htmlFor="address.state"
-              className="block text-sm font-medium mb-1"
-            >
-              Estado *
-            </label>
-            <Input
-              id="address.state"
-              name="address.state"
-              value={form.values.address.state}
-              onChange={form.handleChange}
-              onBlur={form.handleBlur}
-              placeholder="UF"
-              className={cn(hasAddressFieldError("state") && "border-red-500")}
-            />
-            {hasAddressFieldError("state") && (
-              <p className="mt-1 text-sm text-red-500">
-                {getAddressFieldError("state")}
-              </p>
-            )}
+            <div>
+              <label htmlFor="address.state" className="block text-sm font-medium mb-1">
+                Estado *
+              </label>
+              <Input
+                id="address.state"
+                name="address.state"
+                value={form.values.address.state}
+                onChange={form.handleChange}
+                onBlur={form.handleBlur}
+                placeholder="UF"
+                maxLength={2}
+                className={cn(hasAddressFieldError("state") && "border-red-500")}
+              />
+              {hasAddressFieldError("state") && (
+                <p className="mt-1 text-sm text-red-500">
+                  {getAddressFieldError("state")}
+                </p>
+              )}
+            </div>
           </div>
         </div>
       </div>
