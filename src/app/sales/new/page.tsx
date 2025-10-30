@@ -403,8 +403,8 @@ export default function NewSale() {
               </label>
               <input
                 type="number"
-                min="0.01"
-                step="0.01"
+                min="0.0"
+                step="1.00"
                 value={unitPrice}
                 onChange={(e) => setUnitPrice(parseFloat(e.target.value))}
                 className="w-full px-3 py-2 border border-gray-300 rounded"
