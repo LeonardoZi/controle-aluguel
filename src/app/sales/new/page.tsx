@@ -527,8 +527,3 @@ export default function NewSale() {
     </div>
   );
 }
-
-function formatDate(dateString: string) {
-  if (!dateString) return "";
-  return new Intl.DateTimeFormat("pt-BR").format(new Date(dateString));
-}

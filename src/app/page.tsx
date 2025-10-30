@@ -2,6 +2,33 @@ import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 
 
+async function getUpcomingExpirations() {
+  try {
+    const upcomingSales = await prisma.sale.findMany({
+      where: {
+        status: { in: ["ATIVO", "ATRASADO"] },
+      },
+      include: {
+        customer: true,
+        itens: {
+          include: {
+            produto: true,
+          },
+        },
+      },
+      orderBy: {
+        dataDevolucaoPrevista: 'asc',
+      },
+      take: 10,
+    });
+
+    return upcomingSales;
+  } catch (error) {
+    console.error("Error fetching upcoming expirations:", error);
+    return [];
+  }
+}
+
 async function getStats() {
   try {
     const now = new Date();
@@ -71,7 +98,10 @@ async function getStats() {
 }
 
 export default async function Home() {
-  const stats = await getStats();
+  const [stats, upcomingExpirations] = await Promise.all([
+    getStats(),
+    getUpcomingExpirations(),
+  ]);
 
   return (
     <div className="min-h-screen bg-gray-50 font-[family-name:var(--font-geist-sans)] text-gray-900">
@@ -485,7 +515,7 @@ export default async function Home() {
                     <path d="M5 12h14"></path>
                     <path d="M12 5v14"></path>
                   </svg>
-                  Nova Venda/Aluguel
+                  Nova Venda
                 </Link>
 
                 <Link
@@ -533,13 +563,95 @@ export default async function Home() {
                 </Link>
 
               </div>
+
+              <div className="mt-6">
+                <h3 className="text-sm font-semibold text-gray-700 mb-3">
+                  Próximas Devoluções
+                </h3>
+                {upcomingExpirations.length > 0 ? (
+                  <div className="bg-gray-50 rounded-lg border border-gray-200 overflow-hidden">
+                    <div className="max-h-96 overflow-y-auto">
+                      <table className="w-full text-sm">
+                        <thead className="bg-gray-100 sticky top-0">
+                          <tr>
+                            <th className="px-3 py-2 text-left text-xs font-medium text-gray-600">
+                              Cliente
+                            </th>
+                            <th className="px-3 py-2 text-left text-xs font-medium text-gray-600">
+                              Devolução
+                            </th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-gray-200 bg-white">
+                          {upcomingExpirations.map((sale) => {
+                            const daysUntil = Math.ceil(
+                              (new Date(sale.dataDevolucaoPrevista).getTime() - new Date().getTime()) /
+                                (1000 * 60 * 60 * 24)
+                            );
+                            const isUrgent = daysUntil <= 3;
+                            const isOverdue = daysUntil < 0;
+
+                            return (
+                              <tr
+                                key={sale.id}
+                                className="hover:bg-gray-50 transition-colors"
+                              >
+                                <td className="px-3 py-2">
+                                  <Link
+                                    href={`/sales/${sale.id}`}
+                                    className="text-blue-600 hover:text-blue-800 hover:underline font-medium"
+                                  >
+                                    {sale.customer.name}
+                                  </Link>
+                                </td>
+                                <td className="px-3 py-2">
+                                  <div className="flex items-center gap-2">
+                                    <span
+                                      className={`text-xs ${
+                                        isOverdue
+                                          ? "text-red-700 font-bold"
+                                          : isUrgent
+                                          ? "text-red-600 font-semibold"
+                                          : "text-gray-600"
+                                      }`}
+                                    >
+                                      {new Date(
+                                        sale.dataDevolucaoPrevista
+                                      ).toLocaleDateString("pt-BR")}
+                                    </span>
+                                    {isOverdue ? (
+                                      <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-red-200 text-red-900">
+                                        Atrasado
+                                      </span>
+                                    ) : isUrgent ? (
+                                      <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-red-100 text-red-800">
+                                        Urgente
+                                      </span>
+                                    ) : null}
+                                  </div>
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="bg-gray-50 rounded-lg border border-gray-200 p-4 text-center">
+                    <p className="text-sm text-gray-500">
+                      Nenhuma devolução pendente
+                    </p>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </div>
       </div>
 
       {/* Footer */}
-      <footer className="bg-white border-t border-gray-200 py-6 mt-12">
+      <footer className="bg-white border-t border-gray-200 py-4 mt-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col sm:flex-row justify-between items-center">
             <div className="text-sm text-gray-500 mb-4 sm:mb-0">

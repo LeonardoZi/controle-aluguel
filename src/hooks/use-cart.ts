@@ -1,4 +1,3 @@
-// Hook de Carrinho
 import { useState, useEffect } from "react";
 import { formatCurrency, calculateTotal } from "@/lib/utils";
 
@@ -27,7 +26,6 @@ interface UseCartReturn {
 export function useCart(): UseCartReturn {
   const [items, setItems] = useState<CartItem[]>([]);
 
-  // Restaurar carrinho do localStorage (se existir)
   useEffect(() => {
     try {
       const savedCart = localStorage.getItem("cart");
@@ -39,7 +37,6 @@ export function useCart(): UseCartReturn {
     }
   }, []);
 
-  // Salvar carrinho no localStorage quando mudar
   useEffect(() => {
     try {
       localStorage.setItem("cart", JSON.stringify(items));
@@ -48,21 +45,17 @@ export function useCart(): UseCartReturn {
     }
   }, [items]);
 
-  // Adicionar item ao carrinho
   const addItem = (newItem: Omit<CartItem, "id">) => {
     setItems((currentItems) => {
-      // Verificar se o produto já existe no carrinho
       const existingItemIndex = currentItems.findIndex(
         (item) => item.productId === newItem.productId
       );
 
       if (existingItemIndex >= 0) {
-        // Se já existe, atualiza a quantidade
         const updatedItems = [...currentItems];
         const existingItem = updatedItems[existingItemIndex];
         const newQuantity = existingItem.quantity + newItem.quantity;
 
-        // Verificar limite de estoque disponível
         if (
           newItem.maxAvailable !== undefined &&
           newQuantity > newItem.maxAvailable
@@ -81,12 +74,10 @@ export function useCart(): UseCartReturn {
         return updatedItems;
       }
 
-      // Se não existe, adiciona como novo item
       return [...currentItems, { ...newItem, id: crypto.randomUUID() }];
     });
   };
 
-  // Atualizar quantidade de um item
   const updateQuantity = (id: string, quantity: number) => {
     if (quantity <= 0) {
       removeItem(id);
@@ -96,7 +87,6 @@ export function useCart(): UseCartReturn {
     setItems((currentItems) =>
       currentItems.map((item) => {
         if (item.id === id) {
-          // Verificar limite de estoque disponível
           if (item.maxAvailable !== undefined && quantity > item.maxAvailable) {
             return { ...item, quantity: item.maxAvailable };
           }
@@ -107,17 +97,14 @@ export function useCart(): UseCartReturn {
     );
   };
 
-  // Remover item do carrinho
   const removeItem = (id: string) => {
     setItems((currentItems) => currentItems.filter((item) => item.id !== id));
   };
 
-  // Limpar carrinho
   const clearCart = () => {
     setItems([]);
   };
 
-  // Valores calculados
   const totalItems = items.reduce((sum, item) => sum + item.quantity, 0);
   const totalAmount = calculateTotal(items);
   const formattedTotal = formatCurrency(totalAmount);

@@ -1,8 +1,6 @@
-// Componente Table
 import React from "react";
 import { cn } from "@/lib/utils";
 
-// Table principal
 export interface TableProps extends React.HTMLAttributes<HTMLTableElement> {
   hoverable?: boolean;
   striped?: boolean;
@@ -26,7 +24,6 @@ export const Table = React.forwardRef<HTMLTableElement, TableProps>(
 );
 Table.displayName = "Table";
 
-// Cabeçalho da tabela
 export type TableHeaderProps = React.HTMLAttributes<HTMLTableSectionElement>;
 
 export const TableHeader = React.forwardRef<
@@ -41,7 +38,6 @@ export const TableHeader = React.forwardRef<
 ));
 TableHeader.displayName = "TableHeader";
 
-// Corpo da tabela
 export interface TableBodyProps
   extends React.HTMLAttributes<HTMLTableSectionElement> {
   striped?: boolean;
@@ -65,7 +61,6 @@ export const TableBody = React.forwardRef<
 ));
 TableBody.displayName = "TableBody";
 
-// Rodapé da tabela
 export type TableFooterProps = React.HTMLAttributes<HTMLTableSectionElement>;
 
 export const TableFooter = React.forwardRef<
@@ -80,7 +75,6 @@ export const TableFooter = React.forwardRef<
 ));
 TableFooter.displayName = "TableFooter";
 
-// Linha da tabela
 export interface TableRowProps
   extends React.HTMLAttributes<HTMLTableRowElement> {
   selected?: boolean;
@@ -101,7 +95,6 @@ export const TableRow = React.forwardRef<HTMLTableRowElement, TableRowProps>(
 );
 TableRow.displayName = "TableRow";
 
-// Célula de cabeçalho
 export interface TableHeadProps
   extends React.ThHTMLAttributes<HTMLTableCellElement> {
   sortable?: boolean;
@@ -122,7 +115,6 @@ export const TableHead = React.forwardRef<HTMLTableCellElement, TableHeadProps>(
 );
 TableHead.displayName = "TableHead";
 
-// Célula
 export type TableCellProps = React.TdHTMLAttributes<HTMLTableCellElement>;
 
 export const TableCell = React.forwardRef<HTMLTableCellElement, TableCellProps>(
@@ -132,7 +124,6 @@ export const TableCell = React.forwardRef<HTMLTableCellElement, TableCellProps>(
 );
 TableCell.displayName = "TableCell";
 
-// Caption
 export type TableCaptionProps = React.HTMLAttributes<HTMLTableCaptionElement>;
 
 export const TableCaption = React.forwardRef<

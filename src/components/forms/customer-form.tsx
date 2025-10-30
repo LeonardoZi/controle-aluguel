@@ -9,7 +9,6 @@ import { useState, useCallback } from "react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { cn } from "@/lib/utils";
 
-// Schema de validação
 const customerSchema = z.object({
   name: z
     .string()
@@ -85,7 +84,6 @@ export function CustomerForm({
   const [cepError, setCepError] = useState<string | null>(null);
   const [localCep, setLocalCep] = useState(defaultValues.address.zipCode || "");
 
-  // Sincroniza localCep apenas quando initialData muda
   useState(() => {
     if (initialData?.address?.zipCode) {
       setLocalCep(initialData.address.zipCode);
@@ -105,7 +103,6 @@ export function CustomerForm({
     },
   });
 
-  // Função para buscar CEP
   const searchCep = useCallback(async (cep: string) => {
     const cepNumbers = cep.replace(/\D/g, "");
 
@@ -124,17 +121,15 @@ export function CustomerForm({
       if (data.erro) {
         setCepError("CEP não encontrado");
       } else {
-        // Atualiza apenas os campos retornados pela API, preservando os demais
         const updatedAddress = {
           ...form.values.address,
-          zipCode: cep, // Mantém o CEP original
+          zipCode: cep,
           street: data.logradouro || "",
           neighborhood: data.bairro || "",
           city: data.localidade || "",
           state: data.uf || "",
         };
         form.setValue("address", updatedAddress);
-        // Mantém o CEP no estado local também
         setLocalCep(cep);
         setCepError(null);
       }
@@ -146,21 +141,17 @@ export function CustomerForm({
     }
   }, [form]);
 
-  // Handler para mudança do CEP
   const handleCepChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     
-    // Atualiza o estado local imediatamente
     setLocalCep(value);
     
-    // Busca automaticamente quando atingir 8 dígitos
     const numbers = value.replace(/\D/g, "");
     if (numbers.length === 8) {
       searchCep(value);
     }
   };
 
-  // Handler genérico para campos de endereço
   const handleAddressChange = (field: keyof CustomerFormValues["address"]) => 
     (e: React.ChangeEvent<HTMLInputElement>) => {
       form.setValue("address", {
@@ -169,7 +160,6 @@ export function CustomerForm({
       });
     };
 
-  // Handler para campos de texto simples
   const handleFieldChange = (field: keyof Omit<CustomerFormValues, "address" | "isActive">) =>
     (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
       form.setValue(field, e.target.value);
@@ -306,7 +296,6 @@ export function CustomerForm({
               value={localCep || ""}
               onChange={handleCepChange}
               onBlur={(e) => {
-                // Atualiza o form ao sair do campo
                 const newAddress = { ...form.values.address };
                 newAddress.zipCode = localCep;
                 form.setValue("address", newAddress);

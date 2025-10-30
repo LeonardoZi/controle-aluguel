@@ -1,4 +1,3 @@
-// Hook de Formulário
 import { useState, useCallback, ChangeEvent, FormEvent } from "react";
 import { z } from "zod";
 
@@ -43,7 +42,6 @@ export function useForm<T extends Record<string, unknown>>({
   const [touched, setTouched] = useState<Partial<Record<keyof T, boolean>>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Validar todos os campos
   const validateForm = useCallback((): boolean => {
     if (!validationSchema) return true;
 
@@ -68,20 +66,16 @@ export function useForm<T extends Record<string, unknown>>({
     }
   }, [formValues, validationSchema]);
 
-  // Validar um único campo
   const validateField = useCallback(
     (name: keyof T, value: unknown): boolean => {
       if (!validationSchema) return true;
 
       try {
-        // Criar um objeto temporário com todos os valores atuais
         const tempValues = { ...formValues, [name]: value };
 
-        // Usar safeParse para validar o objeto completo
         const result = validationSchema.safeParse(tempValues);
 
         if (result.success) {
-          // Se validou com sucesso, remover qualquer erro anterior deste campo
           setErrors((prev) => {
             const updated = { ...prev };
             delete updated[name];
@@ -89,20 +83,17 @@ export function useForm<T extends Record<string, unknown>>({
           });
           return true;
         } else {
-          // Procurar por erros específicos para este campo
           const fieldError = result.error.errors.find(
             (err) => err.path.length > 0 && err.path[0] === name
           );
 
           if (fieldError) {
-            // Atualizar apenas o erro deste campo
             setErrors((prev) => ({
               ...prev,
               [name]: fieldError.message,
             }));
             return false;
           } else {
-            // Não há erro para este campo específico
             setErrors((prev) => {
               const updated = { ...prev };
               delete updated[name];
@@ -119,7 +110,6 @@ export function useForm<T extends Record<string, unknown>>({
     [validationSchema, formValues]
   );
 
-  // Manipular mudanças em campos
   const handleChange = useCallback(
     (
       e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
@@ -129,7 +119,6 @@ export function useForm<T extends Record<string, unknown>>({
 
       let newValue: unknown = value;
 
-      // Converter valor com base no tipo do campo
       if (type === "checkbox") {
         newValue = (e.target as HTMLInputElement).checked;
       } else if (type === "number") {
@@ -138,7 +127,6 @@ export function useForm<T extends Record<string, unknown>>({
 
       setFormValues((prev) => ({ ...prev, [fieldName]: newValue }));
 
-      // Validar no onChange se configurado
       if (validateOnChange && touched[fieldName]) {
         validateField(fieldName, newValue);
       }
@@ -146,7 +134,6 @@ export function useForm<T extends Record<string, unknown>>({
     [touched, validateField, validateOnChange]
   );
 
-  // Manipular evento de blur (perda de foco)
   const handleBlur = useCallback(
     (
       e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
@@ -155,7 +142,6 @@ export function useForm<T extends Record<string, unknown>>({
 
       setTouched((prev) => ({ ...prev, [fieldName]: true }));
 
-      // Validar no onBlur se configurado
       if (validateOnBlur) {
         validateField(fieldName, formValues[fieldName]);
       }
@@ -163,12 +149,10 @@ export function useForm<T extends Record<string, unknown>>({
     [validateField, validateOnBlur, formValues]
   );
 
-  // Manipular envio do formulário
   const handleSubmit = useCallback(
     async (e: FormEvent<HTMLFormElement>) => {
       e.preventDefault();
 
-      // Marcar todos os campos como tocados
       const allTouched = Object.keys(formValues).reduce((acc, key) => {
         acc[key as keyof T] = true;
         return acc;
@@ -176,8 +160,11 @@ export function useForm<T extends Record<string, unknown>>({
 
       setTouched(allTouched);
 
-      // Validar formulário antes de enviar
       const isValid = validateForm();
+
+      if (!isValid) {
+        console.error("❌ Validação falhou. Erros:", errors);
+      }
 
       if (isValid && onSubmit) {
         setIsSubmitting(true);
@@ -190,27 +177,22 @@ export function useForm<T extends Record<string, unknown>>({
         }
       }
     },
-    [formValues, validateForm, onSubmit]
+    [formValues, validateForm, onSubmit, errors]
   );
 
-  // Definir valor de um campo específico
   const setValue = useCallback(<K extends keyof T>(field: K, value: T[K]) => {
     setFormValues((prev) => ({ ...prev, [field]: value }));
   }, []);
 
-  // Definir múltiplos valores
   const updateValues = useCallback((newValues: Partial<T>) => {
     setFormValues((prev) => ({ ...prev, ...newValues }));
   }, []);
-
-  // Resetar formulário
   const resetForm = useCallback(() => {
     setFormValues(initialValues);
     setErrors({});
     setTouched({});
   }, [initialValues]);
 
-  // Definir erro para um campo
   const setFieldError = useCallback(
     <K extends keyof T>(field: K, error: string) => {
       setErrors((prev) => ({ ...prev, [field]: error }));
@@ -218,7 +200,6 @@ export function useForm<T extends Record<string, unknown>>({
     []
   );
 
-  // Limpar todos os erros
   const clearErrors = useCallback(() => {
     setErrors({});
   }, []);

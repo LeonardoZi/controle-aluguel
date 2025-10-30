@@ -1,8 +1,6 @@
-// Componente Card
 import React from "react";
 import { cn } from "@/lib/utils";
 
-// Card principal
 export interface CardProps extends React.HTMLAttributes<HTMLDivElement> {
   hoverable?: boolean;
 }
@@ -22,7 +20,6 @@ export const Card = React.forwardRef<HTMLDivElement, CardProps>(
 );
 Card.displayName = "Card";
 
-// Cabeçalho do Card
 export type CardHeaderProps = React.HTMLAttributes<HTMLDivElement>;
 
 export const CardHeader = React.forwardRef<HTMLDivElement, CardHeaderProps>(
@@ -36,7 +33,6 @@ export const CardHeader = React.forwardRef<HTMLDivElement, CardHeaderProps>(
 );
 CardHeader.displayName = "CardHeader";
 
-// Título do Card
 export type CardTitleProps = React.HTMLAttributes<HTMLHeadingElement>;
 
 export const CardTitle = React.forwardRef<HTMLHeadingElement, CardTitleProps>(
@@ -50,7 +46,6 @@ export const CardTitle = React.forwardRef<HTMLHeadingElement, CardTitleProps>(
 );
 CardTitle.displayName = "CardTitle";
 
-// Descrição do Card
 export type CardDescriptionProps = React.HTMLAttributes<HTMLParagraphElement>;
 
 export const CardDescription = React.forwardRef<
@@ -65,7 +60,6 @@ export const CardDescription = React.forwardRef<
 ));
 CardDescription.displayName = "CardDescription";
 
-// Conteúdo do Card
 export type CardContentProps = React.HTMLAttributes<HTMLDivElement>;
 
 export const CardContent = React.forwardRef<HTMLDivElement, CardContentProps>(
@@ -75,7 +69,6 @@ export const CardContent = React.forwardRef<HTMLDivElement, CardContentProps>(
 );
 CardContent.displayName = "CardContent";
 
-// Rodapé do Card
 export type CardFooterProps = React.HTMLAttributes<HTMLDivElement>;
 
 export const CardFooter = React.forwardRef<HTMLDivElement, CardFooterProps>(

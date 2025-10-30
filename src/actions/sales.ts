@@ -165,12 +165,10 @@ export async function createSale(data: {
   items: CreateSaleItemInput[];
 }) {
   try {
-    // Validate items
     if (!data.items.length) {
       return { error: "A venda precisa ter pelo menos um item" };
     }
 
-    // Fetch all products for validation
     const productIds = data.items.map((item) => item.produtoId);
     const products = await prisma.product.findMany({
       where: { id: { in: productIds } },
@@ -208,7 +206,6 @@ export async function createSale(data: {
     );
 
     const sale = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
-      // Create the sale
       const newSale = await tx.sale.create({
         data: {
           customerId: data.customerId,
@@ -332,7 +329,6 @@ export async function processReturn(data: {
     }
 
     const updatedSale = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
-      // Update each item with returned quantity
       for (const returnItem of data.items) {
   const saleItem = sale.itens.find((item) => item.id === returnItem.itemId);
         if (!saleItem) continue;
@@ -346,7 +342,6 @@ export async function processReturn(data: {
           },
         });
 
-        // Return products to stock
         await tx.product.update({
           where: { id: saleItem.produtoId },
           data: {
@@ -355,12 +350,10 @@ export async function processReturn(data: {
         });
       }
 
-      // Fetch updated items to recalculate total
       const updatedItems = await tx.itensVenda.findMany({
         where: { saleId: data.saleId },
       });
 
-      // Calculate new total based on actual usage (retirada - devolvida)
   const newTotal = updatedItems.reduce((sum: Decimal, item) => {
         const quantidadeUsada =
           item.quantidadeRetirada - (item.quantidadeDevolvida || 0);
@@ -370,12 +363,10 @@ export async function processReturn(data: {
         return sum.add(itemTotal);
       }, new Decimal(0));
 
-      // Check if all items are fully returned
       const allReturned = updatedItems.every(
         (item) => item.quantidadeDevolvida === item.quantidadeRetirada
       );
 
-      // Update sale status and total
       const updatedSale = await tx.sale.update({
         where: { id: data.saleId },
         data: {
@@ -461,13 +452,11 @@ export async function cancelSale(id: string) {
     }
 
     await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
-      // Update sale status
       await tx.sale.update({
         where: { id },
         data: { status: "CANCELADO", totalAmount: new Decimal(0) },
       });
 
-      // Return all unreturned products to stock
       for (const item of sale.itens) {
         const quantidadeNaoDevolvida =
           item.quantidadeRetirada - (item.quantidadeDevolvida || 0);
@@ -478,7 +467,6 @@ export async function cancelSale(id: string) {
             data: { currentStock: { increment: quantidadeNaoDevolvida } },
           });
 
-          // Mark item as fully returned
           await tx.itensVenda.update({
             where: { id: item.id },
             data: { quantidadeDevolvida: item.quantidadeRetirada },
@@ -608,7 +596,6 @@ export async function getSalesSummary(options?: {
         }),
       ]);
 
-    // Count pending returns (items not fully returned in active/overdue sales)
     const salesWithPendingReturns = await prisma.sale.findMany({
       where: {
         ...whereClause,

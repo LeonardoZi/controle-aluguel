@@ -1,11 +1,9 @@
-// Componente Header
 "use client";
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 
-// Componentes de ícones simples
 const MenuIcon = () => (
   <svg
     xmlns="http://www.w3.org/2000/svg"
@@ -99,9 +97,8 @@ interface HeaderProps {
 
 export function Header({ sidebarOpen, toggleSidebar }: HeaderProps) {
   const [scrolled, setScrolled] = useState(false);
-  const [notifications] = useState(3); // Removida a variável setNotifications que não era usada
+  const [notifications] = useState(3);
 
-  // Detectar scroll para adicionar sombra ao cabeçalho
   useEffect(() => {
     const handleScroll = () => {
       if (window.scrollY > 10) {
@@ -120,7 +117,6 @@ export function Header({ sidebarOpen, toggleSidebar }: HeaderProps) {
       className={cn(
         "h-16 bg-white flex items-center justify-between px-4 fixed top-0 w-full z-30 transition-shadow duration-300",
         scrolled ? "shadow-md" : "",
-        // Usando sidebarOpen para ajustar o estilo conforme o estado da sidebar
         sidebarOpen ? "md:ml-0" : "md:ml-0 md:pl-20"
       )}
     >

@@ -38,7 +38,6 @@ h6 {
   line-height: 1.2;
 }
 
-/* Componentes personalizados reutilizáveis */
 @layer components {
   .card {
     @apply bg-white border border-gray-200 rounded-lg p-6 shadow-sm hover:shadow-md transition-shadow;
@@ -181,7 +180,6 @@ h6 {
   }
 }
 
-/* Animações sutis */
 @keyframes fadeIn {
   from {
     opacity: 0;
@@ -210,7 +208,6 @@ h6 {
   animation: slideInRight 0.3s ease-out;
 }
 
-/* Status colors for common states */
 .status-pending {
   @apply bg-yellow-100 text-yellow-800;
 }
@@ -239,7 +236,6 @@ h6 {
   @apply bg-red-100 text-red-800;
 }
 
-/* Print styles */
 @media print {
   .no-print {
     display: none !important;

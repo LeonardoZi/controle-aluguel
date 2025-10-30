@@ -4,7 +4,6 @@ import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 import { Decimal } from "@prisma/client/runtime/library";
 
-// Get products with optional filters
 export async function getProducts(options?: {
   query?: string;
   lowStock?: boolean;
@@ -29,7 +28,6 @@ export async function getProducts(options?: {
       orderBy: { name: "asc" },
     });
 
-    // Serialize Decimal objects to numbers
     const serializedProducts = products.map((product) => ({
       ...product,
       precoUnitario: Number(product.precoUnitario),
@@ -44,7 +42,6 @@ export async function getProducts(options?: {
   }
 }
 
-// Get a single product by ID
 export async function getProductById(id: string) {
   try {
     const product = await prisma.product.findUnique({
@@ -72,7 +69,6 @@ export async function getProductById(id: string) {
       return { error: "Produto não encontrado" };
     }
 
-    // Serialize Decimal objects
     const serializedProduct = {
       ...product,
       precoUnitario: Number(product.precoUnitario),
@@ -104,7 +100,6 @@ export async function getProductById(id: string) {
   }
 }
 
-// Create a new product
 export async function createProduct(data: {
   name: string;
   description?: string;
@@ -113,7 +108,6 @@ export async function createProduct(data: {
   unit?: string;
 }) {
   try {
-    // Validate required fields
     if (!data.name) {
       return { error: "Nome é obrigatório" };
     }
@@ -147,7 +141,6 @@ export async function createProduct(data: {
   }
 }
 
-// Update a product
 export async function updateProduct(
   id: string,
   data: {
@@ -159,7 +152,6 @@ export async function updateProduct(
   }
 ) {
   try {
-    // Check if product exists
     const existingProduct = await prisma.product.findUnique({
       where: { id },
     });
@@ -168,7 +160,6 @@ export async function updateProduct(
       return { error: "Produto não encontrado" };
     }
 
-    // Update the product
     const product = await prisma.product.update({
       where: { id },
       data: {
@@ -198,13 +189,11 @@ export async function updateProduct(
   }
 }
 
-// Adjust product stock
 export async function adjustStock(
   id: string,
   quantity: number
 ) {
   try {
-    // Get current product
     const product = await prisma.product.findUnique({
       where: { id },
     });
@@ -213,14 +202,12 @@ export async function adjustStock(
       return { error: "Produto não encontrado" };
     }
 
-    // Calculate new stock
     const newStock = product.currentStock + quantity;
 
     if (newStock < 0) {
       return { error: "Estoque não pode ser negativo" };
     }
 
-    // Update stock
     await prisma.product.update({
       where: { id },
       data: { currentStock: newStock },
@@ -235,10 +222,8 @@ export async function adjustStock(
   }
 }
 
-// Delete a product (hard delete since we simplified the schema)
 export async function deleteProduct(id: string) {
   try {
-    // Check if product is used in any sales
     const salesCount = await prisma.itensVenda.count({
       where: { produtoId: id },
     });
@@ -261,7 +246,6 @@ export async function deleteProduct(id: string) {
   }
 }
 
-// Get low stock products report
 export async function getLowStockProducts() {
   try {
     const products = await prisma.product.findMany({
@@ -277,7 +261,6 @@ export async function getLowStockProducts() {
       ],
     });
 
-    // Serialize Decimal objects
     const serializedProducts = products.map((product) => ({
       ...product,
       precoUnitario: Number(product.precoUnitario),

@@ -1,4 +1,3 @@
-// Formulário de Produto
 "use client";
 
 import { useState } from "react";
@@ -7,7 +6,6 @@ import { useForm } from "@/hooks/use-form";
 import { cn } from "@/lib/utils";
 import Image from "next/image";
 
-// Definindo interfaces para os tipos que estão faltando
 interface Category {
   id: string;
   name: string;
@@ -18,7 +16,6 @@ interface Supplier {
   name: string;
 }
 
-// Componentes UI básicos
 const Button = ({
   children,
   className,
@@ -169,7 +166,6 @@ const Checkbox = ({
   />
 );
 
-// Schema de validação simplificado
 const productSchema = z.object({
   name: z
     .string()
@@ -210,15 +206,12 @@ const productSchema = z.object({
     .string()
     .max(50, "Localização não pode exceder 50 caracteres")
     .optional(),
-  // Definindo campos booleanos sem efeitos especiais
   isActive: z.boolean(),
   featured: z.boolean(),
 });
 
-// Tipo derivado do schema
 type ProductFormValues = z.infer<typeof productSchema>;
 
-// Props do componente
 interface ProductFormProps {
   initialData?: Partial<ProductFormValues>;
   onSubmit: (data: ProductFormValues) => void | Promise<void>;
@@ -236,12 +229,10 @@ export function ProductForm({
   categories,
   suppliers,
 }: ProductFormProps) {
-  // Estados locais
   const [imagePreview, setImagePreview] = useState<string | null>(
     initialData?.imageUrl || null
   );
 
-  // Valores iniciais do formulário
   const defaultValues: ProductFormValues = {
     name: "",
     sku: "",
@@ -254,28 +245,24 @@ export function ProductForm({
     supplierId: "",
     imageUrl: "",
     location: "",
-    // Garantindo valores booleanos explícitos
     isActive:
       initialData?.isActive !== undefined ? !!initialData.isActive : true,
     featured:
       initialData?.featured !== undefined ? !!initialData.featured : false,
   };
 
-  // Hook de formulário
   const form = useForm<ProductFormValues>({
     initialValues: defaultValues,
     validationSchema: productSchema,
     onSubmit,
   });
 
-  // Handler para preview de imagem
   const handleImageUrlChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const url = e.target.value;
     form.setValue("imageUrl", url);
     setImagePreview(url || null);
   };
 
-  // Calcular margem de lucro
   const calculateProfit = () => {
     const price = form.values.price;
     const cost = form.values.cost;

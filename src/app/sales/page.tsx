@@ -163,7 +163,7 @@ export default function SalesPage() {
           href="/sales/new"
           className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded"
         >
-          Nova Venda/Aluguel
+          Nova Venda
         </Link>
       </div>
 

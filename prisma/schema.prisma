@@ -40,19 +40,22 @@ model Product {
 }
 
 model Customer {
-  id         String   @id @default(cuid())
-  name       String
-  email      String?
-  phone      String?
-  address    String?
-  city       String?
-  state      String?
-  postalCode String?
-  taxId      String?
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
-  isActive   Boolean  @default(true)
-  sales      Sale[]
+  id           String   @id @default(cuid())
+  name         String
+  email        String?
+  phone        String?
+  address      String?
+  number       String?
+  complement   String?
+  neighborhood String?
+  city         String?
+  state        String?
+  postalCode   String?
+  taxId        String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  isActive     Boolean  @default(true)
+  sales        Sale[]
 
   @@index([name])
   @@index([email])

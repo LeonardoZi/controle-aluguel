@@ -1,10 +1,8 @@
-// Componente ProductCard
 import Image from "next/image";
 import { cn } from "@/lib/utils";
 import { formatCurrency } from "@/lib/utils";
 import { StatusBadge } from "./status-badge";
 
-// Definindo interface Product já que não encontrou o import
 interface Product {
   id: string;
   name: string;
@@ -16,7 +14,6 @@ interface Product {
   description?: string;
 }
 
-// Componentes de UI internos (já que os módulos externos não estão disponíveis)
 const Card = ({
   className,
   ...props
@@ -44,7 +41,6 @@ const CardFooter = ({
   <div className={cn("flex items-center p-6 pt-0", className)} {...props} />
 );
 
-// Botão simplificado
 const Button = ({
   className,
   variant = "default",
@@ -75,7 +71,6 @@ const Button = ({
   </button>
 );
 
-// Ícones simples em vez de usar lucide-react
 const ShoppingCart = () => <span>🛒</span>;
 
 interface ProductCardProps {
@@ -93,11 +88,9 @@ export function ProductCard({
   const { name, price, imageUrl, sku, stock, stockThreshold, description } =
     product;
 
-  // Determinar o status do estoque
   const stockStatus =
     stock <= 0 ? "out" : stock <= stockThreshold ? "low" : "in";
 
-  // Status em português
   const stockLabels = {
     out: "Sem estoque",
     low: "Estoque baixo",

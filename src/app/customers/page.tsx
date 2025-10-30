@@ -2,11 +2,8 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { getCustomers } from "@/actions/customers";
+import { getCustomers, deleteCustomer } from "@/actions/customers";
 
-
-
-// Adicionar interface para o cliente
 interface CustomerData {
   id: string;
   name: string;
@@ -25,6 +22,8 @@ export default function CustomersPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
+  const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     const fetchCustomers = async () => {
@@ -61,6 +60,20 @@ export default function CustomersPage() {
           (customer.phone && customer.phone.includes(searchQuery))
       )
     : customers;
+
+  const handleDelete = async (customerId: string) => {
+    setDeleting(true);
+    const { error } = await deleteCustomer(customerId);
+    
+    if (error) {
+      alert(error);
+    } else {
+      setCustomers(customers.filter(c => c.id !== customerId));
+    }
+    
+    setDeleting(false);
+    setDeleteConfirm(null);
+  };
 
 
 
@@ -167,14 +180,20 @@ export default function CustomersPage() {
                           : "-"}
                       </span>
                     </td>
-                    {/* <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                       <Link
-                        href={`/customers/${customer.id}`}
+                        href={`/customers/${customer.id}/edit`}
                         className="text-blue-600 hover:text-blue-900 mr-4"
                       >
-                        Detalhes
+                        Editar
                       </Link>
-                    </td> */}
+                      <button
+                        onClick={() => setDeleteConfirm(customer.id)}
+                        className="text-red-600 hover:text-red-900"
+                      >
+                        Excluir
+                      </button>
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -182,6 +201,36 @@ export default function CustomersPage() {
           </div>
         )}
       </div>
+
+      {/* Delete Confirmation Modal */}
+      {deleteConfirm && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+            <h3 className="text-lg font-bold text-gray-900 mb-4">
+              Confirmar Exclusão
+            </h3>
+            <p className="text-gray-600 mb-6">
+              Tem certeza que deseja excluir este cliente? Esta ação não pode ser desfeita.
+            </p>
+            <div className="flex justify-end space-x-4">
+              <button
+                onClick={() => setDeleteConfirm(null)}
+                disabled={deleting}
+                className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={() => handleDelete(deleteConfirm)}
+                disabled={deleting}
+                className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 disabled:opacity-50"
+              >
+                {deleting ? "Excluindo..." : "Excluir"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

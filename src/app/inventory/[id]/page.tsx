@@ -1,21 +1,72 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { createProduct } from "@/actions/products";
+import { getProductById, updateProduct } from "@/actions/products";
 
-export default function NewProductPage() {
+interface Product {
+  id: string;
+  name: string;
+  description?: string | null;
+  precoUnitario: number;
+  currentStock: number;
+  unit: string;
+}
+
+export default function EditProductPage({ params }: { params: Promise<{ id: string }> }) {
   const router = useRouter();
+  const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
+  const [productId, setProductId] = useState<string>("");
 
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [precoUnitario, setPrecoUnitario] = useState("");
   const [currentStock, setCurrentStock] = useState("0");
   const [unit, setUnit] = useState("un");
+
+  useEffect(() => {
+    const initializeProduct = async () => {
+      const resolvedParams = await params;
+      setProductId(resolvedParams.id);
+    };
+    
+    initializeProduct();
+  }, [params]);
+
+  useEffect(() => {
+    if (!productId) return;
+
+    const fetchProduct = async () => {
+      setLoading(true);
+      try {
+        const result = await getProductById(productId);
+
+        if (result.error) {
+          throw new Error(result.error);
+        }
+
+        if (result.product) {
+          const product = result.product as Product;
+          setName(product.name);
+          setDescription(product.description || "");
+          setPrecoUnitario(product.precoUnitario.toString());
+          setCurrentStock(product.currentStock.toString());
+          setUnit(product.unit);
+        }
+      } catch (err) {
+        console.error("Erro ao buscar produto:", err);
+        setError("Ocorreu um erro ao carregar o produto.");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchProduct();
+  }, [productId]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -40,7 +91,7 @@ export default function NewProductPage() {
         unit,
       };
 
-      const result = await createProduct(productData);
+      const result = await updateProduct(productId, productData);
 
       if (result.error) {
         throw new Error(result.error);
@@ -48,19 +99,29 @@ export default function NewProductPage() {
 
       router.push("/inventory");
     } catch (err: unknown) {
-      console.error("Erro ao criar produto:", err);
+      console.error("Erro ao atualizar produto:", err);
       setError(
-        err instanceof Error ? err.message : "Ocorreu um erro ao criar o produto."
+        err instanceof Error ? err.message : "Ocorreu um erro ao atualizar o produto."
       );
     } finally {
       setSubmitting(false);
     }
   };
 
+  if (loading) {
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <div className="text-center py-12">
+          <p className="text-gray-500">Carregando produto...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="container mx-auto px-4 py-8">
       <h1 className="text-2xl font-bold text-gray-800 mt-2 text-center mb-6">
-        Novo Produto
+        Editar Produto
       </h1>
 
       {error && (
@@ -143,7 +204,7 @@ export default function NewProductPage() {
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Estoque Inicial
+                Estoque Atual
               </label>
               <input
                 type="number"
@@ -170,7 +231,7 @@ export default function NewProductPage() {
             disabled={submitting}
             className="bg-green-500 hover:bg-green-600 text-white px-6 py-2 rounded disabled:bg-gray-400"
           >
-            {submitting ? "Salvando..." : "Salvar Produto"}
+            {submitting ? "Salvando..." : "Salvar Alterações"}
           </button>
         </div>
       </form>

@@ -1,4 +1,3 @@
-// Componente AppLayout
 "use client";
 
 import { useState } from "react";
@@ -13,7 +12,6 @@ interface AppLayoutProps {
 export function AppLayout({ children }: AppLayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(true);
 
-  // Alternar a visibilidade da barra lateral
   const toggleSidebar = () => setSidebarOpen((prev) => !prev);
 
   return (

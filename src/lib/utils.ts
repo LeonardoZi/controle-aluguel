@@ -1,4 +1,3 @@
-// Funções Utilitárias
 import { type ClassValue, clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
 import { Decimal } from "@prisma/client/runtime/library";

@@ -5,7 +5,6 @@ import Link from "next/link";
 import { Decimal } from "@prisma/client/runtime/library";
 import { getProducts, deleteProduct } from "@/actions/products";
 
-// Types
 interface Product {
   id: string;
   name: string;

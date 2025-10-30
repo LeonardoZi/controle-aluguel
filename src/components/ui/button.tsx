@@ -1,4 +1,3 @@
-// Componente Button
 import React, { forwardRef } from "react";
 import { cn } from "@/lib/utils";
 
@@ -33,7 +32,6 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
         "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500",
         "disabled:opacity-50 disabled:pointer-events-none",
 
-        // Variantes
         variant === "default" && "bg-blue-600 text-white hover:bg-blue-700",
         variant === "destructive" && "bg-red-600 text-white hover:bg-red-700",
         variant === "outline" &&
@@ -42,7 +40,6 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
         variant === "link" &&
           "bg-transparent underline-offset-4 hover:underline text-blue-600",
 
-        // Tamanhos
         size === "default" && "h-10 px-4 py-2 text-sm",
         size === "sm" && "h-8 px-3 text-xs",
         size === "lg" && "h-12 px-6 text-base",

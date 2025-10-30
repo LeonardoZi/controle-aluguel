@@ -1,23 +1,20 @@
-// Componente StatusBadge
 import { ReactNode } from "react";
 import { cn } from "@/lib/utils";
 
-// Tipos de status que a badge pode exibir
 type StatusType =
-  | "in" // Em estoque
-  | "low" // Estoque baixo
-  | "out" // Sem estoque
-  | "pending" // Pendente
-  | "processing" // Em processamento
-  | "shipped" // Enviado
-  | "delivered" // Entregue
-  | "cancelled" // Cancelado
-  | "success" // Sucesso
-  | "warning" // Alerta
-  | "error" // Erro
-  | "info"; // Informação
+  | "in"
+  | "low"
+  | "out"
+  | "pending"
+  | "processing"
+  | "shipped"
+  | "delivered"
+  | "cancelled"
+  | "success"
+  | "warning"
+  | "error"
+  | "info";
 
-// Props do componente
 interface StatusBadgeProps {
   status: StatusType;
   children: ReactNode;
@@ -31,7 +28,6 @@ export function StatusBadge({
   className,
   size = "md",
 }: StatusBadgeProps) {
-  // Mapeamento de cores e estilos baseados no status
   const statusStyles: Record<StatusType, string> = {
     in: "bg-green-100 text-green-800 border-green-200",
     low: "bg-amber-100 text-amber-800 border-amber-200",
@@ -47,7 +43,6 @@ export function StatusBadge({
     info: "bg-blue-100 text-blue-800 border-blue-200",
   };
 
-  // Tamanhos diferentes para a badge
   const sizeStyles = {
     sm: "text-xs px-2 py-0.5",
     md: "text-xs px-2.5 py-1",

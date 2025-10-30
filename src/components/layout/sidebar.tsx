@@ -1,4 +1,3 @@
-// Componente Sidebar
 "use client";
 
 import Link from "next/link";
@@ -6,7 +5,6 @@ import { usePathname } from "next/navigation";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
 
-// Componentes de ícones SVG nativos
 const HomeIcon = () => (
   <svg
     xmlns="http://www.w3.org/2000/svg"
@@ -182,15 +180,12 @@ interface NavItem {
 
 export function Sidebar({ open }: SidebarProps) {
   const pathname = usePathname();
-
-  // Estado para acompanhar quais submenus estão expandidos
   const [expandedItems, setExpandedItems] = useState<Record<string, boolean>>({
     "/products": true,
     "/purchases": false,
     "/sales": false,
   });
 
-  // Alternar estado expandido de um item
   const toggleExpand = (href: string) => {
     setExpandedItems((prev) => ({
       ...prev,
@@ -198,12 +193,10 @@ export function Sidebar({ open }: SidebarProps) {
     }));
   };
 
-  // Verificar se um item está ativo (rota atual)
   const isActive = (href: string) => {
     return pathname === href || pathname.startsWith(`${href}/`);
   };
 
-  // Itens de navegação
   const navItems: NavItem[] = [
     {
       title: "Dashboard",

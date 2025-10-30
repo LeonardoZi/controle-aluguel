@@ -1,10 +1,8 @@
-// Componente DataTable
 "use client";
 
 import React, { useState } from "react";
 import { cn } from "@/lib/utils";
 
-// Componentes de tabela internos (já que os módulos externos não estão disponíveis)
 const Table = ({
   className,
   ...props
@@ -65,7 +63,6 @@ const TableCell = ({
   />
 );
 
-// Botão simplificado
 const Button = ({
   className,
   variant = "default",
@@ -94,7 +91,6 @@ const Button = ({
   </button>
 );
 
-// Input simplificado
 const Input = ({
   className,
   ...props
@@ -108,7 +104,6 @@ const Input = ({
   />
 );
 
-// Ícones simples em vez de usar lucide-react
 const ChevronDown = () => <span className="ml-1">▼</span>;
 const ChevronUp = () => <span className="ml-1">▲</span>;
 const ChevronsUpDown = () => <span className="ml-1">⇕</span>;
@@ -145,7 +140,6 @@ export function DataTable<T extends Record<string, unknown>>({
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
 
-  // Ordenação
   const handleSort = (column: keyof T) => {
     if (sortColumn === column) {
       setSortDirection(sortDirection === "asc" ? "desc" : "asc");
@@ -155,7 +149,6 @@ export function DataTable<T extends Record<string, unknown>>({
     }
   };
 
-  // Filtragem por termo de busca
   const filteredData = searchTerm
     ? data.filter((item) =>
         Object.values(item).some((value: unknown) =>
@@ -164,7 +157,6 @@ export function DataTable<T extends Record<string, unknown>>({
       )
     : data;
 
-  // Ordenação dos dados
   const sortedData = sortColumn
     ? [...filteredData].sort((a, b) => {
         const aValue: unknown = a[sortColumn];
@@ -172,24 +164,20 @@ export function DataTable<T extends Record<string, unknown>>({
 
         if (aValue === bValue) return 0;
 
-        // Comparação segura com verificação de tipo
         if (typeof aValue === "string" && typeof bValue === "string") {
           const comp = aValue.localeCompare(bValue);
           return sortDirection === "asc" ? comp : -comp;
         }
 
-        // Comparação numérica
         if (typeof aValue === "number" && typeof bValue === "number") {
           return sortDirection === "asc" ? aValue - bValue : bValue - aValue;
         }
 
-        // Comparação genérica para outros tipos
         const comparison = String(aValue) < String(bValue) ? -1 : 1;
         return sortDirection === "asc" ? comparison : -comparison;
       })
     : filteredData;
 
-  // Paginação
   const totalPages = pagination
     ? Math.ceil(sortedData.length / itemsPerPage)
     : 1;
@@ -201,7 +189,6 @@ export function DataTable<T extends Record<string, unknown>>({
       )
     : sortedData;
 
-  // Renderização do ícone de ordenação
   const getSortIcon = (column: keyof T) => {
     if (column !== sortColumn) return <ChevronsUpDown />;
     return sortDirection === "asc" ? <ChevronUp /> : <ChevronDown />;

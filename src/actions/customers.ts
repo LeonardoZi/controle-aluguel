@@ -50,6 +50,9 @@ export async function createCustomer(data: {
   email?: string;
   phone?: string;
   address?: string;
+  number?: string;
+  complement?: string;
+  neighborhood?: string;
   city?: string;
   state?: string;
   postalCode?: string;
@@ -75,6 +78,9 @@ export async function updateCustomer(
     email?: string;
     phone?: string;
     address?: string;
+    number?: string;
+    complement?: string;
+    neighborhood?: string;
     city?: string;
     state?: string;
     postalCode?: string;
@@ -99,7 +105,6 @@ export async function updateCustomer(
 
 export async function deleteCustomer(id: string) {
   try {
-    // Soft delete - just mark as inactive
     await prisma.customer.update({
       where: { id },
       data: { isActive: false },
