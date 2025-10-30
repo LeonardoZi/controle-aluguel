@@ -9,7 +9,6 @@ import { getSaleById } from "@/actions/sales";
 import { processReturn } from "@/actions/sales";
 import { getUsers } from "@/actions/users";
 
-// Tipos locais que você já tinha
 interface Product {
   id: string;
   name: string;
@@ -110,8 +109,6 @@ export default function ProcessReturnPage() {
             };
           });
         
-        // AQUI ESTÁ A CORREÇÃO SIMPLES:
-        // Dizemos ao TypeScript para tratar o array 'items' como o tipo 'ReturnItem[]'
         setReturnItems(items as ReturnItem[]);
 
       } catch (err) {
@@ -442,14 +439,6 @@ export default function ProcessReturnPage() {
           </div>
         </div>
 
-        <div className="bg-blue-50 border border-blue-200 text-blue-700 px-4 py-3 rounded mb-6">
-          <p className="text-sm">
-            <strong>Informação:</strong> Ao processar a devolução, os produtos
-            retornarão ao estoque e o valor total da venda será recalculado
-            considerando apenas a quantidade efetivamente utilizada pelo
-            cliente.
-          </p>
-        </div>
 
         <div className="flex justify-end gap-4">
           <Link href="/sales">

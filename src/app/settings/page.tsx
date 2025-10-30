@@ -3,7 +3,6 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 
-// Interface para as configurações do sistema
 interface SystemSettings {
   companyName: string;
   taxId: string;
@@ -19,7 +18,6 @@ interface SystemSettings {
   defaultTaxRate: number;
 }
 
-// Interface para as configurações de usuário
 interface UserPreferences {
   darkMode: boolean;
   emailNotifications: boolean;
@@ -29,7 +27,6 @@ interface UserPreferences {
 }
 
 export default function SettingsPage() {
-  // Estado para as configurações do sistema
   const [systemSettings, setSystemSettings] = useState<SystemSettings>({
     companyName: "Eletro Materiais LTDA",
     taxId: "12.345.678/0001-90",
@@ -44,7 +41,6 @@ export default function SettingsPage() {
     defaultTaxRate: 18,
   });
 
-  // Estado para as preferências do usuário
   const [userPreferences, setUserPreferences] = useState<UserPreferences>({
     darkMode: false,
     emailNotifications: true,
@@ -53,7 +49,6 @@ export default function SettingsPage() {
     itemsPerPage: 20,
   });
 
-  // Estados para controle da UI
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [success, setSuccess] = useState(false);
@@ -62,18 +57,10 @@ export default function SettingsPage() {
     "system" | "user" | "backup" | "security"
   >("system");
 
-  // Carregar configurações do backend
   useEffect(() => {
     const fetchSettings = async () => {
       setLoading(true);
       try {
-        // Em um sistema real, você buscaria as configurações do backend
-        // const response = await fetch("/api/settings");
-        // const data = await response.json();
-        // setSystemSettings(data.systemSettings);
-        // setUserPreferences(data.userPreferences);
-
-        // Simulando um tempo de carregamento para demonstração
         setTimeout(() => {
           setLoading(false);
         }, 1000);
@@ -87,7 +74,6 @@ export default function SettingsPage() {
     fetchSettings();
   }, []);
 
-  // Salvar configurações do sistema
   const handleSystemSettingsSave = async (e: React.FormEvent) => {
     e.preventDefault();
     setSaving(true);
@@ -95,20 +81,11 @@ export default function SettingsPage() {
     setError("");
 
     try {
-      // Em um sistema real, você enviaria as configurações para o backend
-      // const response = await fetch("/api/settings/system", {
-      //   method: "POST",
-      //   headers: { "Content-Type": "application/json" },
-      //   body: JSON.stringify(systemSettings),
-      // });
 
-      // Simulando tempo de processamento
       await new Promise((resolve) => setTimeout(resolve, 1000));
 
-      // Simular sucesso
       setSuccess(true);
 
-      // Limpar mensagem de sucesso após 3 segundos
       setTimeout(() => setSuccess(false), 3000);
     } catch (err) {
       console.error("Erro ao salvar configurações:", err);
@@ -118,7 +95,6 @@ export default function SettingsPage() {
     }
   };
 
-  // Salvar preferências do usuário
   const handleUserPreferencesSave = async (e: React.FormEvent) => {
     e.preventDefault();
     setSaving(true);
@@ -126,20 +102,10 @@ export default function SettingsPage() {
     setError("");
 
     try {
-      // Em um sistema real, você enviaria as preferências para o backend
-      // const response = await fetch("/api/settings/user", {
-      //   method: "POST",
-      //   headers: { "Content-Type": "application/json" },
-      //   body: JSON.stringify(userPreferences),
-      // });
-
-      // Simulando tempo de processamento
       await new Promise((resolve) => setTimeout(resolve, 1000));
 
-      // Simular sucesso
       setSuccess(true);
 
-      // Limpar mensagem de sucesso após 3 segundos
       setTimeout(() => setSuccess(false), 3000);
     } catch (err) {
       console.error("Erro ao salvar preferências:", err);
@@ -149,7 +115,6 @@ export default function SettingsPage() {
     }
   };
 
-  // Atualizar campo de configuração do sistema
   const updateSystemSetting = (
     field: keyof SystemSettings,
     value: SystemSettings[keyof SystemSettings]
@@ -157,7 +122,6 @@ export default function SettingsPage() {
     setSystemSettings((prev) => ({ ...prev, [field]: value }));
   };
 
-  // Atualizar campo de preferência do usuário
   const updateUserPreference = (
     field: keyof UserPreferences,
     value: UserPreferences[keyof UserPreferences]
@@ -165,17 +129,14 @@ export default function SettingsPage() {
     setUserPreferences((prev) => ({ ...prev, [field]: value }));
   };
 
-  // Realizar backup dos dados
   const handleBackup = async () => {
     setSaving(true);
     setSuccess(false);
     setError("");
 
     try {
-      // Simulando tempo de processamento
       await new Promise((resolve) => setTimeout(resolve, 1500));
 
-      // Simular download do arquivo
       const date = new Date().toISOString().slice(0, 10);
       alert(`Backup gerado com sucesso: backup_${date}.zip`);
 
@@ -224,7 +185,6 @@ export default function SettingsPage() {
         </div>
       )}
 
-      {/* Tabs de navegação */}
       <div className="flex border-b border-gray-200 mb-6">
         <button
           onClick={() => setActiveTab("system")}
@@ -268,9 +228,7 @@ export default function SettingsPage() {
         </button>
       </div>
 
-      {/* Conteúdo das tabs */}
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-        {/* Configurações do Sistema */}
         {activeTab === "system" && (
           <form onSubmit={handleSystemSettingsSave}>
             <h2 className="text-lg font-semibold mb-4 text-gray-800">
@@ -468,7 +426,6 @@ export default function SettingsPage() {
           </form>
         )}
 
-        {/* Preferências do Usuário */}
         {activeTab === "user" && (
           <form onSubmit={handleUserPreferencesSave}>
             <h2 className="text-lg font-semibold mb-4 text-gray-800">
@@ -587,7 +544,6 @@ export default function SettingsPage() {
           </form>
         )}
 
-        {/* Backup e Restauração */}
         {activeTab === "backup" && (
           <div>
             <h2 className="text-lg font-semibold mb-4 text-gray-800">
@@ -675,7 +631,6 @@ export default function SettingsPage() {
           </div>
         )}
 
-        {/* Segurança */}
         {activeTab === "security" && (
           <div>
             <h2 className="text-lg font-semibold mb-4 text-gray-800">

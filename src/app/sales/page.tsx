@@ -5,7 +5,6 @@ import Link from "next/link";
 import { Decimal } from "@prisma/client/runtime/library";
 import { getSales, updateOverdueSales } from "@/actions/sales";
 
-// Types
 type SaleStatus = "ATIVO" | "ATRASADO" | "CONCLUIDO" | "CANCELADO";
 
 interface Customer {
@@ -59,7 +58,6 @@ export default function SalesPage() {
     const fetchSales = async () => {
       setLoading(true);
       try {
-        // Update overdue sales first
         await updateOverdueSales();
 
         const result = await getSales();
@@ -118,20 +116,16 @@ export default function SalesPage() {
   };
 
   const filteredSales = sales.filter((sale) => {
-    // Text filter (customer or ID)
     const matchesSearch =
       searchTerm === "" ||
       sale.customer?.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       sale.id.toLowerCase().includes(searchTerm.toLowerCase());
 
-    // Status filter
     const matchesStatus = statusFilter === "" || sale.status === statusFilter;
 
-    // Start date filter
     const saleDate = new Date(sale.dataRetirada);
     const matchesStartDate = !startDate || saleDate >= new Date(startDate);
 
-    // End date filter
     const matchesEndDate =
       !endDate || saleDate <= new Date(`${endDate}T23:59:59`);
 
@@ -179,7 +173,6 @@ export default function SalesPage() {
         </div>
       )}
 
-      {/* Filters */}
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 mb-6">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <div>
@@ -249,7 +242,6 @@ export default function SalesPage() {
         )}
       </div>
 
-      {/* Sales List */}
       {filteredSales.length === 0 ? (
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8 text-center">
           <p className="text-gray-500">

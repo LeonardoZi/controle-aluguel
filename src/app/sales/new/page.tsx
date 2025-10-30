@@ -10,7 +10,6 @@ import { getProducts } from "@/actions/products";
 import { createSale } from "@/actions/sales";
 import { getUsers } from "@/actions/users";
 
-// Types
 interface Customer {
   id: string;
   name: string;
@@ -32,7 +31,7 @@ interface User {
 }
 
 interface SaleItem {
-  id: string; // Temporary ID for UI manipulation
+  id: string;
   produtoId: string;
   produto: Product;
   quantidadeRetirada: number;
@@ -49,14 +48,12 @@ export default function NewSale() {
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
-  // Form state
   const [customerId, setCustomerId] = useState("");
   const [userId, setUserId] = useState("");
   const [dataDevolucaoPrevista, setDataDevolucaoPrevista] = useState("");
   const [notes, setNotes] = useState("");
   const [items, setItems] = useState<SaleItem[]>([]);
 
-  // States for adding products
   const [selectedProductId, setSelectedProductId] = useState("");
   const [quantity, setQuantity] = useState(1);
   const [unitPrice, setUnitPrice] = useState(0);
@@ -81,7 +78,6 @@ export default function NewSale() {
           setUserId(usersResult.users[0].id);
         }
 
-        // Set default return date to 7 days from now
         const defaultReturnDate = new Date();
         defaultReturnDate.setDate(defaultReturnDate.getDate() + 7);
         setDataDevolucaoPrevista(
@@ -98,14 +94,12 @@ export default function NewSale() {
     fetchData();
   }, []);
 
-  // Update unit price when a product is selected
   useEffect(() => {
     if (selectedProductId) {
       const product = products.find((p) => p.id === selectedProductId);
       if (product) {
         setUnitPrice(Number(product.precoUnitario || 0));
 
-        // Check stock
         if (product.currentStock <= 0) {
           setStockWarning(`Atenção: Produto sem estoque disponível!`);
         } else if (product.currentStock < quantity) {
@@ -125,7 +119,6 @@ export default function NewSale() {
     }
   }, [selectedProductId, quantity, products]);
 
-  // Add item to sale
   const handleAddItem = () => {
     if (!selectedProductId || quantity <= 0 || unitPrice <= 0) {
       setError("Selecione um produto, quantidade e preço válidos.");
@@ -138,7 +131,6 @@ export default function NewSale() {
       return;
     }
 
-    // Check stock
     if (product.currentStock < quantity) {
       setError(
         `Quantidade excede o estoque disponível (${product.currentStock} ${product.unit}).`
@@ -146,13 +138,11 @@ export default function NewSale() {
       return;
     }
 
-    // Check if product already in order
     const existingItemIndex = items.findIndex(
       (item) => item.produtoId === selectedProductId
     );
 
     if (existingItemIndex >= 0) {
-      // Check total stock
       const existingItem = items[existingItemIndex];
       const totalQuantity = existingItem.quantidadeRetirada + quantity;
 
@@ -163,7 +153,6 @@ export default function NewSale() {
         return;
       }
 
-      // Update existing item
       const updatedItems = [...items];
       updatedItems[existingItemIndex] = {
         ...existingItem,
@@ -173,9 +162,8 @@ export default function NewSale() {
       };
       setItems(updatedItems);
     } else {
-      // Add new item
       const newItem: SaleItem = {
-        id: Date.now().toString(), // Temporary ID
+        id: Date.now().toString(),
         produtoId: selectedProductId,
         produto: product,
         quantidadeRetirada: quantity,
@@ -185,7 +173,6 @@ export default function NewSale() {
       setItems([...items, newItem]);
     }
 
-    // Reset fields
     setSelectedProductId("");
     setQuantity(1);
     setUnitPrice(0);
@@ -193,17 +180,14 @@ export default function NewSale() {
     setStockWarning("");
   };
 
-  // Remove item from sale
   const handleRemoveItem = (itemId: string) => {
     setItems(items.filter((item) => item.id !== itemId));
   };
 
-  // Calculate total
   const calculateTotal = () => {
     return items.reduce((sum, item) => sum + item.subtotal, 0);
   };
 
-  // Format currency
   const formatCurrency = (value: number | Decimal) => {
     return new Intl.NumberFormat("pt-BR", {
       style: "currency",
@@ -211,7 +195,6 @@ export default function NewSale() {
     }).format(Number(value));
   };
 
-  // Submit form
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -283,7 +266,7 @@ export default function NewSale() {
   return (
     <div className="container mx-auto px-4 py-8">
       <h1 className="text-2xl font-bold text-gray-800 mt-2 text-center mb-6">
-        Nova Venda/Aluguel
+        Nova Venda
       </h1>
 
       {error && (
@@ -293,7 +276,6 @@ export default function NewSale() {
       )}
 
       <form onSubmit={handleSubmit}>
-        {/* Basic Information */}
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-8">
           <h2 className="text-lg font-semibold mb-4 text-gray-800">
             Informações da Venda
@@ -350,9 +332,6 @@ export default function NewSale() {
                 required
                 min={new Date().toISOString().split("T")[0]}
               />
-              <p className="mt-1 text-xs text-gray-500">
-                Data limite para devolução dos produtos não utilizados
-              </p>
             </div>
 
             <div className="md:col-span-2">
@@ -526,15 +505,7 @@ export default function NewSale() {
             </div>
           )}
 
-          {items.length > 0 && (
-            <div className="mt-4 p-4 bg-yellow-50 border border-yellow-200 rounded">
-              <p className="text-sm text-yellow-800">
-                <strong>Importante:</strong> O valor final será calculado
-                apenas pela quantidade efetivamente utilizada. O cliente pode
-                devolver o que não usar até {formatDate(dataDevolucaoPrevista)}.
-              </p>
-            </div>
-          )}
+
         </div>
 
         {/* Action Buttons */}

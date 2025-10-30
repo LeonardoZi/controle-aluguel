@@ -6,7 +6,6 @@ import Link from "next/link";
 import { Decimal } from "@prisma/client/runtime/library";
 import { getSaleById, cancelSale, completeSale } from "@/actions/sales";
 
-// Types
 type SaleStatus = "ATIVO" | "ATRASADO" | "CONCLUIDO" | "CANCELADO";
 
 interface Product {
@@ -208,7 +207,6 @@ export default function SaleDetailsPage() {
         </div>
       )}
 
-      {/* Sale Information */}
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
         <div className="flex justify-between items-start mb-4">
           <h2 className="text-lg font-semibold text-gray-800">
@@ -349,7 +347,6 @@ export default function SaleDetailsPage() {
         </div>
       </div>
 
-      {/* Actions */}
       <div className="flex justify-end gap-4">
         {(sale.status === "ATIVO" || sale.status === "ATRASADO") && (
           <>
