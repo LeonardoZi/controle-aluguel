@@ -275,7 +275,6 @@ export function ProductForm({
 
   return (
     <form onSubmit={form.handleSubmit} className="space-y-6">
-      {/* Informações Básicas */}
       <div className="space-y-4">
         <h3 className="text-lg font-medium">Informações Básicas</h3>
 
@@ -418,7 +417,6 @@ export function ProductForm({
         </div>
       </div>
 
-      {/* Preços e Estoque */}
       <div className="space-y-4">
         <h3 className="text-lg font-medium">Preços e Estoque</h3>
 
@@ -562,7 +560,6 @@ export function ProductForm({
         </div>
       </div>
 
-      {/* Imagem e Status */}
       <div className="space-y-4">
         <h3 className="text-lg font-medium">Imagem e Configurações</h3>
 
@@ -643,7 +640,6 @@ export function ProductForm({
         </div>
       </div>
 
-      {/* Botões de ação */}
       <div className="flex justify-end space-x-4 pt-4">
         {onCancel && (
           <Button variant="outline" onClick={onCancel}>

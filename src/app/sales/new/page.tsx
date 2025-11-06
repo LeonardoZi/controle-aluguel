@@ -349,7 +349,6 @@ export default function NewSale() {
           </div>
         </div>
 
-        {/* Add Items */}
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-8">
           <h2 className="text-lg font-semibold mb-4 text-gray-800">
             Adicionar Produtos
@@ -423,7 +422,6 @@ export default function NewSale() {
           </div>
         </div>
 
-        {/* Items List */}
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-8">
           <h2 className="text-lg font-semibold mb-4 text-gray-800">
             Produtos da Venda ({items.length})
@@ -508,7 +506,6 @@ export default function NewSale() {
 
         </div>
 
-        {/* Action Buttons */}
         <div className="flex justify-end gap-4">
           <Link href="/sales">
             <Button variant="outline" type="button">

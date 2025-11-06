@@ -265,7 +265,6 @@ export function Sidebar({ open }: SidebarProps) {
         <ul className="space-y-1 px-2">
           {navItems.map((item) => (
             <li key={item.href}>
-              {/* Item principal */}
               <div className="relative">
                 <Link
                   href={item.submenu ? "#" : item.href}
@@ -302,7 +301,6 @@ export function Sidebar({ open }: SidebarProps) {
                 </Link>
               </div>
 
-              {/* Submenu */}
               {item.submenu && expandedItems[item.href] && open && (
                 <ul className="mt-1 ml-8 space-y-1">
                   {item.submenu.map((subitem) => (

@@ -1,14 +1,11 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  // Habilitar streaming e suspense features
   experimental: {
     serverActions: {
       allowedOrigins: ["localhost:3000"],
     },
   },
-
-  // Segurança - cabeçalhos HTTP
   headers: async () => {
     return [
       {

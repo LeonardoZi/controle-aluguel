@@ -266,7 +266,6 @@ export default function SaleDetailsPage() {
         )}
       </div>
 
-      {/* Items */}
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
         <h2 className="text-lg font-semibold mb-4 text-gray-800">
           Produtos ({sale.itens.length})

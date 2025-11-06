@@ -364,7 +364,6 @@ export default function SalesPage() {
         </div>
       )}
 
-      {/* Summary */}
       {filteredSales.length > 0 && (
         <div className="mt-4 bg-white rounded-lg shadow-sm border border-gray-200 p-4">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4 text-center">

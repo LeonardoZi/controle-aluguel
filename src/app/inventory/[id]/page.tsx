@@ -219,7 +219,6 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
           </div>
         </div>
 
-        {/* Action Buttons */}
         <div className="flex justify-end gap-4">
           <Link href="/inventory">
             <Button variant="outline" type="button">

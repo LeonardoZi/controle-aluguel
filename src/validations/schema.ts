@@ -1,8 +1,5 @@
 import { z } from "zod";
 
-/**
- * Schema para validação de produto
- */
 export const productSchema = z.object({
   name: z
     .string()
@@ -45,9 +42,6 @@ export const productSchema = z.object({
     .nullish(),
 });
 
-/**
- * Schema para validação de cliente
- */
 export const customerSchema = z.object({
   name: z
     .string()
@@ -85,9 +79,6 @@ export const customerSchema = z.object({
   isActive: z.boolean().default(true),
 });
 
-/**
- * Schema para validação de fornecedor
- */
 export const supplierSchema = z.object({
   companyName: z
     .string()
@@ -130,9 +121,6 @@ export const supplierSchema = z.object({
   isActive: z.boolean().default(true),
 });
 
-/**
- * Schema para validação de venda
- */
 export const saleSchema = z.object({
   customerId: z.string(),
   paymentMethod: z.string(),
@@ -154,9 +142,6 @@ export const saleSchema = z.object({
     .min(1, "Adicione pelo menos um item"),
 });
 
-/**
- * Schema para validação de pedido de compra
- */
 export const purchaseOrderSchema = z.object({
   supplierId: z.string(),
   expectedDelivery: z.string().nullish(),

@@ -135,17 +135,6 @@ export function ProductCard({
       </CardContent>
 
       <CardFooter className="p-4 pt-0 flex gap-2">
-        {/* {onViewDetails && (
-          <Button
-            variant="outline"
-            size="sm"
-            className="flex-1"
-            onClick={onViewDetails}
-          >
-            <Eye />
-            <span className="ml-2">Detalhes</span>
-          </Button>
-        )} */}
 
         {onAddToCart && (
           <Button

@@ -188,7 +188,6 @@ export function CustomerForm({
 
   return (
     <form onSubmit={form.handleSubmit} className="space-y-6">
-      {/* Informações Básicas */}
       <div className="space-y-4">
         <h3 className="text-lg font-medium">Informações Básicas</h3>
 
@@ -279,7 +278,6 @@ export function CustomerForm({
         </div>
       </div>
 
-      {/* Endereço */}
       <div className="space-y-4">
         <h3 className="text-lg font-medium">Endereço</h3>
 
@@ -447,7 +445,6 @@ export function CustomerForm({
         </div>
       </div>
 
-      {/* Observações e Status */}
       <div className="space-y-4">
         <div>
           <label htmlFor="notes" className="block text-sm font-medium mb-1">
@@ -485,7 +482,6 @@ export function CustomerForm({
         </div>
       </div>
 
-      {/* Botões de ação */}
       <div className="flex justify-end space-x-4 pt-4">
         {onCancel && (
           <Button type="button" variant="outline" onClick={onCancel}>

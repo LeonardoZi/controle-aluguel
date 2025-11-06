@@ -2,16 +2,10 @@ import { type ClassValue, clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
 import { Decimal } from "@prisma/client/runtime/library";
 
-/**
- * Combina classes do Tailwind de forma eficiente
- */
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
-/**
- * Formata um valor monetário para exibição
- */
 export function formatCurrency(
   value: Decimal | number | null | undefined,
   currency = "BRL",
@@ -27,9 +21,6 @@ export function formatCurrency(
   }).format(Number(value));
 }
 
-/**
- * Formata uma data para exibição
- */
 export function formatDate(
   date: Date | string | null | undefined,
   locale = "pt-BR",
@@ -51,9 +42,6 @@ export function formatDate(
   );
 }
 
-/**
- * Transforma um texto para URL amigável
- */
 export function slugify(text: string): string {
   return text
     .toString()
@@ -66,9 +54,6 @@ export function slugify(text: string): string {
     .replace(/--+/g, "-");
 }
 
-/**
- * Gera um código SKU com base no nome e categoria
- */
 export function generateSKU(name: string, categoryPrefix = ""): string {
   const namePart = name
     .toUpperCase()
@@ -82,9 +67,6 @@ export function generateSKU(name: string, categoryPrefix = ""): string {
   return `${categoryPrefix}${namePart}${randomPart}`;
 }
 
-/**
- * Debounce para funções - útil para inputs de busca
- */
 export function debounce<F extends (...args: unknown[]) => void>(
   func: F,
   wait: number
@@ -105,9 +87,6 @@ export function debounce<F extends (...args: unknown[]) => void>(
   };
 }
 
-/**
- * Calcula o valor total de uma array de itens com quantidade e preço
- */
 export function calculateTotal<
   T extends { quantity: number; unitPrice?: number | Decimal }
 >(items: T[]): number {
@@ -117,9 +96,6 @@ export function calculateTotal<
   }, 0);
 }
 
-/**
- * Trunca o texto com limite de caracteres e adiciona reticências
- */
 export function truncateText(text: string, limit: number): string {
   if (!text || text.length <= limit) {
     return text || "";
@@ -127,9 +103,6 @@ export function truncateText(text: string, limit: number): string {
   return text.substring(0, limit) + "...";
 }
 
-/**
- * Retorna cores de status baseado no status
- */
 export function getStatusColor(status: string): string {
   const statusMap: Record<string, string> = {
     PENDING: "status-pending",

@@ -109,7 +109,6 @@ export default function InventoryPage() {
         </div>
       )}
 
-      {/* Filters */}
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 mb-6">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div className="md:col-span-2">
@@ -141,7 +140,6 @@ export default function InventoryPage() {
         </div>
       </div>
 
-      {/* Products List */}
       {products.length === 0 ? (
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8 text-center">
           <p className="text-gray-500">
@@ -230,7 +228,6 @@ export default function InventoryPage() {
         </div>
       )}
 
-      {/* Summary */}
       {products.length > 0 && (
         <div className="mt-4 bg-white rounded-lg shadow-sm border border-gray-200 p-4">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-center">
