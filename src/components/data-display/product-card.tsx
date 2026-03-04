@@ -21,7 +21,7 @@ const Card = ({
   <div
     className={cn(
       "rounded-lg border bg-card text-card-foreground shadow-sm",
-      className
+      className,
     )}
     {...props}
   />
@@ -61,7 +61,7 @@ const Button = ({
         : "border border-input hover:bg-accent hover:text-accent-foreground",
       size === "sm" ? "h-9 px-3 text-xs" : "h-10 px-4 py-2",
       disabled && "opacity-50 cursor-not-allowed pointer-events-none",
-      className
+      className,
     )}
     disabled={disabled}
     onClick={onClick}
@@ -135,7 +135,6 @@ export function ProductCard({
       </CardContent>
 
       <CardFooter className="p-4 pt-0 flex gap-2">
-
         {onAddToCart && (
           <Button
             variant="default"

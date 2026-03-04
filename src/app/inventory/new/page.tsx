@@ -50,7 +50,9 @@ export default function NewProductPage() {
     } catch (err: unknown) {
       console.error("Erro ao criar produto:", err);
       setError(
-        err instanceof Error ? err.message : "Ocorreu um erro ao criar o produto."
+        err instanceof Error
+          ? err.message
+          : "Ocorreu um erro ao criar o produto.",
       );
     } finally {
       setSubmitting(false);

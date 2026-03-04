@@ -38,13 +38,13 @@ export function useProducts({
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTermState] = useState(initialFilter);
   const [currentCategoryId, setCurrentCategoryId] = useState<string | null>(
-    categoryId || null
+    categoryId || null,
   );
   const [currentSupplierId, setCurrentSupplierId] = useState<string | null>(
-    supplierId || null
+    supplierId || null,
   );
   const [stockFilter, setStockFilter] = useState<"all" | "low" | "out">(
-    lowStock ? "low" : "all"
+    lowStock ? "low" : "all",
   );
   const [sortField, setSortField] = useState<
     "name" | "sku" | "stock" | "price"
@@ -92,7 +92,7 @@ export function useProducts({
         setError(
           err instanceof Error
             ? err.message
-            : "Ocorreu um erro ao buscar produtos"
+            : "Ocorreu um erro ao buscar produtos",
         );
       } finally {
         setLoading(false);
@@ -108,7 +108,7 @@ export function useProducts({
       page,
       hasMore,
       limit,
-    ]
+    ],
   );
 
   useEffect(() => {
@@ -132,7 +132,7 @@ export function useProducts({
 
       return () => clearTimeout(handler);
     },
-    [setSearchTermState]
+    [setSearchTermState],
   );
 
   useEffect(() => {
@@ -149,7 +149,6 @@ export function useProducts({
       if (cleanupFn) cleanupFn();
     };
   }, [debouncedSetSearchTerm]);
-
 
   const setSearchTermFn = useRef<(term: string) => void>(() => {});
 

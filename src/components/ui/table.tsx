@@ -15,12 +15,12 @@ export const Table = React.forwardRef<HTMLTableElement, TableProps>(
           "w-full caption-bottom text-sm",
           hoverable && "[&_tr:hover]:bg-gray-50",
           striped && "[&_tr:nth-child(even)]:bg-gray-50",
-          className
+          className,
         )}
         {...props}
       />
     </div>
-  )
+  ),
 );
 Table.displayName = "Table";
 
@@ -38,8 +38,7 @@ export const TableHeader = React.forwardRef<
 ));
 TableHeader.displayName = "TableHeader";
 
-export interface TableBodyProps
-  extends React.HTMLAttributes<HTMLTableSectionElement> {
+export interface TableBodyProps extends React.HTMLAttributes<HTMLTableSectionElement> {
   striped?: boolean;
   hoverable?: boolean;
 }
@@ -54,7 +53,7 @@ export const TableBody = React.forwardRef<
       "[&_tr:last-child]:border-0",
       striped && "[&_tr:nth-child(even)]:bg-gray-50",
       hoverable && "[&_tr:hover]:bg-gray-50",
-      className
+      className,
     )}
     {...props}
   />
@@ -75,8 +74,7 @@ export const TableFooter = React.forwardRef<
 ));
 TableFooter.displayName = "TableFooter";
 
-export interface TableRowProps
-  extends React.HTMLAttributes<HTMLTableRowElement> {
+export interface TableRowProps extends React.HTMLAttributes<HTMLTableRowElement> {
   selected?: boolean;
 }
 
@@ -87,16 +85,15 @@ export const TableRow = React.forwardRef<HTMLTableRowElement, TableRowProps>(
       className={cn(
         "border-b border-gray-200 transition-colors",
         selected && "bg-blue-50",
-        className
+        className,
       )}
       {...props}
     />
-  )
+  ),
 );
 TableRow.displayName = "TableRow";
 
-export interface TableHeadProps
-  extends React.ThHTMLAttributes<HTMLTableCellElement> {
+export interface TableHeadProps extends React.ThHTMLAttributes<HTMLTableCellElement> {
   sortable?: boolean;
 }
 
@@ -107,11 +104,11 @@ export const TableHead = React.forwardRef<HTMLTableCellElement, TableHeadProps>(
       className={cn(
         "h-12 px-4 text-left align-middle font-medium text-gray-500",
         sortable && "cursor-pointer select-none",
-        className
+        className,
       )}
       {...props}
     />
-  )
+  ),
 );
 TableHead.displayName = "TableHead";
 
@@ -120,7 +117,7 @@ export type TableCellProps = React.TdHTMLAttributes<HTMLTableCellElement>;
 export const TableCell = React.forwardRef<HTMLTableCellElement, TableCellProps>(
   ({ className, ...props }, ref) => (
     <td ref={ref} className={cn("p-4 align-middle", className)} {...props} />
-  )
+  ),
 );
 TableCell.displayName = "TableCell";
 

@@ -11,7 +11,7 @@ export async function getUsers() {
         name: true,
         email: true,
       },
-      orderBy: { name: 'asc' }
+      orderBy: { name: "asc" },
     });
 
     return { users };

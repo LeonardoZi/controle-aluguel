@@ -258,7 +258,7 @@ export function Sidebar({ open }: SidebarProps) {
       className={cn(
         "fixed left-0 top-16 h-full bg-white border-r border-gray-200 z-20 transition-all duration-300 ease-in-out",
         open ? "w-64" : "w-0 md:w-16",
-        "overflow-hidden"
+        "overflow-hidden",
       )}
     >
       <nav className="py-4 h-full overflow-y-auto">
@@ -275,7 +275,7 @@ export function Sidebar({ open }: SidebarProps) {
                     "flex items-center px-3 py-2.5 text-sm rounded-md gap-3 hover:bg-gray-100 transition-colors",
                     isActive(item.href) &&
                       "bg-blue-50 text-blue-600 font-medium",
-                    !open && "justify-center md:px-3"
+                    !open && "justify-center md:px-3",
                   )}
                 >
                   <span className="shrink-0">{item.icon}</span>
@@ -309,7 +309,7 @@ export function Sidebar({ open }: SidebarProps) {
                         href={subitem.href}
                         className={cn(
                           "flex items-center px-3 py-2 text-sm rounded-md hover:bg-gray-100 transition-colors",
-                          isActive(subitem.href) && "text-blue-600 font-medium"
+                          isActive(subitem.href) && "text-blue-600 font-medium",
                         )}
                       >
                         {subitem.title}

@@ -1,8 +1,7 @@
 import React from "react";
 import { cn } from "@/lib/utils";
 
-export interface InputProps
-  extends React.InputHTMLAttributes<HTMLInputElement> {
+export interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
   error?: boolean | string;
   icon?: React.ReactNode;
   iconPosition?: "left" | "right";
@@ -11,7 +10,7 @@ export interface InputProps
 export const Input = React.forwardRef<HTMLInputElement, InputProps>(
   (
     { className, type, error = false, icon, iconPosition = "left", ...props },
-    ref
+    ref,
   ) => {
     return (
       <div className="relative">
@@ -31,7 +30,7 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
             !!error && "border-red-500 focus:ring-red-500",
             icon && iconPosition === "left" && "pl-10",
             icon && iconPosition === "right" && "pr-10",
-            className
+            className,
           )}
           ref={ref}
           {...props}
@@ -50,7 +49,7 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
         )}
       </div>
     );
-  }
+  },
 );
 
 Input.displayName = "Input";

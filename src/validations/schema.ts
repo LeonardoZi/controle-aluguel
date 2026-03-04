@@ -137,7 +137,7 @@ export const saleSchema = z.object({
         unitPrice: z
           .number()
           .positive("Preço unitário deve ser maior que zero"),
-      })
+      }),
     )
     .min(1, "Adicione pelo menos um item"),
 });
@@ -157,7 +157,7 @@ export const purchaseOrderSchema = z.object({
         unitPrice: z
           .number()
           .nonnegative("Preço unitário não pode ser negativo"),
-      })
+      }),
     )
     .min(1, "Adicione pelo menos um item"),
 });

@@ -1,20 +1,17 @@
-import {
-  Product,
-  Sale,
-  ItensVenda,
-  Customer,
-  User,
-} from "@prisma/client";
+import { Product, Sale, ItensVenda, Customer, User } from "@prisma/client";
 
 export type { Product, Sale, ItensVenda, Customer, User };
 
-export type SerializedProduct = Omit<Product, 'createdAt' | 'updatedAt' | 'precoUnitario'> & {
+export type SerializedProduct = Omit<
+  Product,
+  "createdAt" | "updatedAt" | "precoUnitario"
+> & {
   createdAt: string;
   updatedAt: string;
   precoUnitario: number;
 };
 
-export type ClientReturnItem = Omit<ItensVenda, 'produto'> & {
+export type ClientReturnItem = Omit<ItensVenda, "produto"> & {
   produto: SerializedProduct;
   quantidadePendente: number;
   quantidadeADevolver: number;

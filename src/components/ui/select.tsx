@@ -1,8 +1,7 @@
 import React from "react";
 import { cn } from "@/lib/utils";
 
-export interface SelectProps
-  extends React.SelectHTMLAttributes<HTMLSelectElement> {
+export interface SelectProps extends React.SelectHTMLAttributes<HTMLSelectElement> {
   error?: boolean;
   label?: string;
   helperText?: string;
@@ -11,7 +10,7 @@ export interface SelectProps
 export const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
   (
     { className, error = false, label, helperText, children, ...props },
-    ref
+    ref,
   ) => {
     return (
       <div className="space-y-1">
@@ -30,7 +29,7 @@ export const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
             "focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent",
             "disabled:cursor-not-allowed disabled:opacity-50",
             error && "border-red-500 focus:ring-red-500",
-            className
+            className,
           )}
           ref={ref}
           {...props}
@@ -49,7 +48,7 @@ export const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
         )}
       </div>
     );
-  }
+  },
 );
 
 Select.displayName = "Select";

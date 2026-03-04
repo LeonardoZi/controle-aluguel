@@ -117,7 +117,7 @@ export function Header({ sidebarOpen, toggleSidebar }: HeaderProps) {
       className={cn(
         "h-16 bg-white flex items-center justify-between px-4 fixed top-0 w-full z-30 transition-shadow duration-300",
         scrolled ? "shadow-md" : "",
-        sidebarOpen ? "md:ml-0" : "md:ml-0 md:pl-20"
+        sidebarOpen ? "md:ml-0" : "md:ml-0 md:pl-20",
       )}
     >
       <div className="flex items-center">

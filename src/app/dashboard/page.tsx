@@ -141,7 +141,9 @@ export default function DashboardPage() {
       CANCELADO: "Cancelado",
     };
     return (
-      <span className={`px-2 py-1 rounded-full text-xs font-medium ${badges[status as keyof typeof badges]}`}>
+      <span
+        className={`px-2 py-1 rounded-full text-xs font-medium ${badges[status as keyof typeof badges]}`}
+      >
         {labels[status as keyof typeof labels]}
       </span>
     );
@@ -365,9 +367,7 @@ export default function DashboardPage() {
                 </div>
               ) : (
                 <div className="text-center py-4">
-                  <p className="text-green-600">
-                    ✓ Nenhuma locação atrasada
-                  </p>
+                  <p className="text-green-600">✓ Nenhuma locação atrasada</p>
                 </div>
               )}
             </div>
@@ -480,7 +480,14 @@ export default function DashboardPage() {
                     strokeLinecap="round"
                     strokeLinejoin="round"
                   >
-                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                    <rect
+                      x="3"
+                      y="3"
+                      width="18"
+                      height="18"
+                      rx="2"
+                      ry="2"
+                    ></rect>
                     <line x1="12" y1="8" x2="12" y2="16"></line>
                     <line x1="8" y1="12" x2="16" y2="12"></line>
                   </svg>

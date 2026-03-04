@@ -64,9 +64,7 @@ export default function InventoryPage() {
       setProducts(products.filter((p) => p.id !== id));
     } catch (err) {
       console.error("Erro ao excluir produto:", err);
-      alert(
-        err instanceof Error ? err.message : "Erro ao excluir produto"
-      );
+      alert(err instanceof Error ? err.message : "Erro ao excluir produto");
     }
   };
 

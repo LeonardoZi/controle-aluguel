@@ -15,7 +15,11 @@ interface Product {
   unit: string;
 }
 
-export default function EditProductPage({ params }: { params: Promise<{ id: string }> }) {
+export default function EditProductPage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -33,7 +37,7 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
       const resolvedParams = await params;
       setProductId(resolvedParams.id);
     };
-    
+
     initializeProduct();
   }, [params]);
 
@@ -101,7 +105,9 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
     } catch (err: unknown) {
       console.error("Erro ao atualizar produto:", err);
       setError(
-        err instanceof Error ? err.message : "Ocorreu um erro ao atualizar o produto."
+        err instanceof Error
+          ? err.message
+          : "Ocorreu um erro ao atualizar o produto.",
       );
     } finally {
       setSubmitting(false);

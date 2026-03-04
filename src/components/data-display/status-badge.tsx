@@ -55,7 +55,7 @@ export function StatusBadge({
         "inline-flex items-center justify-center rounded-full border font-medium",
         statusStyles[status],
         sizeStyles[size],
-        className
+        className,
       )}
     >
       {children}

@@ -24,7 +24,7 @@ export function AppLayout({ children }: AppLayoutProps) {
         <main
           className={cn(
             "flex-1 overflow-auto p-6 transition-all duration-300 ease-in-out",
-            sidebarOpen ? "md:ml-64" : "ml-0"
+            sidebarOpen ? "md:ml-64" : "ml-0",
           )}
         >
           {children}

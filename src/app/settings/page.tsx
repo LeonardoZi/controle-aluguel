@@ -81,7 +81,6 @@ export default function SettingsPage() {
     setError("");
 
     try {
-
       await new Promise((resolve) => setTimeout(resolve, 1000));
 
       setSuccess(true);
@@ -117,14 +116,14 @@ export default function SettingsPage() {
 
   const updateSystemSetting = (
     field: keyof SystemSettings,
-    value: SystemSettings[keyof SystemSettings]
+    value: SystemSettings[keyof SystemSettings],
   ) => {
     setSystemSettings((prev) => ({ ...prev, [field]: value }));
   };
 
   const updateUserPreference = (
     field: keyof UserPreferences,
-    value: UserPreferences[keyof UserPreferences]
+    value: UserPreferences[keyof UserPreferences],
   ) => {
     setUserPreferences((prev) => ({ ...prev, [field]: value }));
   };
@@ -164,12 +163,17 @@ export default function SettingsPage() {
     <div className="container mx-auto px-4 py-8">
       <div className="flex flex-col md:flex-row items-center md:items-center mb-6 gap-4">
         <div className="order-1 md:order-none">
-          <Link href="/" className="text-blue-600 hover:underline inline-flex items-center whitespace-nowrap">
+          <Link
+            href="/"
+            className="text-blue-600 hover:underline inline-flex items-center whitespace-nowrap"
+          >
             ← Voltar
           </Link>
         </div>
         <div className="text-center w-full ">
-          <h1 className="flex-1 text-2xl font-bold text-gray-800">Configurações</h1>
+          <h1 className="flex-1 text-2xl font-bold text-gray-800">
+            Configurações
+          </h1>
         </div>
       </div>
 
@@ -351,7 +355,7 @@ export default function SettingsPage() {
                   onChange={(e) =>
                     updateSystemSetting(
                       "lowStockThreshold",
-                      parseInt(e.target.value)
+                      parseInt(e.target.value),
                     )
                   }
                   className="w-full px-3 py-2 border border-gray-300 rounded"
@@ -369,7 +373,7 @@ export default function SettingsPage() {
                   onChange={(e) =>
                     updateSystemSetting(
                       "defaultPaymentTerms",
-                      parseInt(e.target.value)
+                      parseInt(e.target.value),
                     )
                   }
                   className="w-full px-3 py-2 border border-gray-300 rounded"
@@ -388,7 +392,7 @@ export default function SettingsPage() {
                   onChange={(e) =>
                     updateSystemSetting(
                       "defaultTaxRate",
-                      parseFloat(e.target.value)
+                      parseFloat(e.target.value),
                     )
                   }
                   className="w-full px-3 py-2 border border-gray-300 rounded"
@@ -495,7 +499,7 @@ export default function SettingsPage() {
                   onChange={(e) =>
                     updateUserPreference(
                       "itemsPerPage",
-                      parseInt(e.target.value)
+                      parseInt(e.target.value),
                     )
                   }
                   className="w-full max-w-xs px-3 py-2 border border-gray-300 rounded"

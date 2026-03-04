@@ -17,10 +17,10 @@ interface UseFormReturn<T> {
   touched: Partial<Record<keyof T, boolean>>;
   isSubmitting: boolean;
   handleChange: (
-    e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
+    e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>,
   ) => void;
   handleBlur: (
-    e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
+    e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>,
   ) => void;
   handleSubmit: (e: FormEvent<HTMLFormElement>) => void;
   setValue: <K extends keyof T>(field: K, value: T[K]) => void;
@@ -84,7 +84,7 @@ export function useForm<T extends Record<string, unknown>>({
           return true;
         } else {
           const fieldError = result.error.errors.find(
-            (err) => err.path.length > 0 && err.path[0] === name
+            (err) => err.path.length > 0 && err.path[0] === name,
           );
 
           if (fieldError) {
@@ -107,12 +107,14 @@ export function useForm<T extends Record<string, unknown>>({
         return false;
       }
     },
-    [validationSchema, formValues]
+    [validationSchema, formValues],
   );
 
   const handleChange = useCallback(
     (
-      e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
+      e: ChangeEvent<
+        HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
+      >,
     ) => {
       const { name, value, type } = e.target;
       const fieldName = name as keyof T;
@@ -131,12 +133,14 @@ export function useForm<T extends Record<string, unknown>>({
         validateField(fieldName, newValue);
       }
     },
-    [touched, validateField, validateOnChange]
+    [touched, validateField, validateOnChange],
   );
 
   const handleBlur = useCallback(
     (
-      e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
+      e: ChangeEvent<
+        HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
+      >,
     ) => {
       const fieldName = e.target.name as keyof T;
 
@@ -146,17 +150,20 @@ export function useForm<T extends Record<string, unknown>>({
         validateField(fieldName, formValues[fieldName]);
       }
     },
-    [validateField, validateOnBlur, formValues]
+    [validateField, validateOnBlur, formValues],
   );
 
   const handleSubmit = useCallback(
     async (e: FormEvent<HTMLFormElement>) => {
       e.preventDefault();
 
-      const allTouched = Object.keys(formValues).reduce((acc, key) => {
-        acc[key as keyof T] = true;
-        return acc;
-      }, {} as Record<keyof T, boolean>);
+      const allTouched = Object.keys(formValues).reduce(
+        (acc, key) => {
+          acc[key as keyof T] = true;
+          return acc;
+        },
+        {} as Record<keyof T, boolean>,
+      );
 
       setTouched(allTouched);
 
@@ -177,7 +184,7 @@ export function useForm<T extends Record<string, unknown>>({
         }
       }
     },
-    [formValues, validateForm, onSubmit, errors]
+    [formValues, validateForm, onSubmit, errors],
   );
 
   const setValue = useCallback(<K extends keyof T>(field: K, value: T[K]) => {
@@ -197,7 +204,7 @@ export function useForm<T extends Record<string, unknown>>({
     <K extends keyof T>(field: K, error: string) => {
       setErrors((prev) => ({ ...prev, [field]: error }));
     },
-    []
+    [],
   );
 
   const clearErrors = useCallback(() => {

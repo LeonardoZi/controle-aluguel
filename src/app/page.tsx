@@ -1,7 +1,6 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 
-
 async function getUpcomingExpirations() {
   try {
     const upcomingSales = await prisma.sale.findMany({
@@ -17,7 +16,7 @@ async function getUpcomingExpirations() {
         },
       },
       orderBy: {
-        dataDevolucaoPrevista: 'asc',
+        dataDevolucaoPrevista: "asc",
       },
       take: 10,
     });
@@ -135,14 +134,12 @@ export default async function Home() {
             <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-gray-800 mb-4 leading-tight">
               Venda e Aluguel de Materiais
             </h1>
-
           </div>
         </div>
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="grid grid-cols-2 lg:grid-cols-6 gap-4 mb-10">
-
           <div className="bg-white rounded-lg p-6 shadow-sm border border-gray-100">
             <div className="flex items-center justify-between">
               <div>
@@ -173,13 +170,11 @@ export default async function Home() {
             </div>
           </div>
 
-                    <div className="bg-white rounded-lg p-6 shadow-sm border border-gray-100">
+          <div className="bg-white rounded-lg p-6 shadow-sm border border-gray-100">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-500">Vendas Ativas</p>
-                <h3 className="text-2xl font-bold mt-1">
-                  {stats.activeSales}
-                </h3>
+                <h3 className="text-2xl font-bold mt-1">{stats.activeSales}</h3>
               </div>
               <div className="h-12 w-12 bg-green-50 rounded-lg flex items-center justify-center text-green-500">
                 <svg
@@ -200,7 +195,7 @@ export default async function Home() {
             </div>
           </div>
 
-                    <div className="bg-white rounded-lg p-6 shadow-sm border border-gray-100">
+          <div className="bg-white rounded-lg p-6 shadow-sm border border-gray-100">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-500">Atrasadas</p>
@@ -284,10 +279,6 @@ export default async function Home() {
               </div>
             </div>
           </div>
-
-
-
-
         </div>
 
         {/* Main Sections */}
@@ -561,7 +552,6 @@ export default async function Home() {
                   </svg>
                   Novo Produto
                 </Link>
-
               </div>
 
               <div className="mt-6">
@@ -585,8 +575,9 @@ export default async function Home() {
                         <tbody className="divide-y divide-gray-200 bg-white">
                           {upcomingExpirations.map((sale) => {
                             const daysUntil = Math.ceil(
-                              (new Date(sale.dataDevolucaoPrevista).getTime() - new Date().getTime()) /
-                                (1000 * 60 * 60 * 24)
+                              (new Date(sale.dataDevolucaoPrevista).getTime() -
+                                new Date().getTime()) /
+                                (1000 * 60 * 60 * 24),
                             );
                             const isUrgent = daysUntil <= 3;
                             const isOverdue = daysUntil < 0;
@@ -611,12 +602,12 @@ export default async function Home() {
                                         isOverdue
                                           ? "text-red-700 font-bold"
                                           : isUrgent
-                                          ? "text-red-600 font-semibold"
-                                          : "text-gray-600"
+                                            ? "text-red-600 font-semibold"
+                                            : "text-gray-600"
                                       }`}
                                     >
                                       {new Date(
-                                        sale.dataDevolucaoPrevista
+                                        sale.dataDevolucaoPrevista,
                                       ).toLocaleDateString("pt-BR")}
                                     </span>
                                     {isOverdue ? (

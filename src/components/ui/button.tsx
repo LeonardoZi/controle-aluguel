@@ -1,8 +1,7 @@
 import React, { forwardRef } from "react";
 import { cn } from "@/lib/utils";
 
-export interface ButtonProps
-  extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: "default" | "outline" | "ghost" | "link" | "destructive";
   size?: "default" | "sm" | "lg" | "icon";
   loading?: boolean;
@@ -21,7 +20,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
       children,
       ...props
     },
-    ref
+    ref,
   ) => {
     const Comp = asChild ? React.Fragment : "button";
     const buttonProps = {
@@ -45,7 +44,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
         size === "lg" && "h-12 px-6 text-base",
         size === "icon" && "h-10 w-10",
 
-        className
+        className,
       ),
       ...props,
     };
@@ -83,7 +82,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
         )}
       </Comp>
     );
-  }
+  },
 );
 
 Button.displayName = "Button";

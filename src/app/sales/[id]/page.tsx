@@ -86,7 +86,6 @@ export default function SaleDetailsPage() {
     }).format(Number(value));
   };
 
-
   const formatDateShort = (date?: string | Date) => {
     if (!date) return "-";
     return new Intl.DateTimeFormat("pt-BR").format(new Date(date));
@@ -107,7 +106,7 @@ export default function SaleDetailsPage() {
   const handleCancelSale = async () => {
     if (
       !confirm(
-        "Tem certeza que deseja cancelar esta venda? Todos os produtos não devolvidos retornarão ao estoque."
+        "Tem certeza que deseja cancelar esta venda? Todos os produtos não devolvidos retornarão ao estoque.",
       )
     ) {
       return;
@@ -125,9 +124,7 @@ export default function SaleDetailsPage() {
       window.location.reload();
     } catch (err) {
       console.error("Erro ao cancelar venda:", err);
-      alert(
-        err instanceof Error ? err.message : "Erro ao cancelar venda"
-      );
+      alert(err instanceof Error ? err.message : "Erro ao cancelar venda");
     } finally {
       setProcessing(false);
     }
@@ -136,7 +133,7 @@ export default function SaleDetailsPage() {
   const handleCompleteSale = async () => {
     if (
       !confirm(
-        "Tem certeza que deseja concluir esta venda? O valor final será calculado com base nos produtos efetivamente utilizados."
+        "Tem certeza que deseja concluir esta venda? O valor final será calculado com base nos produtos efetivamente utilizados.",
       )
     ) {
       return;
@@ -154,9 +151,7 @@ export default function SaleDetailsPage() {
       window.location.reload();
     } catch (err) {
       console.error("Erro ao concluir venda:", err);
-      alert(
-        err instanceof Error ? err.message : "Erro ao concluir venda"
-      );
+      alert(err instanceof Error ? err.message : "Erro ao concluir venda");
     } finally {
       setProcessing(false);
     }
@@ -252,7 +247,9 @@ export default function SaleDetailsPage() {
           </div>
           <div>
             <span className="text-sm text-gray-500">Criado em:</span>
-            <p className="font-medium text-sm">{formatDateShort(sale.createdAt)}</p>
+            <p className="font-medium text-sm">
+              {formatDateShort(sale.createdAt)}
+            </p>
           </div>
         </div>
 
@@ -306,17 +303,26 @@ export default function SaleDetailsPage() {
                   <tr key={item.id} className="hover:bg-gray-50">
                     <td className="px-4 py-3 whitespace-nowrap">
                       <div className="text-sm font-medium text-gray-900">
-                        {item.produto ? item.produto.name : <span className="text-gray-400">Produto removido</span>}
+                        {item.produto ? (
+                          item.produto.name
+                        ) : (
+                          <span className="text-gray-400">
+                            Produto removido
+                          </span>
+                        )}
                       </div>
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap text-center text-sm">
-                      {item.quantidadeRetirada} {item.produto ? item.produto.unit : "-"}
+                      {item.quantidadeRetirada}{" "}
+                      {item.produto ? item.produto.unit : "-"}
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap text-center text-sm text-green-600">
-                      {item.quantidadeDevolvida || 0} {item.produto ? item.produto.unit : "-"}
+                      {item.quantidadeDevolvida || 0}{" "}
+                      {item.produto ? item.produto.unit : "-"}
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap text-center text-sm font-semibold">
-                      {quantidadeUtilizada} {item.produto ? item.produto.unit : "-"}
+                      {quantidadeUtilizada}{" "}
+                      {item.produto ? item.produto.unit : "-"}
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap text-right text-sm">
                       {formatCurrency(item.precoUnitarioNoMomento)}/

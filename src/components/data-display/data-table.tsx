@@ -34,7 +34,7 @@ const TableRow = ({
   <tr
     className={cn(
       "border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted",
-      className
+      className,
     )}
     {...props}
   />
@@ -47,7 +47,7 @@ const TableHead = ({
   <th
     className={cn(
       "h-12 px-4 text-left align-middle font-medium text-muted-foreground [&:has([role=checkbox])]:pr-0",
-      className
+      className,
     )}
     {...props}
   />
@@ -82,7 +82,7 @@ const Button = ({
         : "border border-input bg-background hover:bg-accent hover:text-accent-foreground",
       size === "sm" ? "h-9 px-3 text-xs" : "h-10 px-4 py-2",
       disabled && "opacity-50 cursor-not-allowed pointer-events-none",
-      className
+      className,
     )}
     disabled={disabled}
     {...props}
@@ -98,7 +98,7 @@ const Input = ({
   <input
     className={cn(
       "flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50",
-      className
+      className,
     )}
     {...props}
   />
@@ -152,8 +152,8 @@ export function DataTable<T extends Record<string, unknown>>({
   const filteredData = searchTerm
     ? data.filter((item) =>
         Object.values(item).some((value: unknown) =>
-          String(value).toLowerCase().includes(searchTerm.toLowerCase())
-        )
+          String(value).toLowerCase().includes(searchTerm.toLowerCase()),
+        ),
       )
     : data;
 
@@ -185,7 +185,7 @@ export function DataTable<T extends Record<string, unknown>>({
   const paginatedData = pagination
     ? sortedData.slice(
         (currentPage - 1) * itemsPerPage,
-        currentPage * itemsPerPage
+        currentPage * itemsPerPage,
       )
     : sortedData;
 

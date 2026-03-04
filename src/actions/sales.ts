@@ -60,7 +60,7 @@ export async function getSales(options?: {
       orderBy: { dataRetirada: "desc" },
     });
 
-  const serializedSales = sales.map((sale) => ({
+    const serializedSales = sales.map((sale) => ({
       ...sale,
       totalAmount: sale.totalAmount ? Number(sale.totalAmount) : null,
       dataRetirada: sale.dataRetirada.toISOString(),
@@ -143,10 +143,10 @@ export async function getSaleById(id: string) {
             updatedAt: sale.customer.updatedAt.toISOString(),
           }
         : {
-            id: '',
-            name: '',
-            email: '',
-            phone: '',
+            id: "",
+            name: "",
+            email: "",
+            phone: "",
           },
     };
 
@@ -175,7 +175,7 @@ export async function createSale(data: {
     });
 
     for (const item of data.items) {
-    const product = products.find((p) => p.id === item.produtoId);
+      const product = products.find((p) => p.id === item.produtoId);
       if (!product) {
         return { error: `Produto com ID ${item.produtoId} não encontrado` };
       }
@@ -202,54 +202,56 @@ export async function createSale(data: {
 
     const totalAmount = itemsWithPrices.reduce(
       (sum, item) => sum.add(item.subtotal),
-      new Decimal(0)
+      new Decimal(0),
     );
 
-    const sale = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
-      const newSale = await tx.sale.create({
-        data: {
-          customerId: data.customerId,
-          userId: data.userId,
-          dataRetirada: new Date(),
-          dataDevolucaoPrevista: new Date(data.dataDevolucaoPrevista),
-          status: "ATIVO",
-          totalAmount,
-          notes: data.notes,
-          itens: {
-            create: itemsWithPrices.map((item) => ({
-              produtoId: item.produtoId,
-              quantidadeRetirada: item.quantidadeRetirada,
-              quantidadeDevolvida: 0,
-              precoUnitarioNoMomento: item.precoUnitarioNoMomento,
-            })),
-          },
-        },
-        include: {
-          itens: {
-            include: {
-              produto: true,
+    const sale = await prisma.$transaction(
+      async (tx: Prisma.TransactionClient) => {
+        const newSale = await tx.sale.create({
+          data: {
+            customerId: data.customerId,
+            userId: data.userId,
+            dataRetirada: new Date(),
+            dataDevolucaoPrevista: new Date(data.dataDevolucaoPrevista),
+            status: "ATIVO",
+            totalAmount,
+            notes: data.notes,
+            itens: {
+              create: itemsWithPrices.map((item) => ({
+                produtoId: item.produtoId,
+                quantidadeRetirada: item.quantidadeRetirada,
+                quantidadeDevolvida: 0,
+                precoUnitarioNoMomento: item.precoUnitarioNoMomento,
+              })),
             },
           },
-          customer: true,
-          user: {
-            select: {
-              id: true,
-              name: true,
-              email: true,
+          include: {
+            itens: {
+              include: {
+                produto: true,
+              },
+            },
+            customer: true,
+            user: {
+              select: {
+                id: true,
+                name: true,
+                email: true,
+              },
             },
           },
-        },
-      });
-
-      for (const item of data.items) {
-        await tx.product.update({
-          where: { id: item.produtoId },
-          data: { currentStock: { decrement: item.quantidadeRetirada } },
         });
-      }
 
-      return newSale;
-    });
+        for (const item of data.items) {
+          await tx.product.update({
+            where: { id: item.produtoId },
+            data: { currentStock: { decrement: item.quantidadeRetirada } },
+          });
+        }
+
+        return newSale;
+      },
+    );
 
     const serializedSale = {
       ...sale,
@@ -313,7 +315,7 @@ export async function processReturn(data: {
     }
 
     for (const returnItem of data.items) {
-  const saleItem = sale.itens.find((item) => item.id === returnItem.itemId);
+      const saleItem = sale.itens.find((item) => item.id === returnItem.itemId);
       if (!saleItem) {
         return { error: `Item ${returnItem.itemId} não encontrado na venda` };
       }
@@ -328,77 +330,83 @@ export async function processReturn(data: {
       }
     }
 
-    const updatedSale = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
-      for (const returnItem of data.items) {
-  const saleItem = sale.itens.find((item) => item.id === returnItem.itemId);
-        if (!saleItem) continue;
+    const updatedSale = await prisma.$transaction(
+      async (tx: Prisma.TransactionClient) => {
+        for (const returnItem of data.items) {
+          const saleItem = sale.itens.find(
+            (item) => item.id === returnItem.itemId,
+          );
+          if (!saleItem) continue;
 
-        await tx.itensVenda.update({
-          where: { id: returnItem.itemId },
-          data: {
-            quantidadeDevolvida: {
-              increment: returnItem.quantidadeDevolvida,
+          await tx.itensVenda.update({
+            where: { id: returnItem.itemId },
+            data: {
+              quantidadeDevolvida: {
+                increment: returnItem.quantidadeDevolvida,
+              },
             },
-          },
+          });
+
+          await tx.product.update({
+            where: { id: saleItem.produtoId },
+            data: {
+              currentStock: { increment: returnItem.quantidadeDevolvida },
+            },
+          });
+        }
+
+        const updatedItems = await tx.itensVenda.findMany({
+          where: { saleId: data.saleId },
         });
 
-        await tx.product.update({
-          where: { id: saleItem.produtoId },
-          data: {
-            currentStock: { increment: returnItem.quantidadeDevolvida },
-          },
-        });
-      }
+        const newTotal = updatedItems.reduce((sum: Decimal, item) => {
+          const quantidadeUsada =
+            item.quantidadeRetirada - (item.quantidadeDevolvida || 0);
+          const itemTotal = new Decimal(item.precoUnitarioNoMomento).mul(
+            quantidadeUsada,
+          );
+          return sum.add(itemTotal);
+        }, new Decimal(0));
 
-      const updatedItems = await tx.itensVenda.findMany({
-        where: { saleId: data.saleId },
-      });
-
-  const newTotal = updatedItems.reduce((sum: Decimal, item) => {
-        const quantidadeUsada =
-          item.quantidadeRetirada - (item.quantidadeDevolvida || 0);
-        const itemTotal = new Decimal(item.precoUnitarioNoMomento).mul(
-          quantidadeUsada
+        const allReturned = updatedItems.every(
+          (item) => item.quantidadeDevolvida === item.quantidadeRetirada,
         );
-        return sum.add(itemTotal);
-      }, new Decimal(0));
 
-      const allReturned = updatedItems.every(
-        (item) => item.quantidadeDevolvida === item.quantidadeRetirada
-      );
-
-      const updatedSale = await tx.sale.update({
-        where: { id: data.saleId },
-        data: {
-          totalAmount: newTotal,
-          status: allReturned ? "CONCLUIDO" : sale.status,
-          notes: data.notes
-            ? `${sale.notes || ""}\n[Devolução] ${data.notes}`.trim()
-            : sale.notes,
-        },
-        include: {
-          itens: {
-            include: {
-              produto: true,
+        const updatedSale = await tx.sale.update({
+          where: { id: data.saleId },
+          data: {
+            totalAmount: newTotal,
+            status: allReturned ? "CONCLUIDO" : sale.status,
+            notes: data.notes
+              ? `${sale.notes || ""}\n[Devolução] ${data.notes}`.trim()
+              : sale.notes,
+          },
+          include: {
+            itens: {
+              include: {
+                produto: true,
+              },
+            },
+            customer: true,
+            user: {
+              select: {
+                id: true,
+                name: true,
+                email: true,
+              },
             },
           },
-          customer: true,
-          user: {
-            select: {
-              id: true,
-              name: true,
-              email: true,
-            },
-          },
-        },
-      });
+        });
 
-      return updatedSale;
-    });
+        return updatedSale;
+      },
+    );
 
     const serializedSale = {
       ...updatedSale,
-      totalAmount: updatedSale.totalAmount ? Number(updatedSale.totalAmount) : null,
+      totalAmount: updatedSale.totalAmount
+        ? Number(updatedSale.totalAmount)
+        : null,
       dataRetirada: updatedSale.dataRetirada.toISOString(),
       dataDevolucaoPrevista: updatedSale.dataDevolucaoPrevista.toISOString(),
       createdAt: updatedSale.createdAt.toISOString(),
@@ -530,11 +538,11 @@ export async function completeSale(id: string) {
       where: { saleId: id },
     });
 
-  const finalTotal = updatedItems.reduce((sum: Decimal, item) => {
+    const finalTotal = updatedItems.reduce((sum: Decimal, item) => {
       const quantidadeUsada =
         item.quantidadeRetirada - (item.quantidadeDevolvida || 0);
       const itemTotal = new Decimal(item.precoUnitarioNoMomento).mul(
-        quantidadeUsada
+        quantidadeUsada,
       );
       return sum.add(itemTotal);
     }, new Decimal(0));
@@ -575,26 +583,34 @@ export async function getSalesSummary(options?: {
         : {}),
     };
 
-    const [totalSales, activeSales, overdueSales, completedSales, totalRevenue] =
-      await Promise.all([
-        prisma.sale.count({ where: whereClause }),
-        prisma.sale.count({
-          where: { ...whereClause, status: "ATIVO" },
-        }),
-        prisma.sale.count({
-          where: {
-            ...whereClause,
-            status: "ATRASADO",
-          },
-        }),
-        prisma.sale.count({
-          where: { ...whereClause, status: "CONCLUIDO" },
-        }),
-        prisma.sale.aggregate({
-          where: { ...whereClause, status: { in: ["ATIVO", "ATRASADO", "CONCLUIDO"] } },
-          _sum: { totalAmount: true },
-        }),
-      ]);
+    const [
+      totalSales,
+      activeSales,
+      overdueSales,
+      completedSales,
+      totalRevenue,
+    ] = await Promise.all([
+      prisma.sale.count({ where: whereClause }),
+      prisma.sale.count({
+        where: { ...whereClause, status: "ATIVO" },
+      }),
+      prisma.sale.count({
+        where: {
+          ...whereClause,
+          status: "ATRASADO",
+        },
+      }),
+      prisma.sale.count({
+        where: { ...whereClause, status: "CONCLUIDO" },
+      }),
+      prisma.sale.aggregate({
+        where: {
+          ...whereClause,
+          status: { in: ["ATIVO", "ATRASADO", "CONCLUIDO"] },
+        },
+        _sum: { totalAmount: true },
+      }),
+    ]);
 
     const salesWithPendingReturns = await prisma.sale.findMany({
       where: {
@@ -606,13 +622,15 @@ export async function getSalesSummary(options?: {
       },
     });
 
-    const pendingReturns = salesWithPendingReturns.reduce((count: number, sale) => {
-      const hasUnreturnedItems = sale.itens.some(
-        (item) =>
-          (item.quantidadeDevolvida || 0) < item.quantidadeRetirada
-      );
-      return count + (hasUnreturnedItems ? 1 : 0);
-    }, 0);
+    const pendingReturns = salesWithPendingReturns.reduce(
+      (count: number, sale) => {
+        const hasUnreturnedItems = sale.itens.some(
+          (item) => (item.quantidadeDevolvida || 0) < item.quantidadeRetirada,
+        );
+        return count + (hasUnreturnedItems ? 1 : 0);
+      },
+      0,
+    );
 
     return {
       summary: {

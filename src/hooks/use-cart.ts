@@ -48,7 +48,7 @@ export function useCart(): UseCartReturn {
   const addItem = (newItem: Omit<CartItem, "id">) => {
     setItems((currentItems) => {
       const existingItemIndex = currentItems.findIndex(
-        (item) => item.productId === newItem.productId
+        (item) => item.productId === newItem.productId,
       );
 
       if (existingItemIndex >= 0) {
@@ -93,7 +93,7 @@ export function useCart(): UseCartReturn {
           return { ...item, quantity };
         }
         return item;
-      })
+      }),
     );
   };
 

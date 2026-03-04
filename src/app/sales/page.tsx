@@ -103,14 +103,18 @@ export default function SalesPage() {
     );
   };
 
-  const isOverdue = (dataDevolucaoPrevista: string | Date, status: SaleStatus) => {
+  const isOverdue = (
+    dataDevolucaoPrevista: string | Date,
+    status: SaleStatus,
+  ) => {
     if (status === "CONCLUIDO" || status === "CANCELADO") return false;
     return new Date(dataDevolucaoPrevista) < new Date();
   };
 
   const calculatePendingReturn = (itens: SaleItem[]) => {
     return itens.reduce((total, item) => {
-      const pendente = item.quantidadeRetirada - (item.quantidadeDevolvida || 0);
+      const pendente =
+        item.quantidadeRetirada - (item.quantidadeDevolvida || 0);
       return total + pendente;
     }, 0);
   };
@@ -155,9 +159,7 @@ export default function SalesPage() {
         <Link href="/" className="text-blue-600 hover:underline mr-4">
           ← Voltar
         </Link>
-        <h1 className="text-2xl font-bold text-gray-800">
-          Vendas e Aluguéis
-        </h1>
+        <h1 className="text-2xl font-bold text-gray-800">Vendas e Aluguéis</h1>
 
         <Link
           href="/sales/new"
@@ -284,7 +286,7 @@ export default function SalesPage() {
                   const pendingReturn = calculatePendingReturn(sale.itens);
                   const overdueStatus = isOverdue(
                     sale.dataDevolucaoPrevista,
-                    sale.status
+                    sale.status,
                   );
 
                   return (
@@ -376,7 +378,7 @@ export default function SalesPage() {
               <p className="text-lg font-semibold text-blue-600">
                 {
                   filteredSales.filter(
-                    (s) => s.status === "ATIVO" || s.status === "ATRASADO"
+                    (s) => s.status === "ATIVO" || s.status === "ATRASADO",
                   ).length
                 }
               </p>
@@ -393,8 +395,8 @@ export default function SalesPage() {
                 {formatCurrency(
                   filteredSales.reduce(
                     (sum, sale) => sum + Number(sale.totalAmount || 0),
-                    0
-                  )
+                    0,
+                  ),
                 )}
               </p>
             </div>

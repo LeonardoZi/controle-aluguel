@@ -9,7 +9,7 @@ export function cn(...inputs: ClassValue[]) {
 export function formatCurrency(
   value: Decimal | number | null | undefined,
   currency = "BRL",
-  locale = "pt-BR"
+  locale = "pt-BR",
 ): string {
   if (value === null || value === undefined) {
     return "-";
@@ -24,7 +24,7 @@ export function formatCurrency(
 export function formatDate(
   date: Date | string | null | undefined,
   locale = "pt-BR",
-  options?: Intl.DateTimeFormatOptions
+  options?: Intl.DateTimeFormatOptions,
 ): string {
   if (!date) {
     return "-";
@@ -38,7 +38,7 @@ export function formatDate(
   };
 
   return new Intl.DateTimeFormat(locale, defaultOptions).format(
-    typeof date === "string" ? new Date(date) : date
+    typeof date === "string" ? new Date(date) : date,
   );
 }
 
@@ -69,7 +69,7 @@ export function generateSKU(name: string, categoryPrefix = ""): string {
 
 export function debounce<F extends (...args: unknown[]) => void>(
   func: F,
-  wait: number
+  wait: number,
 ): (...args: Parameters<F>) => void {
   let timeoutId: ReturnType<typeof setTimeout> | undefined;
 
@@ -88,7 +88,7 @@ export function debounce<F extends (...args: unknown[]) => void>(
 }
 
 export function calculateTotal<
-  T extends { quantity: number; unitPrice?: number | Decimal }
+  T extends { quantity: number; unitPrice?: number | Decimal },
 >(items: T[]): number {
   return items.reduce((sum, item) => {
     const price = item.unitPrice ? Number(item.unitPrice) : 0;

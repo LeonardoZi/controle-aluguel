@@ -93,11 +93,12 @@ export default function ProcessReturnPage() {
         }
 
         const items = saleResult.sale.itens
-          .filter(item => !!item.produto)
+          .filter((item) => !!item.produto)
           .map((item) => {
             const quantidadeDevolvida = item.quantidadeDevolvida || 0;
-            const quantidadePendente = item.quantidadeRetirada - quantidadeDevolvida;
-            
+            const quantidadePendente =
+              item.quantidadeRetirada - quantidadeDevolvida;
+
             return {
               itemId: item.id,
               produto: item.produto,
@@ -108,15 +109,14 @@ export default function ProcessReturnPage() {
               precoUnitario: Number(item.precoUnitarioNoMomento),
             };
           });
-        
-        setReturnItems(items as ReturnItem[]);
 
+        setReturnItems(items as ReturnItem[]);
       } catch (err) {
         console.error("Erro ao carregar dados:", err);
         setError(
           err instanceof Error
             ? err.message
-            : "Ocorreu um erro ao carregar dados."
+            : "Ocorreu um erro ao carregar dados.",
         );
       } finally {
         setLoading(false);
@@ -134,11 +134,11 @@ export default function ProcessReturnPage() {
               ...item,
               quantidadeADevolver: Math.min(
                 Math.max(0, quantidade),
-                item.quantidadePendente
+                item.quantidadePendente,
               ),
             }
-          : item
-      )
+          : item,
+      ),
     );
   };
 
@@ -147,8 +147,8 @@ export default function ProcessReturnPage() {
       prev.map((item) =>
         item.itemId === itemId
           ? { ...item, quantidadeADevolver: item.quantidadePendente }
-          : item
-      )
+          : item,
+      ),
     );
   };
 
@@ -186,7 +186,7 @@ export default function ProcessReturnPage() {
     }
 
     const itemsToReturn = returnItems.filter(
-      (item) => item.quantidadeADevolver > 0
+      (item) => item.quantidadeADevolver > 0,
     );
 
     if (itemsToReturn.length === 0) {
@@ -218,7 +218,7 @@ export default function ProcessReturnPage() {
       setError(
         err instanceof Error
           ? err.message
-          : "Ocorreu um erro ao processar a devolução."
+          : "Ocorreu um erro ao processar a devolução.",
       );
     } finally {
       setSubmitting(false);
@@ -384,7 +384,7 @@ export default function ProcessReturnPage() {
                         onChange={(e) =>
                           handleQuantityChange(
                             item.itemId,
-                            parseFloat(e.target.value) || 0
+                            parseFloat(e.target.value) || 0,
                           )
                         }
                         className="w-24 px-2 py-1 border border-gray-300 rounded text-center"
@@ -393,7 +393,7 @@ export default function ProcessReturnPage() {
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap text-right text-sm font-medium">
                       {formatCurrency(
-                        item.quantidadeADevolver * item.precoUnitario
+                        item.quantidadeADevolver * item.precoUnitario,
                       )}
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap text-center">
@@ -438,7 +438,6 @@ export default function ProcessReturnPage() {
             </table>
           </div>
         </div>
-
 
         <div className="flex justify-end gap-4">
           <Link href="/sales">

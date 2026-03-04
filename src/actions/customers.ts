@@ -86,7 +86,7 @@ export async function updateCustomer(
     postalCode?: string;
     taxId?: string;
     isActive?: boolean;
-  }
+  },
 ) {
   try {
     const customer = await prisma.customer.update({

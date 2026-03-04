@@ -39,7 +39,7 @@ const Button = ({
         ? "bg-blue-600 text-white hover:bg-blue-700"
         : "border border-gray-300 hover:bg-gray-100",
       disabled && "opacity-50 cursor-not-allowed",
-      className
+      className,
     )}
     disabled={disabled}
     onClick={onClick}
@@ -230,7 +230,7 @@ export function ProductForm({
   suppliers,
 }: ProductFormProps) {
   const [imagePreview, setImagePreview] = useState<string | null>(
-    initialData?.imageUrl || null
+    initialData?.imageUrl || null,
   );
 
   const defaultValues: ProductFormValues = {

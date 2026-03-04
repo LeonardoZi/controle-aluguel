@@ -1,7 +1,10 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { CustomerForm, type CustomerFormValues } from "@/components/forms/customer-form";
+import {
+  CustomerForm,
+  type CustomerFormValues,
+} from "@/components/forms/customer-form";
 import { createCustomer } from "@/actions/customers";
 
 export default function NewCustomerPage() {

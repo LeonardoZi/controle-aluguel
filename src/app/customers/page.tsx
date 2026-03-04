@@ -57,25 +57,23 @@ export default function CustomersPage() {
           customer.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
           (customer.email &&
             customer.email.toLowerCase().includes(searchQuery.toLowerCase())) ||
-          (customer.phone && customer.phone.includes(searchQuery))
+          (customer.phone && customer.phone.includes(searchQuery)),
       )
     : customers;
 
   const handleDelete = async (customerId: string) => {
     setDeleting(true);
     const { error } = await deleteCustomer(customerId);
-    
+
     if (error) {
       alert(error);
     } else {
-      setCustomers(customers.filter(c => c.id !== customerId));
+      setCustomers(customers.filter((c) => c.id !== customerId));
     }
-    
+
     setDeleting(false);
     setDeleteConfirm(null);
   };
-
-
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -209,7 +207,8 @@ export default function CustomersPage() {
               Confirmar Exclusão
             </h3>
             <p className="text-gray-600 mb-6">
-              Tem certeza que deseja excluir este cliente? Esta ação não pode ser desfeita.
+              Tem certeza que deseja excluir este cliente? Esta ação não pode
+              ser desfeita.
             </p>
             <div className="flex justify-end space-x-4">
               <button

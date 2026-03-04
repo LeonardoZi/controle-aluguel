@@ -80,9 +80,7 @@ export default function NewSale() {
 
         const defaultReturnDate = new Date();
         defaultReturnDate.setDate(defaultReturnDate.getDate() + 7);
-        setDataDevolucaoPrevista(
-          defaultReturnDate.toISOString().split("T")[0]
-        );
+        setDataDevolucaoPrevista(defaultReturnDate.toISOString().split("T")[0]);
       } catch (err) {
         console.error("Erro ao carregar dados:", err);
         setError("Ocorreu um erro ao carregar dados.");
@@ -104,7 +102,7 @@ export default function NewSale() {
           setStockWarning(`Atenção: Produto sem estoque disponível!`);
         } else if (product.currentStock < quantity) {
           setStockWarning(
-            `Atenção: Apenas ${product.currentStock} ${product.unit} disponíveis!`
+            `Atenção: Apenas ${product.currentStock} ${product.unit} disponíveis!`,
           );
         } else {
           setStockWarning("");
@@ -133,13 +131,13 @@ export default function NewSale() {
 
     if (product.currentStock < quantity) {
       setError(
-        `Quantidade excede o estoque disponível (${product.currentStock} ${product.unit}).`
+        `Quantidade excede o estoque disponível (${product.currentStock} ${product.unit}).`,
       );
       return;
     }
 
     const existingItemIndex = items.findIndex(
-      (item) => item.produtoId === selectedProductId
+      (item) => item.produtoId === selectedProductId,
     );
 
     if (existingItemIndex >= 0) {
@@ -148,7 +146,7 @@ export default function NewSale() {
 
       if (product.currentStock < totalQuantity) {
         setError(
-          `Quantidade total excede o estoque disponível (${product.currentStock} ${product.unit}).`
+          `Quantidade total excede o estoque disponível (${product.currentStock} ${product.unit}).`,
         );
         return;
       }
@@ -246,7 +244,9 @@ export default function NewSale() {
     } catch (err: unknown) {
       console.error("Erro ao submeter formulário:", err);
       setError(
-        err instanceof Error ? err.message : "Ocorreu um erro ao criar a venda."
+        err instanceof Error
+          ? err.message
+          : "Ocorreu um erro ao criar a venda.",
       );
     } finally {
       setSubmitting(false);
@@ -502,8 +502,6 @@ export default function NewSale() {
               </table>
             </div>
           )}
-
-
         </div>
 
         <div className="flex justify-end gap-4">

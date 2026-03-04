@@ -12,11 +12,11 @@ export const Card = React.forwardRef<HTMLDivElement, CardProps>(
       className={cn(
         "rounded-lg border border-gray-200 bg-white shadow-sm",
         hoverable && "transition-shadow hover:shadow-md",
-        className
+        className,
       )}
       {...props}
     />
-  )
+  ),
 );
 Card.displayName = "Card";
 
@@ -29,7 +29,7 @@ export const CardHeader = React.forwardRef<HTMLDivElement, CardHeaderProps>(
       className={cn("flex flex-col p-6 pb-2", className)}
       {...props}
     />
-  )
+  ),
 );
 CardHeader.displayName = "CardHeader";
 
@@ -42,7 +42,7 @@ export const CardTitle = React.forwardRef<HTMLHeadingElement, CardTitleProps>(
       className={cn("font-semibold text-lg leading-tight", className)}
       {...props}
     />
-  )
+  ),
 );
 CardTitle.displayName = "CardTitle";
 
@@ -65,7 +65,7 @@ export type CardContentProps = React.HTMLAttributes<HTMLDivElement>;
 export const CardContent = React.forwardRef<HTMLDivElement, CardContentProps>(
   ({ className, ...props }, ref) => (
     <div ref={ref} className={cn("p-6 pt-0", className)} {...props} />
-  )
+  ),
 );
 CardContent.displayName = "CardContent";
 
@@ -78,6 +78,6 @@ export const CardFooter = React.forwardRef<HTMLDivElement, CardFooterProps>(
       className={cn("p-6 pt-0 flex items-center", className)}
       {...props}
     />
-  )
+  ),
 );
 CardFooter.displayName = "CardFooter";

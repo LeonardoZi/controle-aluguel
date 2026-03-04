@@ -21,9 +21,7 @@ export async function getProducts(options?: {
               ],
             }
           : {}),
-        ...(lowStock === true
-          ? { currentStock: { lte: 10 } }
-          : {}),
+        ...(lowStock === true ? { currentStock: { lte: 10 } } : {}),
       },
       orderBy: { name: "asc" },
     });
@@ -79,7 +77,9 @@ export async function getProductById(id: string) {
         precoUnitarioNoMomento: Number(item.precoUnitarioNoMomento),
         sale: {
           ...item.sale,
-          totalAmount: item.sale.totalAmount ? Number(item.sale.totalAmount) : null,
+          totalAmount: item.sale.totalAmount
+            ? Number(item.sale.totalAmount)
+            : null,
           dataRetirada: item.sale.dataRetirada.toISOString(),
           dataDevolucaoPrevista: item.sale.dataDevolucaoPrevista.toISOString(),
           createdAt: item.sale.createdAt.toISOString(),
@@ -149,7 +149,7 @@ export async function updateProduct(
     precoUnitario?: number | Decimal;
     currentStock?: number;
     unit?: string;
-  }
+  },
 ) {
   try {
     const existingProduct = await prisma.product.findUnique({
@@ -164,11 +164,15 @@ export async function updateProduct(
       where: { id },
       data: {
         ...(data.name !== undefined ? { name: data.name } : {}),
-        ...(data.description !== undefined ? { description: data.description } : {}),
+        ...(data.description !== undefined
+          ? { description: data.description }
+          : {}),
         ...(data.precoUnitario !== undefined
           ? { precoUnitario: new Decimal(data.precoUnitario.toString()) }
           : {}),
-        ...(data.currentStock !== undefined ? { currentStock: data.currentStock } : {}),
+        ...(data.currentStock !== undefined
+          ? { currentStock: data.currentStock }
+          : {}),
         ...(data.unit !== undefined ? { unit: data.unit } : {}),
       },
     });
@@ -189,10 +193,7 @@ export async function updateProduct(
   }
 }
 
-export async function adjustStock(
-  id: string,
-  quantity: number
-) {
+export async function adjustStock(id: string, quantity: number) {
   try {
     const product = await prisma.product.findUnique({
       where: { id },
