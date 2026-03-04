@@ -11,23 +11,8 @@ export default function NewCustomerPage() {
   const router = useRouter();
 
   const handleSubmit = async (data: CustomerFormValues) => {
-    console.log("📝 handleSubmit chamado com:", data);
     try {
-      const customerData = {
-        name: data.name,
-        taxId: data.document,
-        email: data.email,
-        phone: data.phone,
-        address: data.address.street,
-        number: data.address.number,
-        complement: data.address.complement,
-        neighborhood: data.address.neighborhood,
-        city: data.address.city,
-        state: data.address.state,
-        postalCode: data.address.zipCode,
-      };
-
-      const result = await createCustomer(customerData);
+      const result = await createCustomer(data);
 
       if (result.error) {
         alert(result.error);

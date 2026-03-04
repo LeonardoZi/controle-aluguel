@@ -1,52 +1,17 @@
 "use client";
 
-import { z } from "zod";
-import { useForm } from "@/hooks/use-form";
+import { useCallback, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { useState, useCallback } from "react";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Input } from "@/components/ui/input";
+import { useForm } from "@/hooks/use-form";
 import { cn } from "@/lib/utils";
+import {
+  customerSchema,
+  type CustomerFormValues,
+} from "@/validations/schema";
 
-const customerSchema = z.object({
-  name: z
-    .string()
-    .min(3, "Nome deve ter pelo menos 3 caracteres")
-    .max(100, "Nome não pode exceder 100 caracteres"),
-  email: z
-    .string()
-    .email("E-mail inválido")
-    .max(100, "E-mail não pode exceder 100 caracteres"),
-  phone: z
-    .string()
-    .min(10, "Telefone deve ter pelo menos 10 dígitos")
-    .max(15, "Telefone não pode exceder 15 caracteres")
-    .regex(/^\d+$/, "Telefone deve conter apenas números"),
-  document: z
-    .string()
-    .min(11, "CPF/CNPJ deve ter pelo menos 11 dígitos")
-    .max(18, "CPF/CNPJ não pode exceder 18 caracteres"),
-  address: z.object({
-    street: z.string().min(3, "Rua é obrigatória"),
-    number: z.string().min(1, "Número é obrigatório"),
-    complement: z.string().optional(),
-    neighborhood: z.string().min(2, "Bairro é obrigatório"),
-    city: z.string().min(2, "Cidade é obrigatória"),
-    state: z.string().min(2, "Estado é obrigatório"),
-    zipCode: z
-      .string()
-      .min(8, "CEP deve ter 8 dígitos")
-      .max(9, "CEP não pode exceder 9 caracteres"),
-  }),
-  notes: z
-    .string()
-    .max(500, "Observações não podem exceder 500 caracteres")
-    .optional(),
-  isActive: z.boolean().default(true),
-});
-
-export type CustomerFormValues = z.infer<typeof customerSchema>;
+export type { CustomerFormValues };
 
 interface CustomerFormProps {
   initialData?: Partial<CustomerFormValues>;
@@ -65,42 +30,26 @@ export function CustomerForm({
     name: "",
     email: "",
     phone: "",
-    document: "",
-    address: {
-      street: "",
-      number: "",
-      complement: "",
-      neighborhood: "",
-      city: "",
-      state: "",
-      zipCode: "",
-    },
-    notes: "",
+    taxId: "",
+    address: "",
+    number: "",
+    complement: "",
+    neighborhood: "",
+    city: "",
+    state: "",
+    postalCode: "",
     isActive: true,
     ...initialData,
   };
 
   const [isFetchingCep, setIsFetchingCep] = useState(false);
   const [cepError, setCepError] = useState<string | null>(null);
-  const [localCep, setLocalCep] = useState(defaultValues.address.zipCode || "");
-
-  useState(() => {
-    if (initialData?.address?.zipCode) {
-      setLocalCep(initialData.address.zipCode);
-    }
-  });
+  const [localCep, setLocalCep] = useState(defaultValues.postalCode || "");
 
   const form = useForm<CustomerFormValues>({
     initialValues: defaultValues,
-    validationSchema: customerSchema as z.ZodType<CustomerFormValues>,
-    onSubmit: async (values) => {
-      console.log("✅ Form validation passed! Submitting:", values);
-      try {
-        await onSubmit(values);
-      } catch (error) {
-        console.error("❌ Error in onSubmit:", error);
-      }
-    },
+    validationSchema: customerSchema,
+    onSubmit,
   });
 
   const searchCep = useCallback(
@@ -116,26 +65,20 @@ export function CustomerForm({
       setCepError(null);
 
       try {
-        const response = await fetch(
-          `https://viacep.com.br/ws/${cepNumbers}/json/`,
-        );
+        const response = await fetch(`https://viacep.com.br/ws/${cepNumbers}/json/`);
         const data = await response.json();
 
         if (data.erro) {
           setCepError("CEP não encontrado");
-        } else {
-          const updatedAddress = {
-            ...form.values.address,
-            zipCode: cep,
-            street: data.logradouro || "",
-            neighborhood: data.bairro || "",
-            city: data.localidade || "",
-            state: data.uf || "",
-          };
-          form.setValue("address", updatedAddress);
-          setLocalCep(cep);
-          setCepError(null);
+          return;
         }
+
+        form.setValue("postalCode", cep);
+        form.setValue("address", data.logradouro || "");
+        form.setValue("neighborhood", data.bairro || "");
+        form.setValue("city", data.localidade || "");
+        form.setValue("state", data.uf || "");
+        setCepError(null);
       } catch (error) {
         console.error("Erro ao buscar CEP:", error);
         setCepError("Erro ao buscar CEP. Tente novamente");
@@ -148,59 +91,37 @@ export function CustomerForm({
 
   const handleCepChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
-
     setLocalCep(value);
+    form.setValue("postalCode", value);
 
     const numbers = value.replace(/\D/g, "");
     if (numbers.length === 8) {
-      searchCep(value);
+      void searchCep(value);
     }
   };
 
-  const handleAddressChange =
-    (field: keyof CustomerFormValues["address"]) =>
-    (e: React.ChangeEvent<HTMLInputElement>) => {
-      form.setValue("address", {
-        ...form.values.address,
-        [field]: e.target.value,
-      });
-    };
-
   const handleFieldChange =
-    (field: keyof Omit<CustomerFormValues, "address" | "isActive">) =>
-    (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    (
+      field: Exclude<
+        keyof CustomerFormValues,
+        "isActive" | "postalCode"
+      >,
+    ) =>
+    (e: React.ChangeEvent<HTMLInputElement>) => {
       form.setValue(field, e.target.value);
     };
 
-  type AddressField = keyof CustomerFormValues["address"];
-
-  const hasAddressFieldError = (field: AddressField): boolean => {
-    return !!(
-      form.touched.address &&
-      typeof form.touched.address === "object" &&
-      form.touched.address[field] &&
-      form.errors.address &&
-      typeof form.errors.address === "object" &&
-      form.errors.address[field]
-    );
-  };
-
-  const getAddressFieldError = (field: AddressField): string => {
-    if (form.errors.address && typeof form.errors.address === "object") {
-      const error = form.errors.address[field];
-      return error !== undefined && error !== null ? String(error) : "";
-    }
-    return "";
-  };
+  const fieldError = (field: keyof CustomerFormValues) =>
+    form.touched[field] && form.errors[field] ? String(form.errors[field]) : "";
 
   return (
     <form onSubmit={form.handleSubmit} className="space-y-6">
       <div className="space-y-4">
         <h3 className="text-lg font-medium">Informações Básicas</h3>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           <div>
-            <label htmlFor="name" className="block text-sm font-medium mb-1">
+            <label htmlFor="name" className="mb-1 block text-sm font-medium">
               Nome Completo / Razão Social *
             </label>
             <Input
@@ -209,84 +130,68 @@ export function CustomerForm({
               value={form.values.name}
               onChange={handleFieldChange("name")}
               onBlur={form.handleBlur}
-              error={form.touched.name && form.errors.name}
               placeholder="Digite o nome completo"
-              className={cn(
-                form.touched.name && form.errors.name && "border-red-500",
-              )}
+              className={cn(fieldError("name") && "border-red-500")}
             />
-            {form.touched.name && form.errors.name && (
-              <p className="mt-1 text-sm text-red-500">{form.errors.name}</p>
+            {fieldError("name") && (
+              <p className="mt-1 text-sm text-red-500">{fieldError("name")}</p>
             )}
           </div>
 
           <div>
-            <label htmlFor="email" className="block text-sm font-medium mb-1">
-              E-mail *
+            <label htmlFor="email" className="mb-1 block text-sm font-medium">
+              E-mail
             </label>
             <Input
               id="email"
               name="email"
               type="email"
-              value={form.values.email}
+              value={form.values.email ?? ""}
               onChange={handleFieldChange("email")}
               onBlur={form.handleBlur}
               placeholder="email@exemplo.com"
-              className={cn(
-                form.touched.email && form.errors.email && "border-red-500",
-              )}
+              className={cn(fieldError("email") && "border-red-500")}
             />
-            {form.touched.email && form.errors.email && (
-              <p className="mt-1 text-sm text-red-500">{form.errors.email}</p>
+            {fieldError("email") && (
+              <p className="mt-1 text-sm text-red-500">{fieldError("email")}</p>
             )}
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           <div>
-            <label
-              htmlFor="document"
-              className="block text-sm font-medium mb-1"
-            >
-              CPF/CNPJ *
+            <label htmlFor="taxId" className="mb-1 block text-sm font-medium">
+              CPF/CNPJ
             </label>
             <Input
-              id="document"
-              name="document"
-              value={form.values.document}
-              onChange={handleFieldChange("document")}
+              id="taxId"
+              name="taxId"
+              value={form.values.taxId ?? ""}
+              onChange={handleFieldChange("taxId")}
               onBlur={form.handleBlur}
               placeholder="000.000.000-00"
-              className={cn(
-                form.touched.document &&
-                  form.errors.document &&
-                  "border-red-500",
-              )}
+              className={cn(fieldError("taxId") && "border-red-500")}
             />
-            {form.touched.document && form.errors.document && (
-              <p className="mt-1 text-sm text-red-500">
-                {form.errors.document}
-              </p>
+            {fieldError("taxId") && (
+              <p className="mt-1 text-sm text-red-500">{fieldError("taxId")}</p>
             )}
           </div>
 
           <div>
-            <label htmlFor="phone" className="block text-sm font-medium mb-1">
-              Telefone *
+            <label htmlFor="phone" className="mb-1 block text-sm font-medium">
+              Telefone
             </label>
             <Input
               id="phone"
               name="phone"
-              value={form.values.phone}
+              value={form.values.phone ?? ""}
               onChange={handleFieldChange("phone")}
               onBlur={form.handleBlur}
               placeholder="(00) 00000-0000"
-              className={cn(
-                form.touched.phone && form.errors.phone && "border-red-500",
-              )}
+              className={cn(fieldError("phone") && "border-red-500")}
             />
-            {form.touched.phone && form.errors.phone && (
-              <p className="mt-1 text-sm text-red-500">{form.errors.phone}</p>
+            {fieldError("phone") && (
+              <p className="mt-1 text-sm text-red-500">{fieldError("phone")}</p>
             )}
           </div>
         </div>
@@ -295,232 +200,163 @@ export function CustomerForm({
       <div className="space-y-4">
         <h3 className="text-lg font-medium">Endereço</h3>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <label
-              htmlFor="address.zipCode"
-              className="block text-sm font-medium mb-1"
-            >
-              CEP *
-            </label>
-            <input
-              id="address.zipCode"
-              name="address.zipCode"
-              type="text"
-              inputMode="numeric"
-              value={localCep || ""}
-              onChange={handleCepChange}
-              onBlur={(e) => {
-                const newAddress = { ...form.values.address };
-                newAddress.zipCode = localCep;
-                form.setValue("address", newAddress);
-                form.handleBlur(e);
-              }}
-              placeholder="00000-000"
-              disabled={isFetchingCep}
-              maxLength={9}
-              className={cn(
-                "flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50",
-                hasAddressFieldError("zipCode") && "border-red-500",
-              )}
-            />
-            {isFetchingCep && (
-              <p className="mt-1 text-sm text-blue-500">Buscando endereço...</p>
-            )}
-            {cepError && (
-              <p className="mt-1 text-sm text-red-500">{cepError}</p>
-            )}
-            {hasAddressFieldError("zipCode") && !cepError && (
-              <p className="mt-1 text-sm text-red-500">
-                {getAddressFieldError("zipCode")}
-              </p>
-            )}
-          </div>
+        <div>
+          <label htmlFor="postalCode" className="mb-1 block text-sm font-medium">
+            CEP
+          </label>
+          <Input
+            id="postalCode"
+            name="postalCode"
+            type="text"
+            inputMode="numeric"
+            value={localCep}
+            onChange={handleCepChange}
+            onBlur={(e) => {
+              form.handleBlur(e);
+              form.setValue("postalCode", localCep);
+            }}
+            placeholder="00000-000"
+            disabled={isFetchingCep}
+            maxLength={9}
+            className={cn(fieldError("postalCode") && "border-red-500")}
+          />
+          {isFetchingCep && (
+            <p className="mt-1 text-sm text-blue-500">Buscando endereço...</p>
+          )}
+          {cepError && <p className="mt-1 text-sm text-red-500">{cepError}</p>}
+          {!cepError && fieldError("postalCode") && (
+            <p className="mt-1 text-sm text-red-500">{fieldError("postalCode")}</p>
+          )}
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           <div>
-            <label
-              htmlFor="address.street"
-              className="block text-sm font-medium mb-1"
-            >
-              Rua/Avenida *
+            <label htmlFor="address" className="mb-1 block text-sm font-medium">
+              Rua/Avenida
             </label>
             <Input
-              id="address.street"
-              name="address.street"
-              value={form.values.address.street}
-              onChange={handleAddressChange("street")}
+              id="address"
+              name="address"
+              value={form.values.address ?? ""}
+              onChange={handleFieldChange("address")}
               onBlur={form.handleBlur}
               placeholder="Nome da rua"
-              className={cn(hasAddressFieldError("street") && "border-red-500")}
+              className={cn(fieldError("address") && "border-red-500")}
             />
-            {hasAddressFieldError("street") && (
-              <p className="mt-1 text-sm text-red-500">
-                {getAddressFieldError("street")}
-              </p>
+            {fieldError("address") && (
+              <p className="mt-1 text-sm text-red-500">{fieldError("address")}</p>
             )}
           </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label
-                htmlFor="address.number"
-                className="block text-sm font-medium mb-1"
-              >
-                Número *
+              <label htmlFor="number" className="mb-1 block text-sm font-medium">
+                Número
               </label>
               <Input
-                id="address.number"
-                name="address.number"
-                value={form.values.address.number}
-                onChange={handleAddressChange("number")}
+                id="number"
+                name="number"
+                value={form.values.number ?? ""}
+                onChange={handleFieldChange("number")}
                 onBlur={form.handleBlur}
                 placeholder="Número"
-                className={cn(
-                  hasAddressFieldError("number") && "border-red-500",
-                )}
+                className={cn(fieldError("number") && "border-red-500")}
               />
-              {hasAddressFieldError("number") && (
-                <p className="mt-1 text-sm text-red-500">
-                  {getAddressFieldError("number")}
-                </p>
+              {fieldError("number") && (
+                <p className="mt-1 text-sm text-red-500">{fieldError("number")}</p>
               )}
             </div>
 
             <div>
-              <label
-                htmlFor="address.complement"
-                className="block text-sm font-medium mb-1"
-              >
+              <label htmlFor="complement" className="mb-1 block text-sm font-medium">
                 Complemento
               </label>
               <Input
-                id="address.complement"
-                name="address.complement"
-                value={form.values.address.complement}
-                onChange={handleAddressChange("complement")}
+                id="complement"
+                name="complement"
+                value={form.values.complement ?? ""}
+                onChange={handleFieldChange("complement")}
                 onBlur={form.handleBlur}
-                placeholder="Apto, Bloco, etc."
+                placeholder="Apto, bloco, etc."
+                className={cn(fieldError("complement") && "border-red-500")}
               />
+              {fieldError("complement") && (
+                <p className="mt-1 text-sm text-red-500">{fieldError("complement")}</p>
+              )}
             </div>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           <div>
-            <label
-              htmlFor="address.neighborhood"
-              className="block text-sm font-medium mb-1"
-            >
-              Bairro *
+            <label htmlFor="neighborhood" className="mb-1 block text-sm font-medium">
+              Bairro
             </label>
             <Input
-              id="address.neighborhood"
-              name="address.neighborhood"
-              value={form.values.address.neighborhood}
-              onChange={handleAddressChange("neighborhood")}
+              id="neighborhood"
+              name="neighborhood"
+              value={form.values.neighborhood ?? ""}
+              onChange={handleFieldChange("neighborhood")}
               onBlur={form.handleBlur}
               placeholder="Bairro"
-              className={cn(
-                hasAddressFieldError("neighborhood") && "border-red-500",
-              )}
+              className={cn(fieldError("neighborhood") && "border-red-500")}
             />
-            {hasAddressFieldError("neighborhood") && (
-              <p className="mt-1 text-sm text-red-500">
-                {getAddressFieldError("neighborhood")}
-              </p>
+            {fieldError("neighborhood") && (
+              <p className="mt-1 text-sm text-red-500">{fieldError("neighborhood")}</p>
             )}
           </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label
-                htmlFor="address.city"
-                className="block text-sm font-medium mb-1"
-              >
-                Cidade *
+              <label htmlFor="city" className="mb-1 block text-sm font-medium">
+                Cidade
               </label>
               <Input
-                id="address.city"
-                name="address.city"
-                value={form.values.address.city}
-                onChange={handleAddressChange("city")}
+                id="city"
+                name="city"
+                value={form.values.city ?? ""}
+                onChange={handleFieldChange("city")}
                 onBlur={form.handleBlur}
                 placeholder="Cidade"
-                className={cn(hasAddressFieldError("city") && "border-red-500")}
+                className={cn(fieldError("city") && "border-red-500")}
               />
-              {hasAddressFieldError("city") && (
-                <p className="mt-1 text-sm text-red-500">
-                  {getAddressFieldError("city")}
-                </p>
+              {fieldError("city") && (
+                <p className="mt-1 text-sm text-red-500">{fieldError("city")}</p>
               )}
             </div>
 
             <div>
-              <label
-                htmlFor="address.state"
-                className="block text-sm font-medium mb-1"
-              >
-                Estado *
+              <label htmlFor="state" className="mb-1 block text-sm font-medium">
+                Estado
               </label>
               <Input
-                id="address.state"
-                name="address.state"
-                value={form.values.address.state}
-                onChange={handleAddressChange("state")}
+                id="state"
+                name="state"
+                value={form.values.state ?? ""}
+                onChange={handleFieldChange("state")}
                 onBlur={form.handleBlur}
                 placeholder="UF"
                 maxLength={2}
-                className={cn(
-                  hasAddressFieldError("state") && "border-red-500",
-                )}
+                className={cn(fieldError("state") && "border-red-500")}
               />
-              {hasAddressFieldError("state") && (
-                <p className="mt-1 text-sm text-red-500">
-                  {getAddressFieldError("state")}
-                </p>
+              {fieldError("state") && (
+                <p className="mt-1 text-sm text-red-500">{fieldError("state")}</p>
               )}
             </div>
           </div>
         </div>
       </div>
 
-      <div className="space-y-4">
-        <div>
-          <label htmlFor="notes" className="block text-sm font-medium mb-1">
-            Observações
-          </label>
-          <Textarea
-            id="notes"
-            name="notes"
-            value={form.values.notes || ""}
-            onChange={handleFieldChange("notes")}
-            onBlur={form.handleBlur}
-            placeholder="Informações adicionais sobre o cliente"
-            rows={3}
-            className={cn(
-              form.touched.notes && form.errors.notes && "border-red-500",
-            )}
-          />
-          {form.touched.notes && form.errors.notes && (
-            <p className="mt-1 text-sm text-red-500">{form.errors.notes}</p>
-          )}
-        </div>
-
-        <div className="flex items-center space-x-2">
-          <Checkbox
-            id="isActive"
-            name="isActive"
-            checked={form.values.isActive}
-            onCheckedChange={(checked) =>
-              form.setValue("isActive", checked as boolean)
-            }
-          />
-          <label htmlFor="isActive" className="text-sm font-medium">
-            Cliente ativo
-          </label>
-        </div>
+      <div className="flex items-center space-x-2">
+        <Checkbox
+          id="isActive"
+          name="isActive"
+          checked={form.values.isActive}
+          onCheckedChange={(checked) => form.setValue("isActive", checked)}
+        />
+        <label htmlFor="isActive" className="text-sm font-medium">
+          Cliente ativo
+        </label>
       </div>
 
       <div className="flex justify-end space-x-4 pt-4">

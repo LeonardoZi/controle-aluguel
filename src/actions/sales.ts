@@ -4,13 +4,13 @@ import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 import { Decimal } from "@prisma/client/runtime/library";
 import type { Prisma } from "@prisma/client";
+import {
+  createSaleSchema,
+  processReturnSchema,
+  type CreateSaleInput,
+  type ProcessReturnInput,
+} from "@/validations/schema";
 type SaleStatus = "ATIVO" | "ATRASADO" | "CONCLUIDO" | "CANCELADO";
-
-type CreateSaleItemInput = {
-  produtoId: string;
-  quantidadeRetirada: number;
-  precoUnitarioNoMomento?: number | Decimal;
-};
 
 export async function getSales(options?: {
   status?: SaleStatus;
@@ -157,24 +157,25 @@ export async function getSaleById(id: string) {
   }
 }
 
-export async function createSale(data: {
-  customerId: string;
-  userId: string;
-  dataDevolucaoPrevista: Date | string;
-  notes?: string;
-  items: CreateSaleItemInput[];
-}) {
+export async function createSale(data: CreateSaleInput) {
   try {
-    if (!data.items.length) {
+    const parsed = createSaleSchema.safeParse(data);
+    if (!parsed.success) {
+      return { error: parsed.error.issues[0]?.message || "Dados inválidos" };
+    }
+
+    const payload = parsed.data;
+
+    if (!payload.items.length) {
       return { error: "A venda precisa ter pelo menos um item" };
     }
 
-    const productIds = data.items.map((item) => item.produtoId);
+    const productIds = payload.items.map((item) => item.produtoId);
     const products = await prisma.product.findMany({
       where: { id: { in: productIds } },
     });
 
-    for (const item of data.items) {
+    for (const item of payload.items) {
       const product = products.find((p) => p.id === item.produtoId);
       if (!product) {
         return { error: `Produto com ID ${item.produtoId} não encontrado` };
@@ -187,7 +188,7 @@ export async function createSale(data: {
       }
     }
 
-    const itemsWithPrices = data.items.map((item) => {
+    const itemsWithPrices = payload.items.map((item) => {
       const product = products.find((p) => p.id === item.produtoId);
       const precoUnitario = item.precoUnitarioNoMomento
         ? new Decimal(item.precoUnitarioNoMomento.toString())
@@ -209,13 +210,13 @@ export async function createSale(data: {
       async (tx: Prisma.TransactionClient) => {
         const newSale = await tx.sale.create({
           data: {
-            customerId: data.customerId,
-            userId: data.userId,
+            customerId: payload.customerId,
+            userId: payload.userId,
             dataRetirada: new Date(),
-            dataDevolucaoPrevista: new Date(data.dataDevolucaoPrevista),
+            dataDevolucaoPrevista: payload.dataDevolucaoPrevista,
             status: "ATIVO",
             totalAmount,
-            notes: data.notes,
+            notes: payload.notes,
             itens: {
               create: itemsWithPrices.map((item) => ({
                 produtoId: item.produtoId,
@@ -242,7 +243,7 @@ export async function createSale(data: {
           },
         });
 
-        for (const item of data.items) {
+        for (const item of payload.items) {
           await tx.product.update({
             where: { id: item.produtoId },
             data: { currentStock: { decrement: item.quantidadeRetirada } },
@@ -285,18 +286,17 @@ export async function createSale(data: {
   }
 }
 
-export async function processReturn(data: {
-  saleId: string;
-  userId: string;
-  items: {
-    itemId: string;
-    quantidadeDevolvida: number;
-  }[];
-  notes?: string;
-}) {
+export async function processReturn(data: ProcessReturnInput) {
   try {
+    const parsed = processReturnSchema.safeParse(data);
+    if (!parsed.success) {
+      return { error: parsed.error.issues[0]?.message || "Dados inválidos" };
+    }
+
+    const payload = parsed.data;
+
     const sale = await prisma.sale.findUnique({
-      where: { id: data.saleId },
+      where: { id: payload.saleId },
       include: {
         itens: {
           include: {
@@ -314,7 +314,7 @@ export async function processReturn(data: {
       return { error: "Não é possível processar devolução para esta venda" };
     }
 
-    for (const returnItem of data.items) {
+    for (const returnItem of payload.items) {
       const saleItem = sale.itens.find((item) => item.id === returnItem.itemId);
       if (!saleItem) {
         return { error: `Item ${returnItem.itemId} não encontrado na venda` };
@@ -332,7 +332,7 @@ export async function processReturn(data: {
 
     const updatedSale = await prisma.$transaction(
       async (tx: Prisma.TransactionClient) => {
-        for (const returnItem of data.items) {
+        for (const returnItem of payload.items) {
           const saleItem = sale.itens.find(
             (item) => item.id === returnItem.itemId,
           );
@@ -356,7 +356,7 @@ export async function processReturn(data: {
         }
 
         const updatedItems = await tx.itensVenda.findMany({
-          where: { saleId: data.saleId },
+          where: { saleId: payload.saleId },
         });
 
         const newTotal = updatedItems.reduce((sum: Decimal, item) => {
@@ -373,12 +373,12 @@ export async function processReturn(data: {
         );
 
         const updatedSale = await tx.sale.update({
-          where: { id: data.saleId },
+          where: { id: payload.saleId },
           data: {
             totalAmount: newTotal,
             status: allReturned ? "CONCLUIDO" : sale.status,
-            notes: data.notes
-              ? `${sale.notes || ""}\n[Devolução] ${data.notes}`.trim()
+            notes: payload.notes
+              ? `${sale.notes || ""}\n[Devolução] ${payload.notes}`.trim()
               : sale.notes,
           },
           include: {
@@ -431,7 +431,7 @@ export async function processReturn(data: {
     };
 
     revalidatePath("/sales");
-    revalidatePath(`/sales/${data.saleId}`);
+    revalidatePath(`/sales/${payload.saleId}`);
 
     return { sale: serializedSale };
   } catch (error) {

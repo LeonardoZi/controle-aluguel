@@ -3,6 +3,12 @@
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 import { Decimal } from "@prisma/client/runtime/library";
+import {
+  createProductSchema,
+  updateProductSchema,
+  type CreateProductInput,
+  type UpdateProductInput,
+} from "@/validations/schema";
 
 export async function getProducts(options?: {
   query?: string;
@@ -100,29 +106,20 @@ export async function getProductById(id: string) {
   }
 }
 
-export async function createProduct(data: {
-  name: string;
-  description?: string;
-  precoUnitario: number;
-  currentStock?: number;
-  unit?: string;
-}) {
+export async function createProduct(data: CreateProductInput) {
   try {
-    if (!data.name) {
-      return { error: "Nome é obrigatório" };
-    }
-
-    if (!data.precoUnitario || data.precoUnitario <= 0) {
-      return { error: "Preço unitário deve ser maior que zero" };
+    const parsed = createProductSchema.safeParse(data);
+    if (!parsed.success) {
+      return { error: parsed.error.issues[0]?.message || "Dados inválidos" };
     }
 
     const product = await prisma.product.create({
       data: {
-        name: data.name,
-        description: data.description || null,
-        precoUnitario: new Decimal(data.precoUnitario),
-        currentStock: data.currentStock || 0,
-        unit: data.unit || "un",
+        name: parsed.data.name,
+        description: parsed.data.description,
+        precoUnitario: new Decimal(parsed.data.precoUnitario),
+        currentStock: parsed.data.currentStock,
+        unit: parsed.data.unit || "un",
       },
     });
 
@@ -143,15 +140,14 @@ export async function createProduct(data: {
 
 export async function updateProduct(
   id: string,
-  data: {
-    name?: string;
-    description?: string;
-    precoUnitario?: number | Decimal;
-    currentStock?: number;
-    unit?: string;
-  },
+  data: UpdateProductInput,
 ) {
   try {
+    const parsed = updateProductSchema.safeParse(data);
+    if (!parsed.success) {
+      return { error: parsed.error.issues[0]?.message || "Dados inválidos" };
+    }
+
     const existingProduct = await prisma.product.findUnique({
       where: { id },
     });
@@ -163,17 +159,19 @@ export async function updateProduct(
     const product = await prisma.product.update({
       where: { id },
       data: {
-        ...(data.name !== undefined ? { name: data.name } : {}),
-        ...(data.description !== undefined
-          ? { description: data.description }
+        ...(parsed.data.name !== undefined ? { name: parsed.data.name } : {}),
+        ...(parsed.data.description !== undefined
+          ? { description: parsed.data.description }
           : {}),
-        ...(data.precoUnitario !== undefined
-          ? { precoUnitario: new Decimal(data.precoUnitario.toString()) }
+        ...(parsed.data.precoUnitario !== undefined
+          ? {
+              precoUnitario: new Decimal(parsed.data.precoUnitario.toString()),
+            }
           : {}),
-        ...(data.currentStock !== undefined
-          ? { currentStock: data.currentStock }
+        ...(parsed.data.currentStock !== undefined
+          ? { currentStock: parsed.data.currentStock }
           : {}),
-        ...(data.unit !== undefined ? { unit: data.unit } : {}),
+        ...(parsed.data.unit !== undefined ? { unit: parsed.data.unit } : {}),
       },
     });
 

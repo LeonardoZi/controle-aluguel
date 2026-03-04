@@ -2,6 +2,12 @@
 
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
+import {
+  createCustomerSchema,
+  updateCustomerSchema,
+  type CreateCustomerInput,
+  type UpdateCustomerInput,
+} from "@/validations/schema";
 
 export async function getCustomers(query?: string) {
   try {
@@ -45,22 +51,15 @@ export async function getCustomerById(id: string) {
   }
 }
 
-export async function createCustomer(data: {
-  name: string;
-  email?: string;
-  phone?: string;
-  address?: string;
-  number?: string;
-  complement?: string;
-  neighborhood?: string;
-  city?: string;
-  state?: string;
-  postalCode?: string;
-  taxId?: string;
-}) {
+export async function createCustomer(data: CreateCustomerInput) {
   try {
+    const parsed = createCustomerSchema.safeParse(data);
+    if (!parsed.success) {
+      return { error: parsed.error.issues[0]?.message || "Dados inválidos" };
+    }
+
     const customer = await prisma.customer.create({
-      data,
+      data: parsed.data,
     });
 
     revalidatePath("/customers");
@@ -73,25 +72,17 @@ export async function createCustomer(data: {
 
 export async function updateCustomer(
   id: string,
-  data: {
-    name?: string;
-    email?: string;
-    phone?: string;
-    address?: string;
-    number?: string;
-    complement?: string;
-    neighborhood?: string;
-    city?: string;
-    state?: string;
-    postalCode?: string;
-    taxId?: string;
-    isActive?: boolean;
-  },
+  data: UpdateCustomerInput,
 ) {
   try {
+    const parsed = updateCustomerSchema.safeParse(data);
+    if (!parsed.success) {
+      return { error: parsed.error.issues[0]?.message || "Dados inválidos" };
+    }
+
     const customer = await prisma.customer.update({
       where: { id },
-      data,
+      data: parsed.data,
     });
 
     revalidatePath("/customers");

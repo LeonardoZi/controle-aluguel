@@ -25,28 +25,19 @@ export default function EditCustomerPage() {
       if (error) {
         setError(error);
       } else if (customer) {
-        const customerData = customer as typeof customer & {
-          number?: string | null;
-          complement?: string | null;
-          neighborhood?: string | null;
-        };
-
         setInitialData({
-          name: customerData.name,
-          email: customerData.email || "",
-          phone: customerData.phone || "",
-          document: customerData.taxId || "",
-          address: {
-            street: customerData.address || "",
-            number: customerData.number || "",
-            complement: customerData.complement || "",
-            neighborhood: customerData.neighborhood || "",
-            city: customerData.city || "",
-            state: customerData.state || "",
-            zipCode: customerData.postalCode || "",
-          },
-          notes: "",
-          isActive: customerData.isActive,
+          name: customer.name,
+          email: customer.email,
+          phone: customer.phone,
+          taxId: customer.taxId,
+          address: customer.address,
+          number: customer.number,
+          complement: customer.complement,
+          neighborhood: customer.neighborhood,
+          city: customer.city,
+          state: customer.state,
+          postalCode: customer.postalCode,
+          isActive: customer.isActive,
         });
       }
       setLoading(false);
@@ -56,35 +47,16 @@ export default function EditCustomerPage() {
   }, [customerId]);
 
   const handleSubmit = async (data: CustomerFormValues) => {
-    console.log("📝 handleSubmit chamado com:", data);
     try {
-      const customerData = {
-        name: data.name,
-        taxId: data.document,
-        email: data.email,
-        phone: data.phone,
-        address: data.address.street,
-        number: data.address.number,
-        complement: data.address.complement,
-        neighborhood: data.address.neighborhood,
-        city: data.address.city,
-        state: data.address.state,
-        postalCode: data.address.zipCode,
-        isActive: data.isActive,
-      };
-
-      console.log("🔄 Atualizando cliente:", customerData);
-      const result = await updateCustomer(customerId, customerData);
+      const result = await updateCustomer(customerId, data);
 
       if (result.error) {
-        console.error("❌ Erro ao atualizar:", result.error);
         alert(result.error);
       } else {
-        console.log("✅ Cliente atualizado com sucesso");
         router.push("/customers");
       }
     } catch (err) {
-      console.error("❌ Erro na atualização:", err);
+      console.error("Erro na atualização:", err);
       alert("Ocorreu um erro ao atualizar o cliente. Tente novamente.");
     }
   };
