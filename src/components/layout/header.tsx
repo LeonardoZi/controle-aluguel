@@ -115,7 +115,7 @@ export function Header({ sidebarOpen, toggleSidebar }: HeaderProps) {
   return (
     <header
       className={cn(
-        "h-16 bg-white flex items-center justify-between px-4 fixed top-0 w-full z-30 transition-shadow duration-300",
+        "fixed top-0 z-30 flex h-16 w-full items-center justify-between bg-white px-4 transition-shadow duration-300 dark:bg-slate-950",
         scrolled ? "shadow-md" : "",
         sidebarOpen ? "md:ml-0" : "md:ml-0 md:pl-20",
       )}
@@ -123,7 +123,7 @@ export function Header({ sidebarOpen, toggleSidebar }: HeaderProps) {
       <div className="flex items-center">
         <button
           onClick={toggleSidebar}
-          className="mr-4 p-2 rounded-md hover:bg-gray-100"
+          className="mr-4 rounded-md p-2 hover:bg-gray-100 dark:hover:bg-slate-800"
           aria-label="Toggle sidebar"
         >
           <MenuIcon />
@@ -137,16 +137,16 @@ export function Header({ sidebarOpen, toggleSidebar }: HeaderProps) {
           <input
             type="text"
             placeholder="Buscar..."
-            className="pl-10 pr-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 w-64"
+            className="w-64 rounded-lg border border-gray-300 bg-white py-2 pl-10 pr-4 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-slate-700 dark:bg-slate-900 dark:text-gray-100"
           />
-          <div className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400">
+          <div className="absolute left-3 top-1/2 -translate-y-1/2 transform text-gray-400 dark:text-gray-500">
             <SearchIcon />
           </div>
         </div>
       </div>
 
       <div className="flex items-center gap-4">
-        <button className="relative p-2 rounded-full hover:bg-gray-100">
+        <button className="relative rounded-full p-2 hover:bg-gray-100 dark:hover:bg-slate-800">
           <BellIcon />
           {notifications > 0 && (
             <span className="absolute top-0 right-0 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
@@ -155,16 +155,19 @@ export function Header({ sidebarOpen, toggleSidebar }: HeaderProps) {
           )}
         </button>
 
-        <Link href="/settings" className="p-2 rounded-full hover:bg-gray-100">
+        <Link
+          href="/settings"
+          className="rounded-full p-2 hover:bg-gray-100 dark:hover:bg-slate-800"
+        >
           <SettingsIcon />
         </Link>
 
         <div className="flex items-center gap-2 ml-2">
           <Link href="/profile" className="flex items-center gap-2">
-            <div className="w-9 h-9 rounded-full bg-blue-100 flex items-center justify-center">
+            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-blue-100 dark:bg-blue-900/60">
               <UserIcon />
             </div>
-            <span className="hidden md:inline text-sm font-medium">
+            <span className="hidden text-sm font-medium md:inline">
               Administrador
             </span>
           </Link>

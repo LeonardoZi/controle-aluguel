@@ -256,7 +256,7 @@ export function Sidebar({ open }: SidebarProps) {
   return (
     <aside
       className={cn(
-        "fixed left-0 top-16 h-full bg-white border-r border-gray-200 z-20 transition-all duration-300 ease-in-out",
+        "fixed left-0 top-16 z-20 h-full border-r border-gray-200 bg-white transition-all duration-300 ease-in-out dark:border-slate-800 dark:bg-slate-950",
         open ? "w-64" : "w-0 md:w-16",
         "overflow-hidden",
       )}
@@ -272,9 +272,8 @@ export function Sidebar({ open }: SidebarProps) {
                     item.submenu ? () => toggleExpand(item.href) : undefined
                   }
                   className={cn(
-                    "flex items-center px-3 py-2.5 text-sm rounded-md gap-3 hover:bg-gray-100 transition-colors",
-                    isActive(item.href) &&
-                      "bg-blue-50 text-blue-600 font-medium",
+                    "flex items-center gap-3 rounded-md px-3 py-2.5 text-sm transition-colors hover:bg-gray-100 dark:hover:bg-slate-800",
+                    isActive(item.href) && "bg-blue-50 font-medium text-blue-600 dark:bg-blue-900/50",
                     !open && "justify-center md:px-3",
                   )}
                 >
@@ -308,7 +307,7 @@ export function Sidebar({ open }: SidebarProps) {
                       <Link
                         href={subitem.href}
                         className={cn(
-                          "flex items-center px-3 py-2 text-sm rounded-md hover:bg-gray-100 transition-colors",
+                          "flex items-center rounded-md px-3 py-2 text-sm transition-colors hover:bg-gray-100 dark:hover:bg-slate-800",
                           isActive(subitem.href) && "text-blue-600 font-medium",
                         )}
                       >

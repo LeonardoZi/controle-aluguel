@@ -13,8 +13,9 @@ export const Table = React.forwardRef<HTMLTableElement, TableProps>(
         ref={ref}
         className={cn(
           "w-full caption-bottom text-sm",
-          hoverable && "[&_tr:hover]:bg-gray-50",
-          striped && "[&_tr:nth-child(even)]:bg-gray-50",
+          hoverable && "[&_tr:hover]:bg-gray-50 dark:[&_tr:hover]:bg-gray-800",
+          striped &&
+            "[&_tr:nth-child(even)]:bg-gray-50 dark:[&_tr:nth-child(even)]:bg-gray-800/60",
           className,
         )}
         {...props}
@@ -32,7 +33,7 @@ export const TableHeader = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <thead
     ref={ref}
-    className={cn("bg-gray-50 text-gray-700", className)}
+    className={cn("bg-gray-50 text-gray-700 dark:bg-gray-800 dark:text-gray-200", className)}
     {...props}
   />
 ));
@@ -51,8 +52,9 @@ export const TableBody = React.forwardRef<
     ref={ref}
     className={cn(
       "[&_tr:last-child]:border-0",
-      striped && "[&_tr:nth-child(even)]:bg-gray-50",
-      hoverable && "[&_tr:hover]:bg-gray-50",
+      striped &&
+        "[&_tr:nth-child(even)]:bg-gray-50 dark:[&_tr:nth-child(even)]:bg-gray-800/60",
+      hoverable && "[&_tr:hover]:bg-gray-50 dark:[&_tr:hover]:bg-gray-800",
       className,
     )}
     {...props}
@@ -68,7 +70,10 @@ export const TableFooter = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <tfoot
     ref={ref}
-    className={cn("bg-gray-50 font-medium text-gray-900", className)}
+    className={cn(
+      "bg-gray-50 font-medium text-gray-900 dark:bg-gray-800 dark:text-gray-100",
+      className,
+    )}
     {...props}
   />
 ));
@@ -83,8 +88,8 @@ export const TableRow = React.forwardRef<HTMLTableRowElement, TableRowProps>(
     <tr
       ref={ref}
       className={cn(
-        "border-b border-gray-200 transition-colors",
-        selected && "bg-blue-50",
+        "border-b border-gray-200 transition-colors dark:border-gray-800",
+        selected && "bg-blue-50 dark:bg-blue-950/50",
         className,
       )}
       {...props}
@@ -102,7 +107,7 @@ export const TableHead = React.forwardRef<HTMLTableCellElement, TableHeadProps>(
     <th
       ref={ref}
       className={cn(
-        "h-12 px-4 text-left align-middle font-medium text-gray-500",
+        "h-12 px-4 text-left align-middle font-medium text-gray-500 dark:text-gray-300",
         sortable && "cursor-pointer select-none",
         className,
       )}
@@ -129,7 +134,7 @@ export const TableCaption = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <caption
     ref={ref}
-    className={cn("mt-4 text-sm text-gray-500", className)}
+    className={cn("mt-4 text-sm text-gray-500 dark:text-gray-400", className)}
     {...props}
   />
 ));

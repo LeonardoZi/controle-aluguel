@@ -15,7 +15,7 @@ export function AppLayout({ children }: AppLayoutProps) {
   const toggleSidebar = () => setSidebarOpen((prev) => !prev);
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 dark:bg-slate-950">
       <Header sidebarOpen={sidebarOpen} toggleSidebar={toggleSidebar} />
 
       <div className="flex h-[calc(100vh-64px)]">

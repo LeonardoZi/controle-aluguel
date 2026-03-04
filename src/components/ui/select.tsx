@@ -17,7 +17,7 @@ export const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
         {label && (
           <label
             htmlFor={props.id}
-            className="block text-sm font-medium text-gray-700"
+            className="block text-sm font-medium text-gray-700 dark:text-gray-300"
           >
             {label}
           </label>
@@ -25,7 +25,8 @@ export const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
 
         <select
           className={cn(
-            "block w-full rounded-md border border-gray-300 bg-white py-2 pl-3 pr-10 text-sm",
+            "block w-full rounded-md border border-gray-300 bg-white py-2 pl-3 pr-10 text-sm text-gray-900",
+            "dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100",
             "focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent",
             "disabled:cursor-not-allowed disabled:opacity-50",
             error && "border-red-500 focus:ring-red-500",
@@ -38,7 +39,7 @@ export const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
         </select>
 
         {helperText && !error && (
-          <p className="mt-1 text-sm text-gray-500">{helperText}</p>
+          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">{helperText}</p>
         )}
 
         {error && props.id && (

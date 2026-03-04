@@ -29,18 +29,26 @@ export function StatusBadge({
   size = "md",
 }: StatusBadgeProps) {
   const statusStyles: Record<StatusType, string> = {
-    in: "bg-green-100 text-green-800 border-green-200",
-    low: "bg-amber-100 text-amber-800 border-amber-200",
-    out: "bg-red-100 text-red-800 border-red-200",
-    pending: "bg-blue-100 text-blue-800 border-blue-200",
-    processing: "bg-purple-100 text-purple-800 border-purple-200",
-    shipped: "bg-indigo-100 text-indigo-800 border-indigo-200",
-    delivered: "bg-teal-100 text-teal-800 border-teal-200",
-    cancelled: "bg-gray-100 text-gray-800 border-gray-200",
-    success: "bg-green-100 text-green-800 border-green-200",
-    warning: "bg-amber-100 text-amber-800 border-amber-200",
-    error: "bg-red-100 text-red-800 border-red-200",
-    info: "bg-blue-100 text-blue-800 border-blue-200",
+    in: "border-green-200 bg-green-100 text-green-800 dark:border-green-900 dark:bg-green-900/40 dark:text-green-200",
+    low: "border-amber-200 bg-amber-100 text-amber-800 dark:border-amber-900 dark:bg-amber-900/40 dark:text-amber-200",
+    out: "border-red-200 bg-red-100 text-red-800 dark:border-red-900 dark:bg-red-900/40 dark:text-red-200",
+    pending:
+      "border-blue-200 bg-blue-100 text-blue-800 dark:border-blue-900 dark:bg-blue-900/40 dark:text-blue-200",
+    processing:
+      "border-purple-200 bg-purple-100 text-purple-800 dark:border-purple-900 dark:bg-purple-900/40 dark:text-purple-200",
+    shipped:
+      "border-indigo-200 bg-indigo-100 text-indigo-800 dark:border-indigo-900 dark:bg-indigo-900/40 dark:text-indigo-200",
+    delivered:
+      "border-teal-200 bg-teal-100 text-teal-800 dark:border-teal-900 dark:bg-teal-900/40 dark:text-teal-200",
+    cancelled:
+      "border-gray-200 bg-gray-100 text-gray-800 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200",
+    success:
+      "border-green-200 bg-green-100 text-green-800 dark:border-green-900 dark:bg-green-900/40 dark:text-green-200",
+    warning:
+      "border-amber-200 bg-amber-100 text-amber-800 dark:border-amber-900 dark:bg-amber-900/40 dark:text-amber-200",
+    error:
+      "border-red-200 bg-red-100 text-red-800 dark:border-red-900 dark:bg-red-900/40 dark:text-red-200",
+    info: "border-blue-200 bg-blue-100 text-blue-800 dark:border-blue-900 dark:bg-blue-900/40 dark:text-blue-200",
   };
 
   const sizeStyles = {
