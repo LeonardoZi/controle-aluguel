@@ -1,22 +1,12 @@
 "use server";
 
-import { prisma } from "@/lib/prisma";
+import { listUsers } from "@/server/users/queries";
 
 export async function getUsers() {
   try {
-    const users = await prisma.user.findMany({
-      where: { isActive: true },
-      select: {
-        id: true,
-        name: true,
-        email: true,
-      },
-      orderBy: { name: "asc" },
-    });
-
+    const users = await listUsers();
     return { users };
-  } catch (error) {
-    console.error("Error fetching users:", error);
+  } catch {
     return { error: "Falha ao buscar usuários" };
   }
 }

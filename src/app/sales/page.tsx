@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { Decimal } from "@prisma/client/runtime/library";
-import { getSales, updateOverdueSales } from "@/actions/sales";
+import { getSales } from "@/actions/sales";
 
 type SaleStatus = "ATIVO" | "ATRASADO" | "CONCLUIDO" | "CANCELADO";
 
@@ -58,8 +58,6 @@ export default function SalesPage() {
     const fetchSales = async () => {
       setLoading(true);
       try {
-        await updateOverdueSales();
-
         const result = await getSales();
 
         if (result.error) {

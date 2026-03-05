@@ -1,9 +1,7 @@
-"use client";
-
 import Link from "next/link";
-import { type ReactNode, useCallback, useEffect, useState } from "react";
-import { getLowStockProducts } from "@/actions/products";
-import { getSales, getSalesSummary, updateOverdueSales } from "@/actions/sales";
+import { type ReactNode } from "react";
+import { getDashboardOverview } from "@/server/dashboard/queries";
+import type { SaleStatus } from "@/server/contracts/v1/sales";
 import { Badge, type BadgeVariant } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -22,63 +20,6 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { cn } from "@/lib/utils";
-
-interface Product {
-  id: string;
-  name: string;
-  currentStock: number;
-  unit: string;
-  precoUnitario: number;
-}
-
-interface Customer {
-  id: string;
-  name: string;
-  email: string | null;
-  phone: string | null;
-}
-
-interface RentalItem {
-  id: string;
-  produtoId: string;
-  quantidadeRetirada: number;
-  quantidadeDevolvida: number | null;
-  precoUnitarioNoMomento: number;
-  produto: {
-    id: string;
-    name: string;
-    unit: string;
-  };
-}
-
-interface Rental {
-  id: string;
-  customerId: string;
-  userId: string;
-  dataRetirada: string;
-  dataDevolucaoPrevista: string;
-  status: "ATIVO" | "ATRASADO" | "CONCLUIDO" | "CANCELADO";
-  totalAmount: number | null;
-  notes: string | null;
-  createdAt: string;
-  updatedAt: string;
-  customer: Customer;
-  user: {
-    id: string;
-    name: string;
-    email: string;
-  };
-  itens: RentalItem[];
-}
-
-interface DashboardSummary {
-  totalSales: number;
-  activeSales: number;
-  overdueSales: number;
-  completedSales: number;
-  totalRevenue: number;
-  pendingReturns: number;
-}
 
 interface SummaryCard {
   title: string;
@@ -101,7 +42,7 @@ interface QuickAction {
 }
 
 const statusConfig: Record<
-  Rental["status"],
+  SaleStatus,
   {
     label: string;
     variant: BadgeVariant;
@@ -202,371 +143,314 @@ const quickActions: QuickAction[] = [
   },
 ];
 
-export default function DashboardPage() {
-  const [summary, setSummary] = useState<DashboardSummary | null>(null);
-  const [recentRentals, setRecentRentals] = useState<Rental[]>([]);
-  const [overdueRentals, setOverdueRentals] = useState<Rental[]>([]);
-  const [lowStockProducts, setLowStockProducts] = useState<Product[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
+function formatCurrency(value: number) {
+  return new Intl.NumberFormat("pt-BR", {
+    style: "currency",
+    currency: "BRL",
+  }).format(value);
+}
 
-  const fetchDashboardData = useCallback(async () => {
-    setLoading(true);
-    setError("");
+function formatDate(dateValue: string | Date): string {
+  const date = typeof dateValue === "string" ? new Date(dateValue) : dateValue;
+  return new Intl.DateTimeFormat("pt-BR").format(date);
+}
 
-    try {
-      const endDate = new Date();
-      const startDate = new Date();
-      startDate.setDate(endDate.getDate() - 30);
+function renderStatusBadge(status: SaleStatus) {
+  const config = statusConfig[status];
+  return <Badge variant={config.variant}>{config.label}</Badge>;
+}
 
-      await updateOverdueSales();
+export default async function DashboardPage() {
+  try {
+    const overview = await getDashboardOverview();
 
-      const summaryResult = await getSalesSummary({ startDate, endDate });
-      if (summaryResult.error) {
-        setError(summaryResult.error);
-      } else if (summaryResult.summary) {
-        setSummary(summaryResult.summary);
-      }
-
-      const recentResult = await getSales({ startDate, endDate });
-      if (recentResult.sales) {
-        setRecentRentals(recentResult.sales as Rental[]);
-      }
-
-      const overdueResult = await getSales({ status: "ATRASADO" });
-      if (overdueResult.sales) {
-        setOverdueRentals(overdueResult.sales as Rental[]);
-      }
-
-      const productsResult = await getLowStockProducts();
-      if (productsResult.products) {
-        setLowStockProducts(productsResult.products as Product[]);
-      }
-    } catch (err) {
-      console.error("Erro ao carregar dados do dashboard:", err);
-      setError("Ocorreu um erro ao carregar os dados. Tente novamente.");
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    fetchDashboardData();
-  }, [fetchDashboardData]);
-
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat("pt-BR", {
-      style: "currency",
-      currency: "BRL",
-    }).format(value);
-  };
-
-  const formatDate = (dateValue: string | Date): string => {
-    const date =
-      typeof dateValue === "string" ? new Date(dateValue) : dateValue;
-    return new Intl.DateTimeFormat("pt-BR").format(date);
-  };
-
-  const summaryCards: SummaryCard[] = [
-    {
-      title: "Locações Ativas",
-      value: summary?.activeSales ?? 0,
-      valueClassName: "text-blue-600",
-      href: "/sales?status=ATIVO",
-      linkLabel: "Ver locações ativas",
-    },
-    {
-      title: "Locações Atrasadas",
-      value: summary?.overdueSales ?? 0,
-      valueClassName: "text-red-600",
-      href: "/sales?status=ATRASADO",
-      linkLabel: "Ver locações atrasadas",
-    },
-    {
-      title: "Receita (30 dias)",
-      value: formatCurrency(summary?.totalRevenue ?? 0),
-      valueClassName: "text-2xl text-green-600",
-      caption: `${summary?.completedSales ?? 0} locações concluídas`,
-    },
-    {
-      title: "Estoque Baixo",
-      value: lowStockProducts.length,
-      valueClassName: "text-amber-600",
-      href: "/inventory",
-      linkLabel: "Ver inventário",
-      badge: {
-        label: lowStockProducts.length > 0 ? "Atenção" : "OK",
-        variant: lowStockProducts.length > 0 ? "warning" : "success",
+    const summaryCards: SummaryCard[] = [
+      {
+        title: "Locações Ativas",
+        value: overview.summary.activeSales,
+        valueClassName: "text-blue-600",
+        href: "/sales?status=ATIVO",
+        linkLabel: "Ver locações ativas",
       },
-    },
-  ];
+      {
+        title: "Locações Atrasadas",
+        value: overview.summary.overdueSales,
+        valueClassName: "text-red-600",
+        href: "/sales?status=ATRASADO",
+        linkLabel: "Ver locações atrasadas",
+      },
+      {
+        title: "Receita (30 dias)",
+        value: formatCurrency(overview.summary.totalRevenue),
+        valueClassName: "text-2xl text-green-600",
+        caption: `${overview.summary.completedSales} locações concluídas`,
+      },
+      {
+        title: "Estoque Baixo",
+        value: overview.lowStockProducts.length,
+        valueClassName: "text-amber-600",
+        href: "/inventory",
+        linkLabel: "Ver inventário",
+        badge: {
+          label: overview.lowStockProducts.length > 0 ? "Atenção" : "OK",
+          variant: overview.lowStockProducts.length > 0 ? "warning" : "success",
+        },
+      },
+    ];
 
-  const renderStatusBadge = (status: Rental["status"]) => {
-    const config = statusConfig[status];
-    return <Badge variant={config.variant}>{config.label}</Badge>;
-  };
+    return (
+      <div className="container mx-auto space-y-8 px-4 py-8">
+        <header className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <Button variant="ghost" asChild className="w-fit">
+            <Link href="/">← Voltar</Link>
+          </Button>
 
-  return (
-    <div className="container mx-auto space-y-8 px-4 py-8">
-      <header className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <Button variant="ghost" asChild className="w-fit">
-          <Link href="/">← Voltar</Link>
-        </Button>
-
-        <div className="space-y-1 text-left sm:text-right">
-          <h1 className="text-2xl font-bold text-gray-900">
-            Dashboard - Sistema de Locação
-          </h1>
-          <p className="text-sm text-gray-500">Resumo operacional dos últimos 30 dias.</p>
-        </div>
-      </header>
-
-      {loading ? (
-        <div className="space-y-6">
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
-            {Array.from({ length: 4 }).map((_, index) => (
-              <Card key={index}>
-                <CardHeader className="space-y-2">
-                  <div className="h-4 w-24 animate-pulse rounded bg-gray-100" />
-                  <div className="h-8 w-20 animate-pulse rounded bg-gray-200" />
-                </CardHeader>
-                <CardContent>
-                  <div className="h-4 w-36 animate-pulse rounded bg-gray-100" />
-                </CardContent>
-              </Card>
-            ))}
+          <div className="space-y-1 text-left sm:text-right">
+            <h1 className="text-2xl font-bold text-gray-900">
+              Dashboard - Sistema de Locação
+            </h1>
+            <p className="text-sm text-gray-500">
+              Resumo operacional dos últimos 30 dias.
+            </p>
           </div>
+        </header>
 
+        <section className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+          {summaryCards.map((card) => (
+            <Card key={card.title}>
+              <CardHeader className="space-y-1 pb-3">
+                <CardDescription>{card.title}</CardDescription>
+                <CardTitle className={cn("text-3xl", card.valueClassName)}>
+                  {card.value}
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-2">
+                {card.caption ? (
+                  <p className="text-xs text-gray-500">{card.caption}</p>
+                ) : null}
+
+                {card.badge ? (
+                  <Badge variant={card.badge.variant}>{card.badge.label}</Badge>
+                ) : null}
+
+                {card.href && card.linkLabel ? (
+                  <Button variant="link" asChild className="h-auto p-0 text-blue-600">
+                    <Link href={card.href}>{card.linkLabel} →</Link>
+                  </Button>
+                ) : null}
+              </CardContent>
+            </Card>
+          ))}
+        </section>
+
+        <section className="grid grid-cols-1 gap-6 xl:grid-cols-2">
           <Card>
-            <CardContent className="py-10 text-center text-gray-500">
-              Carregando dados do dashboard...
+            <CardHeader>
+              <CardTitle>Locações Recentes</CardTitle>
+              <CardDescription>Últimos registros dos últimos 30 dias.</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {overview.recentRentals.length > 0 ? (
+                <Table className="min-w-[560px]">
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Cliente</TableHead>
+                      <TableHead>Retirada</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead className="text-right">Valor</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {overview.recentRentals.map((rental) => (
+                      <TableRow key={rental.id}>
+                        <TableCell>
+                          <Link
+                            href={`/sales/${rental.id}`}
+                            className="font-medium text-blue-600 hover:underline"
+                          >
+                            {rental.customer.name}
+                          </Link>
+                        </TableCell>
+                        <TableCell>{formatDate(rental.dataRetirada)}</TableCell>
+                        <TableCell>{renderStatusBadge(rental.status)}</TableCell>
+                        <TableCell className="text-right font-medium">
+                          {formatCurrency(rental.totalAmount ?? 0)}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              ) : (
+                <p className="py-4 text-center text-sm text-gray-500">
+                  Nenhuma locação registrada nos últimos 30 dias.
+                </p>
+              )}
             </CardContent>
           </Card>
-        </div>
-      ) : error ? (
-        <Card className="border-red-200 bg-red-50">
-          <CardHeader>
-            <CardTitle className="text-red-700">Falha ao carregar dashboard</CardTitle>
-            <CardDescription className="text-red-600">{error}</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Button
-              variant="outline"
-              onClick={fetchDashboardData}
-              className="border-red-200 text-red-700 hover:bg-red-100 hover:text-red-700"
-            >
-              Tentar novamente
-            </Button>
-          </CardContent>
-        </Card>
-      ) : (
-        <>
-          <section className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
-            {summaryCards.map((card) => (
-              <Card key={card.title}>
-                <CardHeader className="space-y-1 pb-3">
-                  <CardDescription>{card.title}</CardDescription>
-                  <CardTitle className={cn("text-3xl", card.valueClassName)}>
-                    {card.value}
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-2">
-                  {card.caption ? (
-                    <p className="text-xs text-gray-500">{card.caption}</p>
-                  ) : null}
 
-                  {card.badge ? (
-                    <Badge variant={card.badge.variant}>{card.badge.label}</Badge>
-                  ) : null}
-
-                  {card.href && card.linkLabel ? (
-                    <Button variant="link" asChild className="h-auto p-0 text-blue-600">
-                      <Link href={card.href}>{card.linkLabel} →</Link>
-                    </Button>
-                  ) : null}
-                </CardContent>
-              </Card>
-            ))}
-          </section>
-
-          <section className="grid grid-cols-1 gap-6 xl:grid-cols-2">
-            <Card>
-              <CardHeader>
-                <CardTitle>Locações Recentes</CardTitle>
-                <CardDescription>Últimos registros dos últimos 30 dias.</CardDescription>
-              </CardHeader>
-              <CardContent>
-                {recentRentals.length > 0 ? (
-                  <Table className="min-w-[560px]">
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Cliente</TableHead>
-                        <TableHead>Retirada</TableHead>
-                        <TableHead>Status</TableHead>
-                        <TableHead className="text-right">Valor</TableHead>
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-red-600">Locações Atrasadas</CardTitle>
+              <CardDescription>Demandam retorno imediato.</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {overview.overdueRentals.length > 0 ? (
+                <Table className="min-w-[520px]">
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Cliente</TableHead>
+                      <TableHead>Devolução</TableHead>
+                      <TableHead className="text-right">Valor</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {overview.overdueRentals.map((rental) => (
+                      <TableRow key={rental.id}>
+                        <TableCell>
+                          <Link
+                            href={`/sales/${rental.id}`}
+                            className="font-medium text-blue-600 hover:underline"
+                          >
+                            {rental.customer.name}
+                          </Link>
+                        </TableCell>
+                        <TableCell className="font-medium text-red-600">
+                          {formatDate(rental.dataDevolucaoPrevista)}
+                        </TableCell>
+                        <TableCell className="text-right font-medium">
+                          {formatCurrency(rental.totalAmount ?? 0)}
+                        </TableCell>
                       </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {recentRentals.slice(0, 5).map((rental) => (
-                        <TableRow key={rental.id}>
-                          <TableCell>
-                            <Link
-                              href={`/sales/${rental.id}`}
-                              className="font-medium text-blue-600 hover:underline"
-                            >
-                              {rental.customer.name}
-                            </Link>
-                          </TableCell>
-                          <TableCell>{formatDate(rental.dataRetirada)}</TableCell>
-                          <TableCell>{renderStatusBadge(rental.status)}</TableCell>
-                          <TableCell className="text-right font-medium">
-                            {formatCurrency(rental.totalAmount ?? 0)}
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                ) : (
-                  <p className="py-4 text-center text-sm text-gray-500">
-                    Nenhuma locação registrada nos últimos 30 dias.
-                  </p>
-                )}
-              </CardContent>
-            </Card>
+                    ))}
+                  </TableBody>
+                </Table>
+              ) : (
+                <p className="py-4 text-center text-sm text-green-600">
+                  Nenhuma locação atrasada no momento.
+                </p>
+              )}
+            </CardContent>
+          </Card>
+        </section>
 
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-red-600">Locações Atrasadas</CardTitle>
-                <CardDescription>Demandam retorno imediato.</CardDescription>
-              </CardHeader>
-              <CardContent>
-                {overdueRentals.length > 0 ? (
-                  <Table className="min-w-[520px]">
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Cliente</TableHead>
-                        <TableHead>Devolução</TableHead>
-                        <TableHead className="text-right">Valor</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {overdueRentals.slice(0, 5).map((rental) => (
-                        <TableRow key={rental.id}>
-                          <TableCell>
-                            <Link
-                              href={`/sales/${rental.id}`}
-                              className="font-medium text-blue-600 hover:underline"
-                            >
-                              {rental.customer.name}
-                            </Link>
-                          </TableCell>
-                          <TableCell className="font-medium text-red-600">
-                            {formatDate(rental.dataDevolucaoPrevista)}
-                          </TableCell>
-                          <TableCell className="text-right font-medium">
-                            {formatCurrency(rental.totalAmount ?? 0)}
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                ) : (
-                  <p className="py-4 text-center text-sm text-green-600">
-                    Nenhuma locação atrasada no momento.
-                  </p>
-                )}
-              </CardContent>
-            </Card>
-          </section>
-
-          {lowStockProducts.length > 0 ? (
-            <section>
-              <Card>
-                <CardHeader>
-                  <CardTitle>Produtos com Estoque Baixo</CardTitle>
-                  <CardDescription>Itens que precisam de reposição.</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <Table className="min-w-[640px]">
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Produto</TableHead>
-                        <TableHead className="text-center">Estoque Atual</TableHead>
-                        <TableHead className="text-center">Unidade</TableHead>
-                        <TableHead className="text-right">Preço Unit.</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {lowStockProducts.slice(0, 5).map((product) => (
-                        <TableRow key={product.id}>
-                          <TableCell>
-                            <Link
-                              href={`/inventory/${product.id}`}
-                              className="font-medium text-blue-600 hover:underline"
-                            >
-                              {product.name}
-                            </Link>
-                          </TableCell>
-                          <TableCell className="text-center font-medium">
-                            <span
-                              className={cn(
-                                product.currentStock === 0
-                                  ? "text-red-600"
-                                  : "text-amber-600",
-                              )}
-                            >
-                              {product.currentStock}
-                            </span>
-                          </TableCell>
-                          <TableCell className="text-center text-gray-600">
-                            {product.unit}
-                          </TableCell>
-                          <TableCell className="text-right">
-                            {formatCurrency(product.precoUnitario)}
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </CardContent>
-              </Card>
-            </section>
-          ) : null}
-
+        {overview.lowStockProducts.length > 0 ? (
           <section>
             <Card>
               <CardHeader>
-                <CardTitle>Ações Rápidas</CardTitle>
-                <CardDescription>Atalhos para as operações mais usadas.</CardDescription>
+                <CardTitle>Produtos com Estoque Baixo</CardTitle>
+                <CardDescription>Itens que precisam de reposição.</CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-                  {quickActions.map((action) => (
-                    <Button
-                      key={action.href}
-                      variant="outline"
-                      asChild
-                      className="h-auto flex-col gap-2 rounded-lg border-gray-200 p-4 text-center hover:bg-gray-50"
-                    >
-                      <Link href={action.href}>
-                        <span
-                          className={cn(
-                            "flex h-10 w-10 items-center justify-center rounded-full",
-                            action.iconClassName,
-                          )}
-                        >
-                          {action.icon}
-                        </span>
-                        <span className="text-sm font-medium">{action.label}</span>
-                      </Link>
-                    </Button>
-                  ))}
-                </div>
+                <Table className="min-w-[640px]">
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Produto</TableHead>
+                      <TableHead className="text-center">Estoque Atual</TableHead>
+                      <TableHead className="text-center">Unidade</TableHead>
+                      <TableHead className="text-right">Preço Unit.</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {overview.lowStockProducts.map((product) => (
+                      <TableRow key={product.id}>
+                        <TableCell>
+                          <Link
+                            href={`/inventory/${product.id}`}
+                            className="font-medium text-blue-600 hover:underline"
+                          >
+                            {product.name}
+                          </Link>
+                        </TableCell>
+                        <TableCell className="text-center font-medium">
+                          <span
+                            className={cn(
+                              product.currentStock === 0
+                                ? "text-red-600"
+                                : "text-amber-600",
+                            )}
+                          >
+                            {product.currentStock}
+                          </span>
+                        </TableCell>
+                        <TableCell className="text-center text-gray-600">
+                          {product.unit}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          {formatCurrency(product.precoUnitario)}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
               </CardContent>
             </Card>
           </section>
-        </>
-      )}
-    </div>
-  );
+        ) : null}
+
+        <section>
+          <Card>
+            <CardHeader>
+              <CardTitle>Ações Rápidas</CardTitle>
+              <CardDescription>Atalhos para as operações mais usadas.</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+                {quickActions.map((action) => (
+                  <Button
+                    key={action.href}
+                    variant="outline"
+                    asChild
+                    className="h-auto flex-col gap-2 rounded-lg border-gray-200 p-4 text-center hover:bg-gray-50"
+                  >
+                    <Link href={action.href}>
+                      <span
+                        className={cn(
+                          "flex h-10 w-10 items-center justify-center rounded-full",
+                          action.iconClassName,
+                        )}
+                      >
+                        {action.icon}
+                      </span>
+                      <span className="text-sm font-medium">{action.label}</span>
+                    </Link>
+                  </Button>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </section>
+      </div>
+    );
+  } catch {
+    return (
+      <div className="container mx-auto space-y-8 px-4 py-8">
+        <header className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <Button variant="ghost" asChild className="w-fit">
+            <Link href="/">← Voltar</Link>
+          </Button>
+
+          <div className="space-y-1 text-left sm:text-right">
+            <h1 className="text-2xl font-bold text-gray-900">
+              Dashboard - Sistema de Locação
+            </h1>
+            <p className="text-sm text-gray-500">Falha ao carregar os dados.</p>
+          </div>
+        </header>
+
+        <Card className="border-red-200 bg-red-50">
+          <CardHeader>
+            <CardTitle className="text-red-700">Falha ao carregar dashboard</CardTitle>
+            <CardDescription className="text-red-600">
+              Ocorreu um erro ao carregar os dados. Tente novamente.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Button variant="outline" asChild className="border-red-200 text-red-700">
+              <Link href="/dashboard">Tentar novamente</Link>
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 }

@@ -1,6 +1,5 @@
 "use server";
 
-import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 import {
   createCustomerSchema,
@@ -8,124 +7,94 @@ import {
   type CreateCustomerInput,
   type UpdateCustomerInput,
 } from "@/validations/schema";
+import {
+  createCustomerCommand,
+  deactivateCustomerCommand,
+  updateCustomerCommand,
+} from "@/server/customers/commands";
+import {
+  findCustomerById,
+  listCustomerSales,
+  listCustomers,
+} from "@/server/customers/queries";
 
 export async function getCustomers(query?: string) {
   try {
-    const customers = await prisma.customer.findMany({
-      where: {
-        isActive: true,
-        ...(query
-          ? {
-              OR: [
-                { name: { contains: query, mode: "insensitive" } },
-                { email: { contains: query, mode: "insensitive" } },
-                { phone: { contains: query, mode: "insensitive" } },
-              ],
-            }
-          : {}),
-      },
-      orderBy: { name: "asc" },
-    });
-
+    const customers = await listCustomers(query);
     return { customers };
-  } catch (error) {
-    console.error("Error fetching customers:", error);
+  } catch {
     return { error: "Falha ao buscar clientes" };
   }
 }
 
 export async function getCustomerById(id: string) {
   try {
-    const customer = await prisma.customer.findUnique({
-      where: { id },
-    });
+    const customer = await findCustomerById(id);
 
     if (!customer) {
       return { error: "Cliente não encontrado" };
     }
 
     return { customer };
-  } catch (error) {
-    console.error("Error fetching customer:", error);
+  } catch {
     return { error: "Falha ao buscar cliente" };
   }
 }
 
 export async function createCustomer(data: CreateCustomerInput) {
-  try {
-    const parsed = createCustomerSchema.safeParse(data);
-    if (!parsed.success) {
-      return { error: parsed.error.issues[0]?.message || "Dados inválidos" };
-    }
+  const parsed = createCustomerSchema.safeParse(data);
 
-    const customer = await prisma.customer.create({
-      data: parsed.data,
-    });
-
-    revalidatePath("/customers");
-    return { customer };
-  } catch (error) {
-    console.error("Error creating customer:", error);
-    return { error: "Falha ao criar cliente" };
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message || "Dados inválidos" };
   }
+
+  const result = await createCustomerCommand(parsed.data);
+
+  if (result.error) {
+    return { error: result.error };
+  }
+
+  revalidatePath("/customers");
+  revalidatePath("/");
+  return { customer: result.customer };
 }
 
-export async function updateCustomer(
-  id: string,
-  data: UpdateCustomerInput,
-) {
-  try {
-    const parsed = updateCustomerSchema.safeParse(data);
-    if (!parsed.success) {
-      return { error: parsed.error.issues[0]?.message || "Dados inválidos" };
-    }
+export async function updateCustomer(id: string, data: UpdateCustomerInput) {
+  const parsed = updateCustomerSchema.safeParse(data);
 
-    const customer = await prisma.customer.update({
-      where: { id },
-      data: parsed.data,
-    });
-
-    revalidatePath("/customers");
-    revalidatePath(`/customers/${id}`);
-    return { customer };
-  } catch (error) {
-    console.error("Error updating customer:", error);
-    return { error: "Falha ao atualizar cliente" };
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message || "Dados inválidos" };
   }
+
+  const result = await updateCustomerCommand(id, parsed.data);
+
+  if (result.error) {
+    return { error: result.error };
+  }
+
+  revalidatePath("/customers");
+  revalidatePath(`/customers/${id}`);
+  revalidatePath("/");
+  return { customer: result.customer };
 }
 
 export async function deleteCustomer(id: string) {
-  try {
-    await prisma.customer.update({
-      where: { id },
-      data: { isActive: false },
-    });
+  const result = await deactivateCustomerCommand(id);
 
-    revalidatePath("/customers");
-    return { success: true };
-  } catch (error) {
-    console.error("Error deleting customer:", error);
-    return { error: "Falha ao deletar cliente" };
+  if (result.error) {
+    return { error: result.error };
   }
+
+  revalidatePath("/customers");
+  revalidatePath("/");
+  return { success: true };
 }
 
 export async function getCustomerSales(customerId: string) {
   try {
-    const sales = await prisma.sale.findMany({
-      where: { customerId },
-      include: {
-        itens: {
-          include: {
-            produto: true,
-          },
-        },
-      },
-      orderBy: { dataRetirada: "desc" },
-    });
-
+    const sales = await listCustomerSales(customerId);
     return { sales };
-  } catch (error) {
-    console.error("Error fetching customer sales:", error);
+  } catch {
     return { error: "Falha ao buscar vendas do cliente" };
   }
 }

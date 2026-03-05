@@ -1,275 +1,121 @@
 "use server";
 
-import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
-import { Decimal } from "@prisma/client/runtime/library";
 import {
   createProductSchema,
   updateProductSchema,
   type CreateProductInput,
   type UpdateProductInput,
 } from "@/validations/schema";
+import {
+  adjustStockCommand,
+  createProductCommand,
+  deleteProductCommand,
+  updateProductCommand,
+} from "@/server/inventory/commands";
+import {
+  findProductById,
+  listLowStockProducts,
+  listProducts,
+} from "@/server/inventory/queries";
 
 export async function getProducts(options?: {
   query?: string;
   lowStock?: boolean;
 }) {
   try {
-    const { query, lowStock } = options || {};
-
-    const products = await prisma.product.findMany({
-      where: {
-        ...(query
-          ? {
-              OR: [
-                { name: { contains: query, mode: "insensitive" } },
-                { description: { contains: query, mode: "insensitive" } },
-              ],
-            }
-          : {}),
-        ...(lowStock === true ? { currentStock: { lte: 10 } } : {}),
-      },
-      orderBy: { name: "asc" },
-    });
-
-    const serializedProducts = products.map((product) => ({
-      ...product,
-      precoUnitario: Number(product.precoUnitario),
-      createdAt: product.createdAt.toISOString(),
-      updatedAt: product.updatedAt.toISOString(),
-    }));
-
-    return { products: serializedProducts };
-  } catch (error) {
-    console.error("Error fetching products:", error);
+    const products = await listProducts(options || {});
+    return { products };
+  } catch {
     return { error: "Falha ao buscar produtos" };
   }
 }
 
 export async function getProductById(id: string) {
   try {
-    const product = await prisma.product.findUnique({
-      where: { id },
-      include: {
-        itensDeVenda: {
-          include: {
-            sale: {
-              include: {
-                customer: true,
-              },
-            },
-          },
-          orderBy: {
-            sale: {
-              dataRetirada: "desc",
-            },
-          },
-          take: 10,
-        },
-      },
-    });
+    const product = await findProductById(id);
 
     if (!product) {
       return { error: "Produto não encontrado" };
     }
 
-    const serializedProduct = {
-      ...product,
-      precoUnitario: Number(product.precoUnitario),
-      createdAt: product.createdAt.toISOString(),
-      updatedAt: product.updatedAt.toISOString(),
-      itensDeVenda: product.itensDeVenda.map((item) => ({
-        ...item,
-        precoUnitarioNoMomento: Number(item.precoUnitarioNoMomento),
-        sale: {
-          ...item.sale,
-          totalAmount: item.sale.totalAmount
-            ? Number(item.sale.totalAmount)
-            : null,
-          dataRetirada: item.sale.dataRetirada.toISOString(),
-          dataDevolucaoPrevista: item.sale.dataDevolucaoPrevista.toISOString(),
-          createdAt: item.sale.createdAt.toISOString(),
-          updatedAt: item.sale.updatedAt.toISOString(),
-          customer: {
-            ...item.sale.customer,
-            createdAt: item.sale.customer.createdAt.toISOString(),
-            updatedAt: item.sale.customer.updatedAt.toISOString(),
-          },
-        },
-      })),
-    };
-
-    return { product: serializedProduct };
-  } catch (error) {
-    console.error("Error fetching product:", error);
+    return { product };
+  } catch {
     return { error: "Falha ao buscar produto" };
   }
 }
 
 export async function createProduct(data: CreateProductInput) {
-  try {
-    const parsed = createProductSchema.safeParse(data);
-    if (!parsed.success) {
-      return { error: parsed.error.issues[0]?.message || "Dados inválidos" };
-    }
+  const parsed = createProductSchema.safeParse(data);
 
-    const product = await prisma.product.create({
-      data: {
-        name: parsed.data.name,
-        description: parsed.data.description,
-        precoUnitario: new Decimal(parsed.data.precoUnitario),
-        currentStock: parsed.data.currentStock,
-        unit: parsed.data.unit || "un",
-      },
-    });
-
-    const serializedProduct = {
-      ...product,
-      precoUnitario: Number(product.precoUnitario),
-      createdAt: product.createdAt.toISOString(),
-      updatedAt: product.updatedAt.toISOString(),
-    };
-
-    revalidatePath("/inventory");
-    return { product: serializedProduct };
-  } catch (error) {
-    console.error("Error creating product:", error);
-    return { error: "Falha ao criar produto" };
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message || "Dados inválidos" };
   }
+
+  const result = await createProductCommand(parsed.data);
+
+  if (result.error) {
+    return { error: result.error };
+  }
+
+  revalidatePath("/inventory");
+  revalidatePath("/dashboard");
+  revalidatePath("/");
+  return { product: result.product };
 }
 
-export async function updateProduct(
-  id: string,
-  data: UpdateProductInput,
-) {
-  try {
-    const parsed = updateProductSchema.safeParse(data);
-    if (!parsed.success) {
-      return { error: parsed.error.issues[0]?.message || "Dados inválidos" };
-    }
+export async function updateProduct(id: string, data: UpdateProductInput) {
+  const parsed = updateProductSchema.safeParse(data);
 
-    const existingProduct = await prisma.product.findUnique({
-      where: { id },
-    });
-
-    if (!existingProduct) {
-      return { error: "Produto não encontrado" };
-    }
-
-    const product = await prisma.product.update({
-      where: { id },
-      data: {
-        ...(parsed.data.name !== undefined ? { name: parsed.data.name } : {}),
-        ...(parsed.data.description !== undefined
-          ? { description: parsed.data.description }
-          : {}),
-        ...(parsed.data.precoUnitario !== undefined
-          ? {
-              precoUnitario: new Decimal(parsed.data.precoUnitario.toString()),
-            }
-          : {}),
-        ...(parsed.data.currentStock !== undefined
-          ? { currentStock: parsed.data.currentStock }
-          : {}),
-        ...(parsed.data.unit !== undefined ? { unit: parsed.data.unit } : {}),
-      },
-    });
-
-    const serializedProduct = {
-      ...product,
-      precoUnitario: Number(product.precoUnitario),
-      createdAt: product.createdAt.toISOString(),
-      updatedAt: product.updatedAt.toISOString(),
-    };
-
-    revalidatePath("/inventory");
-    revalidatePath(`/inventory/${id}`);
-    return { product: serializedProduct };
-  } catch (error) {
-    console.error("Error updating product:", error);
-    return { error: "Falha ao atualizar produto" };
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message || "Dados inválidos" };
   }
+
+  const result = await updateProductCommand(id, parsed.data);
+
+  if (result.error) {
+    return { error: result.error };
+  }
+
+  revalidatePath("/inventory");
+  revalidatePath(`/inventory/${id}`);
+  revalidatePath("/dashboard");
+  revalidatePath("/");
+  return { product: result.product };
 }
 
 export async function adjustStock(id: string, quantity: number) {
-  try {
-    const product = await prisma.product.findUnique({
-      where: { id },
-    });
+  const result = await adjustStockCommand(id, quantity);
 
-    if (!product) {
-      return { error: "Produto não encontrado" };
-    }
-
-    const newStock = product.currentStock + quantity;
-
-    if (newStock < 0) {
-      return { error: "Estoque não pode ser negativo" };
-    }
-
-    await prisma.product.update({
-      where: { id },
-      data: { currentStock: newStock },
-    });
-
-    revalidatePath("/inventory");
-    revalidatePath(`/inventory/${id}`);
-    return { success: true, newStock };
-  } catch (error) {
-    console.error("Error adjusting stock:", error);
-    return { error: "Falha ao ajustar estoque" };
+  if (result.error) {
+    return { error: result.error };
   }
+
+  revalidatePath("/inventory");
+  revalidatePath(`/inventory/${id}`);
+  revalidatePath("/dashboard");
+  revalidatePath("/");
+  return { success: true, newStock: result.newStock };
 }
 
 export async function deleteProduct(id: string) {
-  try {
-    const salesCount = await prisma.itensVenda.count({
-      where: { produtoId: id },
-    });
+  const result = await deleteProductCommand(id);
 
-    if (salesCount > 0) {
-      return {
-        error: `Não é possível excluir este produto pois ele está associado a ${salesCount} venda(s).`,
-      };
-    }
-
-    await prisma.product.delete({
-      where: { id },
-    });
-
-    revalidatePath("/inventory");
-    return { success: true };
-  } catch (error) {
-    console.error("Error deleting product:", error);
-    return { error: "Falha ao deletar produto" };
+  if (result.error) {
+    return { error: result.error };
   }
+
+  revalidatePath("/inventory");
+  revalidatePath("/dashboard");
+  revalidatePath("/");
+  return { success: true };
 }
 
 export async function getLowStockProducts() {
   try {
-    const products = await prisma.product.findMany({
-      where: {
-        currentStock: {
-          lte: 10,
-        },
-      },
-      orderBy: [
-        {
-          currentStock: "asc",
-        },
-      ],
-    });
-
-    const serializedProducts = products.map((product) => ({
-      ...product,
-      precoUnitario: Number(product.precoUnitario),
-      createdAt: product.createdAt.toISOString(),
-      updatedAt: product.updatedAt.toISOString(),
-    }));
-
-    return { products: serializedProducts };
-  } catch (error) {
-    console.error("Error fetching low stock products:", error);
-    return { error: "Failed to fetch low stock products" };
+    const products = await listLowStockProducts();
+    return { products };
+  } catch {
+    return { error: "Falha ao buscar produtos com estoque baixo" };
   }
 }

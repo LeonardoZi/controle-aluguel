@@ -1,26 +1,14 @@
 import { prisma } from "@/lib/prisma";
+import {
+  homeOverviewSchema,
+  homeStatsSchema,
+  type HomeStatsDto,
+  type UpcomingExpirationDto,
+} from "@/server/contracts/v1/home";
+import { LOW_STOCK_THRESHOLD } from "@/server/shared/constants";
+import { listUpcomingExpirations } from "@/server/sales/queries";
 
-const LOW_STOCK_THRESHOLD = 10;
-const UPCOMING_EXPIRATIONS_LIMIT = 10;
-
-export interface HomeStats {
-  totalProducts: number;
-  totalCustomers: number;
-  activeSales: number;
-  overdueSales: number;
-  monthRevenue: number;
-  lowStockCount: number;
-}
-
-export interface UpcomingExpiration {
-  id: string;
-  dataDevolucaoPrevista: Date;
-  customer: {
-    name: string;
-  };
-}
-
-const emptyStats: HomeStats = {
+const emptyStats: HomeStatsDto = {
   totalProducts: 0,
   totalCustomers: 0,
   activeSales: 0,
@@ -29,33 +17,23 @@ const emptyStats: HomeStats = {
   lowStockCount: 0,
 };
 
-export async function getUpcomingExpirations(): Promise<UpcomingExpiration[]> {
+export async function getUpcomingExpirations(): Promise<UpcomingExpirationDto[]> {
   try {
-    return await prisma.sale.findMany({
-      where: {
-        status: { in: ["ATIVO", "ATRASADO"] },
+    const sales = await listUpcomingExpirations();
+
+    return sales.map((sale) => ({
+      id: sale.id,
+      dataDevolucaoPrevista: sale.dataDevolucaoPrevista.toISOString(),
+      customer: {
+        name: sale.customer.name,
       },
-      select: {
-        id: true,
-        dataDevolucaoPrevista: true,
-        customer: {
-          select: {
-            name: true,
-          },
-        },
-      },
-      orderBy: {
-        dataDevolucaoPrevista: "asc",
-      },
-      take: UPCOMING_EXPIRATIONS_LIMIT,
-    });
-  } catch (error) {
-    console.error("Error fetching upcoming expirations:", error);
+    }));
+  } catch {
     return [];
   }
 }
 
-export async function getHomeStats(): Promise<HomeStats> {
+export async function getHomeStats(): Promise<HomeStatsDto> {
   try {
     const now = new Date();
     const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
@@ -74,12 +52,16 @@ export async function getHomeStats(): Promise<HomeStats> {
       }),
       prisma.sale.count({
         where: {
-          status: { in: ["ATIVO", "ATRASADO"] },
+          status: "ATIVO",
+          dataDevolucaoPrevista: { gte: now },
         },
       }),
       prisma.sale.count({
         where: {
-          status: "ATRASADO",
+          OR: [
+            { status: "ATRASADO" },
+            { status: "ATIVO", dataDevolucaoPrevista: { lt: now } },
+          ],
         },
       }),
       prisma.sale.aggregate({
@@ -102,16 +84,15 @@ export async function getHomeStats(): Promise<HomeStats> {
       }),
     ]);
 
-    return {
+    return homeStatsSchema.parse({
       totalProducts,
       totalCustomers,
       activeSales,
       overdueSales,
       monthRevenue: Number(monthRevenue._sum?.totalAmount || 0),
       lowStockCount,
-    };
-  } catch (error) {
-    console.error("Error fetching home statistics:", error);
+    });
+  } catch {
     return emptyStats;
   }
 }
@@ -122,8 +103,8 @@ export async function getHomeOverview() {
     getUpcomingExpirations(),
   ]);
 
-  return {
+  return homeOverviewSchema.parse({
     stats,
     upcomingExpirations,
-  };
+  });
 }

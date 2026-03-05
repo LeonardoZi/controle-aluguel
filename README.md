@@ -13,10 +13,11 @@ Sistema para gerenciamento de estoque e vendas desenvolvido para comércio.
 ## Tecnologias
 
 - Next.js 15
-- React
+- React 19
 - TypeScript
-- Prisma (PostgreSQL)
+- Prisma + PostgreSQL
 - Tailwind CSS
+- Zod
 
 ## Desenvolvimento
 

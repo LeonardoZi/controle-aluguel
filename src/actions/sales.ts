@@ -1,16 +1,24 @@
 "use server";
 
-import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
-import { Decimal } from "@prisma/client/runtime/library";
-import type { Prisma } from "@prisma/client";
 import {
   createSaleSchema,
   processReturnSchema,
   type CreateSaleInput,
   type ProcessReturnInput,
 } from "@/validations/schema";
-type SaleStatus = "ATIVO" | "ATRASADO" | "CONCLUIDO" | "CANCELADO";
+import {
+  cancelSaleCommand,
+  completeSaleCommand,
+  createSaleCommand,
+  processReturnCommand,
+} from "@/server/sales/commands";
+import {
+  findSaleById,
+  getSalesSummaryReadModel,
+  listSales,
+} from "@/server/sales/queries";
+import type { SaleStatus } from "@/server/contracts/v1/sales";
 
 export async function getSales(options?: {
   status?: SaleStatus;
@@ -20,549 +28,92 @@ export async function getSales(options?: {
   isOverdue?: boolean;
 }) {
   try {
-    const { status, customerId, startDate, endDate, isOverdue } = options || {};
-    const now = new Date();
-
-    const sales = await prisma.sale.findMany({
-      where: {
-        ...(status ? { status } : {}),
-        ...(customerId ? { customerId } : {}),
-        ...(startDate || endDate
-          ? {
-              dataRetirada: {
-                ...(startDate ? { gte: startDate } : {}),
-                ...(endDate ? { lte: endDate } : {}),
-              },
-            }
-          : {}),
-        ...(isOverdue
-          ? {
-              dataDevolucaoPrevista: { lt: now },
-              status: { in: ["ATIVO", "ATRASADO"] },
-            }
-          : {}),
-      },
-      include: {
-        customer: true,
-        user: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-          },
-        },
-        itens: {
-          include: {
-            produto: true,
-          },
-        },
-      },
-      orderBy: { dataRetirada: "desc" },
-    });
-
-    const serializedSales = sales.map((sale) => ({
-      ...sale,
-      totalAmount: sale.totalAmount ? Number(sale.totalAmount) : null,
-      dataRetirada: sale.dataRetirada.toISOString(),
-      dataDevolucaoPrevista: sale.dataDevolucaoPrevista.toISOString(),
-      createdAt: sale.createdAt.toISOString(),
-      updatedAt: sale.updatedAt.toISOString(),
-      itens: sale.itens.map((item) => ({
-        ...item,
-        precoUnitarioNoMomento: Number(item.precoUnitarioNoMomento),
-        produto: {
-          ...item.produto,
-          precoUnitario: Number(item.produto.precoUnitario),
-          createdAt: item.produto.createdAt.toISOString(),
-          updatedAt: item.produto.updatedAt.toISOString(),
-        },
-      })),
-      customer: {
-        ...sale.customer,
-        createdAt: sale.customer.createdAt.toISOString(),
-        updatedAt: sale.customer.updatedAt.toISOString(),
-      },
-      user: sale.user,
-    }));
-
-    return { sales: serializedSales };
-  } catch (error) {
-    console.error("Error fetching sales:", error);
-    return { error: "Failed to fetch sales" };
+    const sales = await listSales(options || {});
+    return { sales };
+  } catch {
+    return { error: "Falha ao buscar vendas" };
   }
 }
 
 export async function getSaleById(id: string) {
   try {
-    const sale = await prisma.sale.findUnique({
-      where: { id },
-      include: {
-        customer: true,
-        user: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-          },
-        },
-        itens: {
-          include: {
-            produto: true,
-          },
-        },
-      },
-    });
+    const sale = await findSaleById(id);
 
     if (!sale) {
-      return { error: "Sale not found" };
+      return { error: "Venda não encontrada" };
     }
 
-    const serializedSale = {
-      ...sale,
-      totalAmount: sale.totalAmount ? Number(sale.totalAmount) : null,
-      dataRetirada: sale.dataRetirada.toISOString(),
-      dataDevolucaoPrevista: sale.dataDevolucaoPrevista.toISOString(),
-      createdAt: sale.createdAt.toISOString(),
-      updatedAt: sale.updatedAt.toISOString(),
-      itens: sale.itens.map((item) => ({
-        ...item,
-        precoUnitarioNoMomento: Number(item.precoUnitarioNoMomento),
-        produto: item.produto
-          ? {
-              ...item.produto,
-              precoUnitario: Number(item.produto.precoUnitario),
-              createdAt: item.produto.createdAt.toISOString(),
-              updatedAt: item.produto.updatedAt.toISOString(),
-            }
-          : undefined,
-      })),
-      customer: sale.customer
-        ? {
-            ...sale.customer,
-            createdAt: sale.customer.createdAt.toISOString(),
-            updatedAt: sale.customer.updatedAt.toISOString(),
-          }
-        : {
-            id: "",
-            name: "",
-            email: "",
-            phone: "",
-          },
-    };
-
-    return { sale: serializedSale };
-  } catch (error) {
-    console.error("Error fetching sale:", error);
-    return { error: "Failed to fetch sale" };
+    return { sale };
+  } catch {
+    return { error: "Falha ao buscar venda" };
   }
 }
 
 export async function createSale(data: CreateSaleInput) {
-  try {
-    const parsed = createSaleSchema.safeParse(data);
-    if (!parsed.success) {
-      return { error: parsed.error.issues[0]?.message || "Dados inválidos" };
-    }
+  const parsed = createSaleSchema.safeParse(data);
 
-    const payload = parsed.data;
-
-    if (!payload.items.length) {
-      return { error: "A venda precisa ter pelo menos um item" };
-    }
-
-    const productIds = payload.items.map((item) => item.produtoId);
-    const products = await prisma.product.findMany({
-      where: { id: { in: productIds } },
-    });
-
-    for (const item of payload.items) {
-      const product = products.find((p) => p.id === item.produtoId);
-      if (!product) {
-        return { error: `Produto com ID ${item.produtoId} não encontrado` };
-      }
-
-      if (product.currentStock < item.quantidadeRetirada) {
-        return {
-          error: `Estoque insuficiente para o produto: ${product.name}. Disponível: ${product.currentStock}, Solicitado: ${item.quantidadeRetirada}`,
-        };
-      }
-    }
-
-    const itemsWithPrices = payload.items.map((item) => {
-      const product = products.find((p) => p.id === item.produtoId);
-      const precoUnitario = item.precoUnitarioNoMomento
-        ? new Decimal(item.precoUnitarioNoMomento.toString())
-        : product!.precoUnitario;
-
-      return {
-        ...item,
-        precoUnitarioNoMomento: precoUnitario,
-        subtotal: precoUnitario.mul(item.quantidadeRetirada),
-      };
-    });
-
-    const totalAmount = itemsWithPrices.reduce(
-      (sum, item) => sum.add(item.subtotal),
-      new Decimal(0),
-    );
-
-    const sale = await prisma.$transaction(
-      async (tx: Prisma.TransactionClient) => {
-        const newSale = await tx.sale.create({
-          data: {
-            customerId: payload.customerId,
-            userId: payload.userId,
-            dataRetirada: new Date(),
-            dataDevolucaoPrevista: payload.dataDevolucaoPrevista,
-            status: "ATIVO",
-            totalAmount,
-            notes: payload.notes,
-            itens: {
-              create: itemsWithPrices.map((item) => ({
-                produtoId: item.produtoId,
-                quantidadeRetirada: item.quantidadeRetirada,
-                quantidadeDevolvida: 0,
-                precoUnitarioNoMomento: item.precoUnitarioNoMomento,
-              })),
-            },
-          },
-          include: {
-            itens: {
-              include: {
-                produto: true,
-              },
-            },
-            customer: true,
-            user: {
-              select: {
-                id: true,
-                name: true,
-                email: true,
-              },
-            },
-          },
-        });
-
-        for (const item of payload.items) {
-          await tx.product.update({
-            where: { id: item.produtoId },
-            data: { currentStock: { decrement: item.quantidadeRetirada } },
-          });
-        }
-
-        return newSale;
-      },
-    );
-
-    const serializedSale = {
-      ...sale,
-      totalAmount: sale.totalAmount ? Number(sale.totalAmount) : null,
-      dataRetirada: sale.dataRetirada.toISOString(),
-      dataDevolucaoPrevista: sale.dataDevolucaoPrevista.toISOString(),
-      createdAt: sale.createdAt.toISOString(),
-      updatedAt: sale.updatedAt.toISOString(),
-      itens: sale.itens.map((item) => ({
-        ...item,
-        precoUnitarioNoMomento: Number(item.precoUnitarioNoMomento),
-        produto: {
-          ...item.produto,
-          precoUnitario: Number(item.produto.precoUnitario),
-          createdAt: item.produto.createdAt.toISOString(),
-          updatedAt: item.produto.updatedAt.toISOString(),
-        },
-      })),
-      customer: {
-        ...sale.customer,
-        createdAt: sale.customer.createdAt.toISOString(),
-        updatedAt: sale.customer.updatedAt.toISOString(),
-      },
-    };
-
-    revalidatePath("/sales");
-    return { sale: serializedSale };
-  } catch (error) {
-    console.error("Error creating sale:", error);
-    return { error: "Falha ao criar venda" };
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message || "Dados inválidos" };
   }
+
+  const result = await createSaleCommand(parsed.data);
+
+  if (result.error) {
+    return { error: result.error };
+  }
+
+  revalidatePath("/sales");
+  revalidatePath("/dashboard");
+  revalidatePath("/");
+  return { sale: result.sale };
 }
 
 export async function processReturn(data: ProcessReturnInput) {
-  try {
-    const parsed = processReturnSchema.safeParse(data);
-    if (!parsed.success) {
-      return { error: parsed.error.issues[0]?.message || "Dados inválidos" };
-    }
+  const parsed = processReturnSchema.safeParse(data);
 
-    const payload = parsed.data;
-
-    const sale = await prisma.sale.findUnique({
-      where: { id: payload.saleId },
-      include: {
-        itens: {
-          include: {
-            produto: true,
-          },
-        },
-      },
-    });
-
-    if (!sale) {
-      return { error: "Venda não encontrada" };
-    }
-
-    if (sale.status === "CONCLUIDO" || sale.status === "CANCELADO") {
-      return { error: "Não é possível processar devolução para esta venda" };
-    }
-
-    for (const returnItem of payload.items) {
-      const saleItem = sale.itens.find((item) => item.id === returnItem.itemId);
-      if (!saleItem) {
-        return { error: `Item ${returnItem.itemId} não encontrado na venda` };
-      }
-
-      const currentlyReturned = saleItem.quantidadeDevolvida || 0;
-      const totalReturned = currentlyReturned + returnItem.quantidadeDevolvida;
-
-      if (totalReturned > saleItem.quantidadeRetirada) {
-        return {
-          error: `Quantidade devolvida excede a quantidade retirada para o produto ${saleItem.produto.name}`,
-        };
-      }
-    }
-
-    const updatedSale = await prisma.$transaction(
-      async (tx: Prisma.TransactionClient) => {
-        for (const returnItem of payload.items) {
-          const saleItem = sale.itens.find(
-            (item) => item.id === returnItem.itemId,
-          );
-          if (!saleItem) continue;
-
-          await tx.itensVenda.update({
-            where: { id: returnItem.itemId },
-            data: {
-              quantidadeDevolvida: {
-                increment: returnItem.quantidadeDevolvida,
-              },
-            },
-          });
-
-          await tx.product.update({
-            where: { id: saleItem.produtoId },
-            data: {
-              currentStock: { increment: returnItem.quantidadeDevolvida },
-            },
-          });
-        }
-
-        const updatedItems = await tx.itensVenda.findMany({
-          where: { saleId: payload.saleId },
-        });
-
-        const newTotal = updatedItems.reduce((sum: Decimal, item) => {
-          const quantidadeUsada =
-            item.quantidadeRetirada - (item.quantidadeDevolvida || 0);
-          const itemTotal = new Decimal(item.precoUnitarioNoMomento).mul(
-            quantidadeUsada,
-          );
-          return sum.add(itemTotal);
-        }, new Decimal(0));
-
-        const allReturned = updatedItems.every(
-          (item) => item.quantidadeDevolvida === item.quantidadeRetirada,
-        );
-
-        const updatedSale = await tx.sale.update({
-          where: { id: payload.saleId },
-          data: {
-            totalAmount: newTotal,
-            status: allReturned ? "CONCLUIDO" : sale.status,
-            notes: payload.notes
-              ? `${sale.notes || ""}\n[Devolução] ${payload.notes}`.trim()
-              : sale.notes,
-          },
-          include: {
-            itens: {
-              include: {
-                produto: true,
-              },
-            },
-            customer: true,
-            user: {
-              select: {
-                id: true,
-                name: true,
-                email: true,
-              },
-            },
-          },
-        });
-
-        return updatedSale;
-      },
-    );
-
-    const serializedSale = {
-      ...updatedSale,
-      totalAmount: updatedSale.totalAmount
-        ? Number(updatedSale.totalAmount)
-        : null,
-      dataRetirada: updatedSale.dataRetirada.toISOString(),
-      dataDevolucaoPrevista: updatedSale.dataDevolucaoPrevista.toISOString(),
-      createdAt: updatedSale.createdAt.toISOString(),
-      updatedAt: updatedSale.updatedAt.toISOString(),
-      itens: updatedSale.itens.map((item) => ({
-        ...item,
-        precoUnitarioNoMomento: Number(item.precoUnitarioNoMomento),
-        produto: item.produto
-          ? {
-              ...item.produto,
-              precoUnitario: Number(item.produto.precoUnitario),
-              createdAt: item.produto.createdAt.toISOString(),
-              updatedAt: item.produto.updatedAt.toISOString(),
-            }
-          : undefined,
-      })),
-      customer: {
-        ...updatedSale.customer,
-        createdAt: updatedSale.customer.createdAt.toISOString(),
-        updatedAt: updatedSale.customer.updatedAt.toISOString(),
-      },
-    };
-
-    revalidatePath("/sales");
-    revalidatePath(`/sales/${payload.saleId}`);
-
-    return { sale: serializedSale };
-  } catch (error) {
-    console.error("Error processing return:", error);
-    return { error: "Falha ao processar devolução" };
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message || "Dados inválidos" };
   }
+
+  const result = await processReturnCommand(parsed.data);
+
+  if (result.error) {
+    return { error: result.error };
+  }
+
+  revalidatePath("/sales");
+  revalidatePath(`/sales/${parsed.data.saleId}`);
+  revalidatePath("/dashboard");
+  revalidatePath("/");
+  return { sale: result.sale };
 }
 
 export async function cancelSale(id: string) {
-  try {
-    const sale = await prisma.sale.findUnique({
-      where: { id },
-      include: { itens: true },
-    });
+  const result = await cancelSaleCommand(id);
 
-    if (!sale) {
-      return { error: "Venda não encontrada" };
-    }
-
-    if (sale.status === "CANCELADO") {
-      return { error: "Venda já está cancelada" };
-    }
-
-    if (sale.status === "CONCLUIDO") {
-      return { error: "Não é possível cancelar uma venda concluída" };
-    }
-
-    await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
-      await tx.sale.update({
-        where: { id },
-        data: { status: "CANCELADO", totalAmount: new Decimal(0) },
-      });
-
-      for (const item of sale.itens) {
-        const quantidadeNaoDevolvida =
-          item.quantidadeRetirada - (item.quantidadeDevolvida || 0);
-
-        if (quantidadeNaoDevolvida > 0) {
-          await tx.product.update({
-            where: { id: item.produtoId },
-            data: { currentStock: { increment: quantidadeNaoDevolvida } },
-          });
-
-          await tx.itensVenda.update({
-            where: { id: item.id },
-            data: { quantidadeDevolvida: item.quantidadeRetirada },
-          });
-        }
-      }
-    });
-
-    revalidatePath("/sales");
-    revalidatePath(`/sales/${id}`);
-
-    return { success: true };
-  } catch (error) {
-    console.error("Error canceling sale:", error);
-    return { error: "Falha ao cancelar venda" };
+  if (result.error) {
+    return { error: result.error };
   }
-}
 
-export async function updateOverdueSales() {
-  try {
-    const now = new Date();
-
-    const result = await prisma.sale.updateMany({
-      where: {
-        dataDevolucaoPrevista: { lt: now },
-        status: "ATIVO",
-      },
-      data: {
-        status: "ATRASADO",
-      },
-    });
-
-    revalidatePath("/sales");
-    return { updated: result.count };
-  } catch (error) {
-    console.error("Error updating overdue sales:", error);
-    return { error: "Falha ao atualizar vendas atrasadas" };
-  }
+  revalidatePath("/sales");
+  revalidatePath(`/sales/${id}`);
+  revalidatePath("/dashboard");
+  revalidatePath("/");
+  return { success: true };
 }
 
 export async function completeSale(id: string) {
-  try {
-    const sale = await prisma.sale.findUnique({
-      where: { id },
-      include: { itens: true },
-    });
+  const result = await completeSaleCommand(id);
 
-    if (!sale) {
-      return { error: "Venda não encontrada" };
-    }
-
-    if (sale.status === "CANCELADO") {
-      return { error: "Não é possível concluir uma venda cancelada" };
-    }
-
-    if (sale.status === "CONCLUIDO") {
-      return { error: "Venda já está concluída" };
-    }
-
-    const updatedItems = await prisma.itensVenda.findMany({
-      where: { saleId: id },
-    });
-
-    const finalTotal = updatedItems.reduce((sum: Decimal, item) => {
-      const quantidadeUsada =
-        item.quantidadeRetirada - (item.quantidadeDevolvida || 0);
-      const itemTotal = new Decimal(item.precoUnitarioNoMomento).mul(
-        quantidadeUsada,
-      );
-      return sum.add(itemTotal);
-    }, new Decimal(0));
-
-    await prisma.sale.update({
-      where: { id },
-      data: {
-        status: "CONCLUIDO",
-        totalAmount: finalTotal,
-      },
-    });
-
-    revalidatePath("/sales");
-    revalidatePath(`/sales/${id}`);
-
-    return { success: true };
-  } catch (error) {
-    console.error("Error completing sale:", error);
-    return { error: "Falha ao concluir venda" };
+  if (result.error) {
+    return { error: result.error };
   }
+
+  revalidatePath("/sales");
+  revalidatePath(`/sales/${id}`);
+  revalidatePath("/dashboard");
+  revalidatePath("/");
+  return { success: true };
 }
 
 export async function getSalesSummary(options?: {
@@ -570,82 +121,9 @@ export async function getSalesSummary(options?: {
   endDate?: Date;
 }) {
   try {
-    const { startDate, endDate } = options || {};
-
-    const whereClause = {
-      ...(startDate || endDate
-        ? {
-            dataRetirada: {
-              ...(startDate ? { gte: startDate } : {}),
-              ...(endDate ? { lte: endDate } : {}),
-            },
-          }
-        : {}),
-    };
-
-    const [
-      totalSales,
-      activeSales,
-      overdueSales,
-      completedSales,
-      totalRevenue,
-    ] = await Promise.all([
-      prisma.sale.count({ where: whereClause }),
-      prisma.sale.count({
-        where: { ...whereClause, status: "ATIVO" },
-      }),
-      prisma.sale.count({
-        where: {
-          ...whereClause,
-          status: "ATRASADO",
-        },
-      }),
-      prisma.sale.count({
-        where: { ...whereClause, status: "CONCLUIDO" },
-      }),
-      prisma.sale.aggregate({
-        where: {
-          ...whereClause,
-          status: { in: ["ATIVO", "ATRASADO", "CONCLUIDO"] },
-        },
-        _sum: { totalAmount: true },
-      }),
-    ]);
-
-    const salesWithPendingReturns = await prisma.sale.findMany({
-      where: {
-        ...whereClause,
-        status: { in: ["ATIVO", "ATRASADO"] },
-      },
-      include: {
-        itens: true,
-      },
-    });
-
-    const pendingReturns = salesWithPendingReturns.reduce(
-      (count: number, sale) => {
-        const hasUnreturnedItems = sale.itens.some(
-          (item) => (item.quantidadeDevolvida || 0) < item.quantidadeRetirada,
-        );
-        return count + (hasUnreturnedItems ? 1 : 0);
-      },
-      0,
-    );
-
-    return {
-      summary: {
-        totalSales,
-        activeSales,
-        overdueSales,
-        completedSales,
-        totalRevenue: totalRevenue._sum.totalAmount
-          ? Number(totalRevenue._sum.totalAmount)
-          : 0,
-        pendingReturns,
-      },
-    };
-  } catch (error) {
-    console.error("Error fetching sales summary:", error);
+    const summary = await getSalesSummaryReadModel(options || {});
+    return { summary };
+  } catch {
     return { error: "Falha ao buscar resumo de vendas" };
   }
 }
