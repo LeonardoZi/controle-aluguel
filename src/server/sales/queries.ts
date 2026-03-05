@@ -127,52 +127,58 @@ export async function getSalesSummaryReadModel(
       : {}),
   };
 
-  const [totalSales, activeSales, overdueSales, completedSales, totalRevenue, openSales] =
-    await Promise.all([
-      prisma.sale.count({ where: baseWhere }),
-      prisma.sale.count({
-        where: {
-          ...baseWhere,
-          status: "ATIVO",
-          dataDevolucaoPrevista: { gte: now },
-        },
-      }),
-      prisma.sale.count({
-        where: {
-          ...baseWhere,
-          OR: [
-            { status: "ATRASADO" },
-            { status: "ATIVO", dataDevolucaoPrevista: { lt: now } },
-          ],
-        },
-      }),
-      prisma.sale.count({
-        where: { ...baseWhere, status: "CONCLUIDO" },
-      }),
-      prisma.sale.aggregate({
-        where: {
-          ...baseWhere,
-          status: { in: ["ATIVO", "ATRASADO", "CONCLUIDO"] },
-        },
-        _sum: {
-          totalAmount: true,
-        },
-      }),
-      prisma.sale.findMany({
-        where: {
-          ...baseWhere,
-          status: { in: ["ATIVO", "ATRASADO"] },
-        },
-        select: {
-          itens: {
-            select: {
-              quantidadeRetirada: true,
-              quantidadeDevolvida: true,
-            },
+  const [
+    totalSales,
+    activeSales,
+    overdueSales,
+    completedSales,
+    totalRevenue,
+    openSales,
+  ] = await Promise.all([
+    prisma.sale.count({ where: baseWhere }),
+    prisma.sale.count({
+      where: {
+        ...baseWhere,
+        status: "ATIVO",
+        dataDevolucaoPrevista: { gte: now },
+      },
+    }),
+    prisma.sale.count({
+      where: {
+        ...baseWhere,
+        OR: [
+          { status: "ATRASADO" },
+          { status: "ATIVO", dataDevolucaoPrevista: { lt: now } },
+        ],
+      },
+    }),
+    prisma.sale.count({
+      where: { ...baseWhere, status: "CONCLUIDO" },
+    }),
+    prisma.sale.aggregate({
+      where: {
+        ...baseWhere,
+        status: { in: ["ATIVO", "ATRASADO", "CONCLUIDO"] },
+      },
+      _sum: {
+        totalAmount: true,
+      },
+    }),
+    prisma.sale.findMany({
+      where: {
+        ...baseWhere,
+        status: { in: ["ATIVO", "ATRASADO"] },
+      },
+      select: {
+        itens: {
+          select: {
+            quantidadeRetirada: true,
+            quantidadeDevolvida: true,
           },
         },
-      }),
-    ]);
+      },
+    }),
+  ]);
 
   return salesSummarySchema.parse({
     totalSales,

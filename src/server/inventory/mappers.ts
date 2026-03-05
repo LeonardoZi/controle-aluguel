@@ -7,9 +7,7 @@ import {
   type ProductDto,
 } from "@/server/contracts/v1/inventory";
 
-export function toProductDto(
-  product: Product,
-): ProductDto {
+export function toProductDto(product: Product): ProductDto {
   return productSchema.parse({
     id: product.id,
     name: product.name,
@@ -22,10 +20,10 @@ export function toProductDto(
   });
 }
 
-export function toProductListDto(
-  products: Product[],
-): ProductDto[] {
-  return productListSchema.parse(products.map((product) => toProductDto(product)));
+export function toProductListDto(products: Product[]): ProductDto[] {
+  return productListSchema.parse(
+    products.map((product) => toProductDto(product)),
+  );
 }
 
 type ProductWithSalesHistory = Prisma.ProductGetPayload<{
@@ -66,7 +64,9 @@ export function toProductDetailsDto(
           dataRetirada: item.sale.dataRetirada.toISOString(),
           dataDevolucaoPrevista: item.sale.dataDevolucaoPrevista.toISOString(),
           status: item.sale.status,
-          totalAmount: item.sale.totalAmount ? Number(item.sale.totalAmount) : null,
+          totalAmount: item.sale.totalAmount
+            ? Number(item.sale.totalAmount)
+            : null,
           createdAt: item.sale.createdAt.toISOString(),
           updatedAt: item.sale.updatedAt.toISOString(),
           customer: {

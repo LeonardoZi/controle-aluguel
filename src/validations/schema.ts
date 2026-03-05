@@ -49,17 +49,14 @@ const optionalTaxId = z.preprocess(
     .optional(),
 );
 
-const unitString = z.preprocess(
-  (value) => {
-    if (typeof value !== "string") {
-      return value;
-    }
+const unitString = z.preprocess((value) => {
+  if (typeof value !== "string") {
+    return value;
+  }
 
-    const normalized = value.trim();
-    return normalized === "" ? undefined : normalized;
-  },
-  z.string().max(20, "Unidade deve ter no máximo 20 caracteres").default("un"),
-);
+  const normalized = value.trim();
+  return normalized === "" ? undefined : normalized;
+}, z.string().max(20, "Unidade deve ter no máximo 20 caracteres").default("un"));
 
 export const customerSchema = z.object({
   name: z

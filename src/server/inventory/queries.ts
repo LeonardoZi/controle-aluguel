@@ -6,7 +6,10 @@ import {
   type ProductDto,
 } from "@/server/contracts/v1/inventory";
 import { LOW_STOCK_THRESHOLD } from "@/server/shared/constants";
-import { toProductDetailsDto, toProductListDto } from "@/server/inventory/mappers";
+import {
+  toProductDetailsDto,
+  toProductListDto,
+} from "@/server/inventory/mappers";
 
 export interface ProductQueryFilters {
   query?: string;

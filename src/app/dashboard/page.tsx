@@ -234,7 +234,11 @@ export default async function DashboardPage() {
                 ) : null}
 
                 {card.href && card.linkLabel ? (
-                  <Button variant="link" asChild className="h-auto p-0 text-blue-600">
+                  <Button
+                    variant="link"
+                    asChild
+                    className="h-auto p-0 text-blue-600"
+                  >
                     <Link href={card.href}>{card.linkLabel} →</Link>
                   </Button>
                 ) : null}
@@ -247,7 +251,9 @@ export default async function DashboardPage() {
           <Card>
             <CardHeader>
               <CardTitle>Locações Recentes</CardTitle>
-              <CardDescription>Últimos registros dos últimos 30 dias.</CardDescription>
+              <CardDescription>
+                Últimos registros dos últimos 30 dias.
+              </CardDescription>
             </CardHeader>
             <CardContent>
               {overview.recentRentals.length > 0 ? (
@@ -272,7 +278,9 @@ export default async function DashboardPage() {
                           </Link>
                         </TableCell>
                         <TableCell>{formatDate(rental.dataRetirada)}</TableCell>
-                        <TableCell>{renderStatusBadge(rental.status)}</TableCell>
+                        <TableCell>
+                          {renderStatusBadge(rental.status)}
+                        </TableCell>
                         <TableCell className="text-right font-medium">
                           {formatCurrency(rental.totalAmount ?? 0)}
                         </TableCell>
@@ -338,14 +346,18 @@ export default async function DashboardPage() {
             <Card>
               <CardHeader>
                 <CardTitle>Produtos com Estoque Baixo</CardTitle>
-                <CardDescription>Itens que precisam de reposição.</CardDescription>
+                <CardDescription>
+                  Itens que precisam de reposição.
+                </CardDescription>
               </CardHeader>
               <CardContent>
                 <Table className="min-w-[640px]">
                   <TableHeader>
                     <TableRow>
                       <TableHead>Produto</TableHead>
-                      <TableHead className="text-center">Estoque Atual</TableHead>
+                      <TableHead className="text-center">
+                        Estoque Atual
+                      </TableHead>
                       <TableHead className="text-center">Unidade</TableHead>
                       <TableHead className="text-right">Preço Unit.</TableHead>
                     </TableRow>
@@ -391,7 +403,9 @@ export default async function DashboardPage() {
           <Card>
             <CardHeader>
               <CardTitle>Ações Rápidas</CardTitle>
-              <CardDescription>Atalhos para as operações mais usadas.</CardDescription>
+              <CardDescription>
+                Atalhos para as operações mais usadas.
+              </CardDescription>
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
@@ -411,7 +425,9 @@ export default async function DashboardPage() {
                       >
                         {action.icon}
                       </span>
-                      <span className="text-sm font-medium">{action.label}</span>
+                      <span className="text-sm font-medium">
+                        {action.label}
+                      </span>
                     </Link>
                   </Button>
                 ))}
@@ -439,13 +455,19 @@ export default async function DashboardPage() {
 
         <Card className="border-red-200 bg-red-50">
           <CardHeader>
-            <CardTitle className="text-red-700">Falha ao carregar dashboard</CardTitle>
+            <CardTitle className="text-red-700">
+              Falha ao carregar dashboard
+            </CardTitle>
             <CardDescription className="text-red-600">
               Ocorreu um erro ao carregar os dados. Tente novamente.
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <Button variant="outline" asChild className="border-red-200 text-red-700">
+            <Button
+              variant="outline"
+              asChild
+              className="border-red-200 text-red-700"
+            >
               <Link href="/dashboard">Tentar novamente</Link>
             </Button>
           </CardContent>

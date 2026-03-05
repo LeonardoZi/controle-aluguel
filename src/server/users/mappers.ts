@@ -1,4 +1,8 @@
-import { userListSchema, userSchema, type UserDto } from "@/server/contracts/v1/users";
+import {
+  userListSchema,
+  userSchema,
+  type UserDto,
+} from "@/server/contracts/v1/users";
 
 export function toUserDto(user: {
   id: string;

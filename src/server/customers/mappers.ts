@@ -5,9 +5,7 @@ import {
   type CustomerDto,
 } from "@/server/contracts/v1/customers";
 
-export function toCustomerDto(
-  customer: Customer,
-): CustomerDto {
+export function toCustomerDto(customer: Customer): CustomerDto {
   return customerSchema.parse({
     id: customer.id,
     name: customer.name,
@@ -27,9 +25,7 @@ export function toCustomerDto(
   });
 }
 
-export function toCustomerListDto(
-  customers: Customer[],
-): CustomerDto[] {
+export function toCustomerListDto(customers: Customer[]): CustomerDto[] {
   return customerListSchema.parse(
     customers.map((customer) => toCustomerDto(customer)),
   );

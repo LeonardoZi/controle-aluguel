@@ -1,6 +1,9 @@
 import { Decimal } from "@prisma/client/runtime/library";
 import { prisma } from "@/lib/prisma";
-import type { CreateProductInput, UpdateProductInput } from "@/validations/schema";
+import type {
+  CreateProductInput,
+  UpdateProductInput,
+} from "@/validations/schema";
 import type { ProductDto } from "@/server/contracts/v1/inventory";
 import { toProductDto } from "@/server/inventory/mappers";
 
@@ -63,7 +66,8 @@ export async function updateProductCommand(
     };
   } catch (error) {
     return {
-      error: error instanceof Error ? error.message : "Falha ao atualizar produto",
+      error:
+        error instanceof Error ? error.message : "Falha ao atualizar produto",
     };
   }
 }
@@ -98,7 +102,8 @@ export async function adjustStockCommand(
     };
   } catch (error) {
     return {
-      error: error instanceof Error ? error.message : "Falha ao ajustar estoque",
+      error:
+        error instanceof Error ? error.message : "Falha ao ajustar estoque",
     };
   }
 }
@@ -124,7 +129,8 @@ export async function deleteProductCommand(
     return { success: true };
   } catch (error) {
     return {
-      error: error instanceof Error ? error.message : "Falha ao deletar produto",
+      error:
+        error instanceof Error ? error.message : "Falha ao deletar produto",
     };
   }
 }

@@ -33,7 +33,10 @@ export const TableHeader = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <thead
     ref={ref}
-    className={cn("bg-gray-50 text-gray-700 dark:bg-gray-800 dark:text-gray-200", className)}
+    className={cn(
+      "bg-gray-50 text-gray-700 dark:bg-gray-800 dark:text-gray-200",
+      className,
+    )}
     {...props}
   />
 ));

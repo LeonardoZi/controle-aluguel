@@ -38,9 +38,7 @@ export function ThemeToggle() {
     <button
       type="button"
       onClick={handleToggle}
-      aria-label={
-        theme === "dark" ? "Ativar modo claro" : "Ativar modo escuro"
-      }
+      aria-label={theme === "dark" ? "Ativar modo claro" : "Ativar modo escuro"}
       title={theme === "dark" ? "Ativar modo claro" : "Ativar modo escuro"}
       className={cn(
         "fixed bottom-4 right-4 z-50 inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-medium shadow-lg backdrop-blur transition-colors print:hidden",

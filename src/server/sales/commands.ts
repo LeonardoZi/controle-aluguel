@@ -16,7 +16,9 @@ interface AggregatedSaleItem {
   precoUnitarioNoMomento?: number;
 }
 
-function aggregateSaleItems(items: CreateSaleInput["items"]): AggregatedSaleItem[] {
+function aggregateSaleItems(
+  items: CreateSaleInput["items"],
+): AggregatedSaleItem[] {
   const map = new Map<string, AggregatedSaleItem>();
 
   for (const item of items) {
@@ -51,89 +53,93 @@ export async function createSaleCommand(
   const aggregatedItems = aggregateSaleItems(payload.items);
 
   try {
-    const createdSale = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
-      const productIds = aggregatedItems.map((item) => item.produtoId);
+    const createdSale = await prisma.$transaction(
+      async (tx: Prisma.TransactionClient) => {
+        const productIds = aggregatedItems.map((item) => item.produtoId);
 
-      const products = await tx.product.findMany({
-        where: { id: { in: productIds } },
-      });
+        const products = await tx.product.findMany({
+          where: { id: { in: productIds } },
+        });
 
-      const productsById = new Map(products.map((product) => [product.id, product]));
+        const productsById = new Map(
+          products.map((product) => [product.id, product]),
+        );
 
-      for (const item of aggregatedItems) {
-        const product = productsById.get(item.produtoId);
+        for (const item of aggregatedItems) {
+          const product = productsById.get(item.produtoId);
 
-        if (!product) {
-          throw new Error(`Produto com ID ${item.produtoId} não encontrado`);
+          if (!product) {
+            throw new Error(`Produto com ID ${item.produtoId} não encontrado`);
+          }
+
+          const updated = await tx.product.updateMany({
+            where: {
+              id: item.produtoId,
+              currentStock: {
+                gte: item.quantidadeRetirada,
+              },
+            },
+            data: {
+              currentStock: {
+                decrement: item.quantidadeRetirada,
+              },
+            },
+          });
+
+          if (updated.count !== 1) {
+            throw new Error(
+              `Estoque insuficiente para o produto: ${product.name}. Disponível: ${product.currentStock}, Solicitado: ${item.quantidadeRetirada}`,
+            );
+          }
         }
 
-        const updated = await tx.product.updateMany({
-          where: {
-            id: item.produtoId,
-            currentStock: {
-              gte: item.quantidadeRetirada,
+        const saleItems = aggregatedItems.map((item) => {
+          const product = productsById.get(item.produtoId);
+          const unitPrice = item.precoUnitarioNoMomento
+            ? new Decimal(item.precoUnitarioNoMomento)
+            : product!.precoUnitario;
+
+          return {
+            produtoId: item.produtoId,
+            quantidadeRetirada: item.quantidadeRetirada,
+            quantidadeDevolvida: 0,
+            precoUnitarioNoMomento: unitPrice,
+          };
+        });
+
+        const totalAmount = calculateTotalAmount(saleItems);
+
+        return tx.sale.create({
+          data: {
+            customerId: payload.customerId,
+            userId: payload.userId,
+            dataRetirada: new Date(),
+            dataDevolucaoPrevista: payload.dataDevolucaoPrevista,
+            status: "ATIVO",
+            totalAmount,
+            notes: payload.notes,
+            itens: {
+              create: saleItems,
             },
           },
-          data: {
-            currentStock: {
-              decrement: item.quantidadeRetirada,
+          include: {
+            customer: true,
+            user: {
+              select: {
+                id: true,
+                name: true,
+                email: true,
+              },
+            },
+            itens: {
+              include: {
+                produto: true,
+              },
             },
           },
         });
-
-        if (updated.count !== 1) {
-          throw new Error(
-            `Estoque insuficiente para o produto: ${product.name}. Disponível: ${product.currentStock}, Solicitado: ${item.quantidadeRetirada}`,
-          );
-        }
-      }
-
-      const saleItems = aggregatedItems.map((item) => {
-        const product = productsById.get(item.produtoId);
-        const unitPrice = item.precoUnitarioNoMomento
-          ? new Decimal(item.precoUnitarioNoMomento)
-          : product!.precoUnitario;
-
-        return {
-          produtoId: item.produtoId,
-          quantidadeRetirada: item.quantidadeRetirada,
-          quantidadeDevolvida: 0,
-          precoUnitarioNoMomento: unitPrice,
-        };
-      });
-
-      const totalAmount = calculateTotalAmount(saleItems);
-
-      return tx.sale.create({
-        data: {
-          customerId: payload.customerId,
-          userId: payload.userId,
-          dataRetirada: new Date(),
-          dataDevolucaoPrevista: payload.dataDevolucaoPrevista,
-          status: "ATIVO",
-          totalAmount,
-          notes: payload.notes,
-          itens: {
-            create: saleItems,
-          },
-        },
-        include: {
-          customer: true,
-          user: {
-            select: {
-              id: true,
-              name: true,
-              email: true,
-            },
-          },
-          itens: {
-            include: {
-              produto: true,
-            },
-          },
-        },
-      });
-    });
+      },
+    );
 
     return {
       sale: toSaleDetailsDto(createdSale),
@@ -149,115 +155,127 @@ export async function processReturnCommand(
   payload: ProcessReturnInput,
 ): Promise<{ sale?: SaleDetailsDto; error?: string }> {
   try {
-    const updatedSale = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
-      const sale = await tx.sale.findUnique({
-        where: { id: payload.saleId },
-        include: {
-          itens: {
-            include: {
-              produto: true,
+    const updatedSale = await prisma.$transaction(
+      async (tx: Prisma.TransactionClient) => {
+        const sale = await tx.sale.findUnique({
+          where: { id: payload.saleId },
+          include: {
+            itens: {
+              include: {
+                produto: true,
+              },
+            },
+            customer: true,
+            user: {
+              select: {
+                id: true,
+                name: true,
+                email: true,
+              },
             },
           },
-          customer: true,
-          user: {
-            select: {
-              id: true,
-              name: true,
-              email: true,
-            },
-          },
-        },
-      });
+        });
 
-      if (!sale) {
-        throw new Error("Venda não encontrada");
-      }
-
-      if (sale.status === "CONCLUIDO" || sale.status === "CANCELADO") {
-        throw new Error("Não é possível processar devolução para esta venda");
-      }
-
-      for (const returnItem of payload.items) {
-        const saleItem = sale.itens.find((item) => item.id === returnItem.itemId);
-
-        if (!saleItem) {
-          throw new Error(`Item ${returnItem.itemId} não encontrado na venda`);
+        if (!sale) {
+          throw new Error("Venda não encontrada");
         }
 
-        const currentlyReturned = saleItem.quantidadeDevolvida || 0;
-        const totalReturned = currentlyReturned + returnItem.quantidadeDevolvida;
+        if (sale.status === "CONCLUIDO" || sale.status === "CANCELADO") {
+          throw new Error("Não é possível processar devolução para esta venda");
+        }
 
-        if (totalReturned > saleItem.quantidadeRetirada) {
-          throw new Error(
-            `Quantidade devolvida excede a quantidade retirada para o produto ${saleItem.produto.name}`,
+        for (const returnItem of payload.items) {
+          const saleItem = sale.itens.find(
+            (item) => item.id === returnItem.itemId,
           );
+
+          if (!saleItem) {
+            throw new Error(
+              `Item ${returnItem.itemId} não encontrado na venda`,
+            );
+          }
+
+          const currentlyReturned = saleItem.quantidadeDevolvida || 0;
+          const totalReturned =
+            currentlyReturned + returnItem.quantidadeDevolvida;
+
+          if (totalReturned > saleItem.quantidadeRetirada) {
+            throw new Error(
+              `Quantidade devolvida excede a quantidade retirada para o produto ${saleItem.produto.name}`,
+            );
+          }
         }
-      }
 
-      for (const returnItem of payload.items) {
-        const saleItem = sale.itens.find((item) => item.id === returnItem.itemId);
+        for (const returnItem of payload.items) {
+          const saleItem = sale.itens.find(
+            (item) => item.id === returnItem.itemId,
+          );
 
-        if (!saleItem) {
-          continue;
+          if (!saleItem) {
+            continue;
+          }
+
+          await tx.itensVenda.update({
+            where: { id: returnItem.itemId },
+            data: {
+              quantidadeDevolvida: {
+                increment: returnItem.quantidadeDevolvida,
+              },
+            },
+          });
+
+          await tx.product.update({
+            where: { id: saleItem.produtoId },
+            data: {
+              currentStock: {
+                increment: returnItem.quantidadeDevolvida,
+              },
+            },
+          });
         }
 
-        await tx.itensVenda.update({
-          where: { id: returnItem.itemId },
+        const updatedItems = await tx.itensVenda.findMany({
+          where: { saleId: payload.saleId },
+        });
+
+        const totalAmount = calculateTotalAmount(updatedItems);
+        const allReturned = updatedItems.every(
+          (item) => getPendingQuantity(item) === 0,
+        );
+
+        return tx.sale.update({
+          where: { id: payload.saleId },
           data: {
-            quantidadeDevolvida: {
-              increment: returnItem.quantidadeDevolvida,
+            totalAmount,
+            status: allReturned ? "CONCLUIDO" : sale.status,
+            notes: appendReturnNote(sale.notes, payload.notes),
+          },
+          include: {
+            customer: true,
+            user: {
+              select: {
+                id: true,
+                name: true,
+                email: true,
+              },
+            },
+            itens: {
+              include: {
+                produto: true,
+              },
             },
           },
         });
-
-        await tx.product.update({
-          where: { id: saleItem.produtoId },
-          data: {
-            currentStock: {
-              increment: returnItem.quantidadeDevolvida,
-            },
-          },
-        });
-      }
-
-      const updatedItems = await tx.itensVenda.findMany({
-        where: { saleId: payload.saleId },
-      });
-
-      const totalAmount = calculateTotalAmount(updatedItems);
-      const allReturned = updatedItems.every((item) => getPendingQuantity(item) === 0);
-
-      return tx.sale.update({
-        where: { id: payload.saleId },
-        data: {
-          totalAmount,
-          status: allReturned ? "CONCLUIDO" : sale.status,
-          notes: appendReturnNote(sale.notes, payload.notes),
-        },
-        include: {
-          customer: true,
-          user: {
-            select: {
-              id: true,
-              name: true,
-              email: true,
-            },
-          },
-          itens: {
-            include: {
-              produto: true,
-            },
-          },
-        },
-      });
-    });
+      },
+    );
 
     return {
       sale: toSaleDetailsDto(updatedSale),
     };
   } catch (error) {
     return {
-      error: error instanceof Error ? error.message : "Falha ao processar devolução",
+      error:
+        error instanceof Error ? error.message : "Falha ao processar devolução",
     };
   }
 }

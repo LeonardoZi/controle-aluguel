@@ -6,10 +6,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { useForm } from "@/hooks/use-form";
 import { cn } from "@/lib/utils";
-import {
-  customerSchema,
-  type CustomerFormValues,
-} from "@/validations/schema";
+import { customerSchema, type CustomerFormValues } from "@/validations/schema";
 
 export type { CustomerFormValues };
 
@@ -65,7 +62,9 @@ export function CustomerForm({
       setCepError(null);
 
       try {
-        const response = await fetch(`https://viacep.com.br/ws/${cepNumbers}/json/`);
+        const response = await fetch(
+          `https://viacep.com.br/ws/${cepNumbers}/json/`,
+        );
         const data = await response.json();
 
         if (data.erro) {
@@ -101,12 +100,7 @@ export function CustomerForm({
   };
 
   const handleFieldChange =
-    (
-      field: Exclude<
-        keyof CustomerFormValues,
-        "isActive" | "postalCode"
-      >,
-    ) =>
+    (field: Exclude<keyof CustomerFormValues, "isActive" | "postalCode">) =>
     (e: React.ChangeEvent<HTMLInputElement>) => {
       form.setValue(field, e.target.value);
     };
@@ -201,7 +195,10 @@ export function CustomerForm({
         <h3 className="text-lg font-medium">Endereço</h3>
 
         <div>
-          <label htmlFor="postalCode" className="mb-1 block text-sm font-medium">
+          <label
+            htmlFor="postalCode"
+            className="mb-1 block text-sm font-medium"
+          >
             CEP
           </label>
           <Input
@@ -225,7 +222,9 @@ export function CustomerForm({
           )}
           {cepError && <p className="mt-1 text-sm text-red-500">{cepError}</p>}
           {!cepError && fieldError("postalCode") && (
-            <p className="mt-1 text-sm text-red-500">{fieldError("postalCode")}</p>
+            <p className="mt-1 text-sm text-red-500">
+              {fieldError("postalCode")}
+            </p>
           )}
         </div>
 
@@ -244,13 +243,18 @@ export function CustomerForm({
               className={cn(fieldError("address") && "border-red-500")}
             />
             {fieldError("address") && (
-              <p className="mt-1 text-sm text-red-500">{fieldError("address")}</p>
+              <p className="mt-1 text-sm text-red-500">
+                {fieldError("address")}
+              </p>
             )}
           </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label htmlFor="number" className="mb-1 block text-sm font-medium">
+              <label
+                htmlFor="number"
+                className="mb-1 block text-sm font-medium"
+              >
                 Número
               </label>
               <Input
@@ -263,12 +267,17 @@ export function CustomerForm({
                 className={cn(fieldError("number") && "border-red-500")}
               />
               {fieldError("number") && (
-                <p className="mt-1 text-sm text-red-500">{fieldError("number")}</p>
+                <p className="mt-1 text-sm text-red-500">
+                  {fieldError("number")}
+                </p>
               )}
             </div>
 
             <div>
-              <label htmlFor="complement" className="mb-1 block text-sm font-medium">
+              <label
+                htmlFor="complement"
+                className="mb-1 block text-sm font-medium"
+              >
                 Complemento
               </label>
               <Input
@@ -281,7 +290,9 @@ export function CustomerForm({
                 className={cn(fieldError("complement") && "border-red-500")}
               />
               {fieldError("complement") && (
-                <p className="mt-1 text-sm text-red-500">{fieldError("complement")}</p>
+                <p className="mt-1 text-sm text-red-500">
+                  {fieldError("complement")}
+                </p>
               )}
             </div>
           </div>
@@ -289,7 +300,10 @@ export function CustomerForm({
 
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           <div>
-            <label htmlFor="neighborhood" className="mb-1 block text-sm font-medium">
+            <label
+              htmlFor="neighborhood"
+              className="mb-1 block text-sm font-medium"
+            >
               Bairro
             </label>
             <Input
@@ -302,7 +316,9 @@ export function CustomerForm({
               className={cn(fieldError("neighborhood") && "border-red-500")}
             />
             {fieldError("neighborhood") && (
-              <p className="mt-1 text-sm text-red-500">{fieldError("neighborhood")}</p>
+              <p className="mt-1 text-sm text-red-500">
+                {fieldError("neighborhood")}
+              </p>
             )}
           </div>
 
@@ -321,7 +337,9 @@ export function CustomerForm({
                 className={cn(fieldError("city") && "border-red-500")}
               />
               {fieldError("city") && (
-                <p className="mt-1 text-sm text-red-500">{fieldError("city")}</p>
+                <p className="mt-1 text-sm text-red-500">
+                  {fieldError("city")}
+                </p>
               )}
             </div>
 
@@ -340,7 +358,9 @@ export function CustomerForm({
                 className={cn(fieldError("state") && "border-red-500")}
               />
               {fieldError("state") && (
-                <p className="mt-1 text-sm text-red-500">{fieldError("state")}</p>
+                <p className="mt-1 text-sm text-red-500">
+                  {fieldError("state")}
+                </p>
               )}
             </div>
           </div>

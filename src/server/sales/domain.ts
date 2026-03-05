@@ -26,10 +26,12 @@ export function getPendingQuantity(item: {
   return item.quantidadeRetirada - (item.quantidadeDevolvida || 0);
 }
 
-export function hasPendingReturns(items: Array<{
-  quantidadeRetirada: number;
-  quantidadeDevolvida: number | null;
-}>): boolean {
+export function hasPendingReturns(
+  items: Array<{
+    quantidadeRetirada: number;
+    quantidadeDevolvida: number | null;
+  }>,
+): boolean {
   return items.some((item) => getPendingQuantity(item) > 0);
 }
 

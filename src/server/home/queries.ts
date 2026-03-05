@@ -17,7 +17,9 @@ const emptyStats: HomeStatsDto = {
   lowStockCount: 0,
 };
 
-export async function getUpcomingExpirations(): Promise<UpcomingExpirationDto[]> {
+export async function getUpcomingExpirations(): Promise<
+  UpcomingExpirationDto[]
+> {
   try {
     const sales = await listUpcomingExpirations();
 

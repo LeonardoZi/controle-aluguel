@@ -1,5 +1,8 @@
 import { prisma } from "@/lib/prisma";
-import type { CreateCustomerInput, UpdateCustomerInput } from "@/validations/schema";
+import type {
+  CreateCustomerInput,
+  UpdateCustomerInput,
+} from "@/validations/schema";
 import type { CustomerDto } from "@/server/contracts/v1/customers";
 import { toCustomerDto } from "@/server/customers/mappers";
 
@@ -36,7 +39,8 @@ export async function updateCustomerCommand(
     };
   } catch (error) {
     return {
-      error: error instanceof Error ? error.message : "Falha ao atualizar cliente",
+      error:
+        error instanceof Error ? error.message : "Falha ao atualizar cliente",
     };
   }
 }
@@ -53,7 +57,8 @@ export async function deactivateCustomerCommand(
     return { success: true };
   } catch (error) {
     return {
-      error: error instanceof Error ? error.message : "Falha ao deletar cliente",
+      error:
+        error instanceof Error ? error.message : "Falha ao deletar cliente",
     };
   }
 }

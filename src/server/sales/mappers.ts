@@ -30,11 +30,7 @@ export function toSaleDetailsDto(
     userId: sale.userId,
     dataRetirada: sale.dataRetirada.toISOString(),
     dataDevolucaoPrevista: sale.dataDevolucaoPrevista.toISOString(),
-    status: deriveSaleStatus(
-      sale.status,
-      sale.dataDevolucaoPrevista,
-      now,
-    ),
+    status: deriveSaleStatus(sale.status, sale.dataDevolucaoPrevista, now),
     totalAmount: sale.totalAmount ? Number(sale.totalAmount) : null,
     notes: sale.notes,
     createdAt: sale.createdAt.toISOString(),

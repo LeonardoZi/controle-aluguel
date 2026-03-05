@@ -273,7 +273,8 @@ export function Sidebar({ open }: SidebarProps) {
                   }
                   className={cn(
                     "flex items-center gap-3 rounded-md px-3 py-2.5 text-sm transition-colors hover:bg-gray-100 dark:hover:bg-slate-800",
-                    isActive(item.href) && "bg-blue-50 font-medium text-blue-600 dark:bg-blue-900/50",
+                    isActive(item.href) &&
+                      "bg-blue-50 font-medium text-blue-600 dark:bg-blue-900/50",
                     !open && "justify-center md:px-3",
                   )}
                 >

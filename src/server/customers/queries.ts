@@ -26,7 +26,9 @@ export async function listCustomers(query?: string): Promise<CustomerDto[]> {
   return customerListSchema.parse(toCustomerListDto(customers));
 }
 
-export async function findCustomerById(id: string): Promise<CustomerDto | null> {
+export async function findCustomerById(
+  id: string,
+): Promise<CustomerDto | null> {
   const customer = await prisma.customer.findUnique({
     where: { id },
   });

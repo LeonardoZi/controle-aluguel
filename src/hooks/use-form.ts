@@ -6,7 +6,7 @@ type ValidationErrors<T> = Partial<Record<keyof T, string>>;
 interface UseFormOptions<T> {
   initialValues: T;
   onSubmit?: (values: T) => void | Promise<void>;
-  validationSchema?: z.ZodType<T>;
+  validationSchema?: z.ZodType<T, z.ZodTypeDef, unknown>;
   validateOnChange?: boolean;
   validateOnBlur?: boolean;
 }
