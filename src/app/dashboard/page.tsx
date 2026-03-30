@@ -4,6 +4,7 @@ import { getDashboardOverview } from "@/server/dashboard/queries";
 import type { SaleStatus } from "@/server/contracts/v1/sales";
 import { Badge, type BadgeVariant } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { HandCoins, Package2, CheckCircle2, CircleAlert } from "lucide-react";
 import {
   Card,
   CardContent,
@@ -24,6 +25,7 @@ import { cn } from "@/lib/utils";
 interface SummaryCard {
   title: string;
   value: string | number;
+  icon?: ReactNode;
   valueClassName: string;
   href?: string;
   linkLabel?: string;
@@ -32,13 +34,6 @@ interface SummaryCard {
     label: string;
     variant: BadgeVariant;
   };
-}
-
-interface QuickAction {
-  href: string;
-  label: string;
-  icon: ReactNode;
-  iconClassName: string;
 }
 
 const statusConfig: Record<
@@ -53,95 +48,6 @@ const statusConfig: Record<
   CONCLUIDO: { label: "Concluído", variant: "success" },
   CANCELADO: { label: "Cancelado", variant: "secondary" },
 };
-
-const quickActions: QuickAction[] = [
-  {
-    href: "/sales/new",
-    label: "Nova Locação",
-    iconClassName: "bg-green-100 text-green-600",
-    icon: (
-      <svg
-        xmlns="http://www.w3.org/2000/svg"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        className="h-5 w-5"
-      >
-        <path d="M5 12h14" />
-        <path d="M12 5v14" />
-      </svg>
-    ),
-  },
-  {
-    href: "/inventory/new",
-    label: "Novo Produto",
-    iconClassName: "bg-blue-100 text-blue-600",
-    icon: (
-      <svg
-        xmlns="http://www.w3.org/2000/svg"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        className="h-5 w-5"
-      >
-        <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
-        <line x1="12" y1="8" x2="12" y2="16" />
-        <line x1="8" y1="12" x2="16" y2="12" />
-      </svg>
-    ),
-  },
-  {
-    href: "/customers/new",
-    label: "Novo Cliente",
-    iconClassName: "bg-amber-100 text-amber-600",
-    icon: (
-      <svg
-        xmlns="http://www.w3.org/2000/svg"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        className="h-5 w-5"
-      >
-        <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
-        <circle cx="8.5" cy="7" r="4" />
-        <path d="M20 8v6" />
-        <path d="M23 11h-6" />
-      </svg>
-    ),
-  },
-  {
-    href: "/sales",
-    label: "Ver Locações",
-    iconClassName: "bg-purple-100 text-purple-600",
-    icon: (
-      <svg
-        xmlns="http://www.w3.org/2000/svg"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        className="h-5 w-5"
-      >
-        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-        <polyline points="14 2 14 8 20 8" />
-        <line x1="16" y1="13" x2="8" y2="13" />
-        <line x1="16" y1="17" x2="8" y2="17" />
-        <polyline points="10 9 9 9 8 9" />
-      </svg>
-    ),
-  },
-];
 
 function formatCurrency(value: number) {
   return new Intl.NumberFormat("pt-BR", {
@@ -167,6 +73,7 @@ export default async function DashboardPage() {
     const summaryCards: SummaryCard[] = [
       {
         title: "Locações Ativas",
+        icon: <CheckCircle2 size={24} className="text-muted-foreground" />,
         value: overview.summary.activeSales,
         valueClassName: "text-blue-600",
         href: "/sales?status=ATIVO",
@@ -174,6 +81,7 @@ export default async function DashboardPage() {
       },
       {
         title: "Locações Atrasadas",
+        icon: <CircleAlert className="text-muted-foreground" size={24} />,
         value: overview.summary.overdueSales,
         valueClassName: "text-red-600",
         href: "/sales?status=ATRASADO",
@@ -181,20 +89,19 @@ export default async function DashboardPage() {
       },
       {
         title: "Receita (30 dias)",
+        icon: <HandCoins className="text-muted-foreground" size={24} />,
         value: formatCurrency(overview.summary.totalRevenue),
         valueClassName: "text-2xl text-green-600",
-        caption: `${overview.summary.completedSales} locações concluídas`,
+        href: undefined,
+        linkLabel: `${overview.summary.completedSales} locações concluídas`,
       },
       {
         title: "Estoque Baixo",
+        icon: <Package2 className="text-muted-foreground" size={24} />,
         value: overview.lowStockProducts.length,
         valueClassName: "text-amber-600",
         href: "/inventory",
         linkLabel: "Ver inventário",
-        badge: {
-          label: overview.lowStockProducts.length > 0 ? "Atenção" : "OK",
-          variant: overview.lowStockProducts.length > 0 ? "warning" : "success",
-        },
       },
     ];
 
@@ -220,7 +127,8 @@ export default async function DashboardPage() {
             <Card key={card.title}>
               <CardHeader className="space-y-1 pb-3">
                 <CardDescription>{card.title}</CardDescription>
-                <CardTitle className={cn("text-3xl", card.valueClassName)}>
+                <CardTitle className={cn("text-3xl flex items-center gap-2", card.valueClassName)}>
+                  {card.icon}
                   {card.value}
                 </CardTitle>
               </CardHeader>
@@ -239,9 +147,15 @@ export default async function DashboardPage() {
                     asChild
                     className="h-auto p-0 text-blue-600"
                   >
-                    <Link href={card.href}>{card.linkLabel} →</Link>
+                    <Link href={card.href}>
+                      {card.linkLabel} →
+                    </Link>
                   </Button>
-                ) : null}
+                ) : (
+                  <div className="inline-flex items-center text-[14px] font-medium text-[#60A5FA] leading-5 cursor-default select-none transition-colors">
+                    {card.linkLabel}
+                  </div>
+                )}
               </CardContent>
             </Card>
           ))}
@@ -298,45 +212,11 @@ export default async function DashboardPage() {
 
           <Card>
             <CardHeader>
-              <CardTitle className="text-red-600">Locações Atrasadas</CardTitle>
-              <CardDescription>Demandam retorno imediato.</CardDescription>
+              <CardTitle className="text-white-400">Gráficos</CardTitle>
+              <CardDescription>Dropdown</CardDescription>
             </CardHeader>
             <CardContent>
-              {overview.overdueRentals.length > 0 ? (
-                <Table className="min-w-[520px]">
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Cliente</TableHead>
-                      <TableHead>Devolução</TableHead>
-                      <TableHead className="text-right">Valor</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {overview.overdueRentals.map((rental) => (
-                      <TableRow key={rental.id}>
-                        <TableCell>
-                          <Link
-                            href={`/sales/${rental.id}`}
-                            className="font-medium text-blue-600 hover:underline"
-                          >
-                            {rental.customer.name}
-                          </Link>
-                        </TableCell>
-                        <TableCell className="font-medium text-red-600">
-                          {formatDate(rental.dataDevolucaoPrevista)}
-                        </TableCell>
-                        <TableCell className="text-right font-medium">
-                          {formatCurrency(rental.totalAmount ?? 0)}
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              ) : (
-                <p className="py-4 text-center text-sm text-green-600">
-                  Nenhuma locação atrasada no momento.
-                </p>
-              )}
+              grafico.
             </CardContent>
           </Card>
         </section>
@@ -399,42 +279,7 @@ export default async function DashboardPage() {
           </section>
         ) : null}
 
-        <section>
-          <Card>
-            <CardHeader>
-              <CardTitle>Ações Rápidas</CardTitle>
-              <CardDescription>
-                Atalhos para as operações mais usadas.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-                {quickActions.map((action) => (
-                  <Button
-                    key={action.href}
-                    variant="outline"
-                    asChild
-                    className="h-auto flex-col gap-2 rounded-lg border-gray-200 p-4 text-center hover:bg-gray-50"
-                  >
-                    <Link href={action.href}>
-                      <span
-                        className={cn(
-                          "flex h-10 w-10 items-center justify-center rounded-full",
-                          action.iconClassName,
-                        )}
-                      >
-                        {action.icon}
-                      </span>
-                      <span className="text-sm font-medium">
-                        {action.label}
-                      </span>
-                    </Link>
-                  </Button>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        </section>
+
       </div>
     );
   } catch {
