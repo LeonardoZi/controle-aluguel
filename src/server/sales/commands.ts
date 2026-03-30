@@ -1,5 +1,4 @@
-import type { Prisma } from "@prisma/client";
-import { Decimal } from "@prisma/client/runtime/library";
+import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import type { CreateSaleInput, ProcessReturnInput } from "@/validations/schema";
 import {
@@ -96,7 +95,7 @@ export async function createSaleCommand(
         const saleItems = aggregatedItems.map((item) => {
           const product = productsById.get(item.produtoId);
           const unitPrice = item.precoUnitarioNoMomento
-            ? new Decimal(item.precoUnitarioNoMomento)
+            ? new Prisma.Decimal(item.precoUnitarioNoMomento)
             : product!.precoUnitario;
 
           return {
@@ -308,7 +307,7 @@ export async function cancelSaleCommand(
         where: { id },
         data: {
           status: "CANCELADO",
-          totalAmount: new Decimal(0),
+          totalAmount: new Prisma.Decimal(0),
         },
       });
 

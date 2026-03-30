@@ -1,4 +1,4 @@
-import { Decimal } from "@prisma/client/runtime/library";
+import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import type {
   CreateProductInput,
@@ -15,7 +15,7 @@ export async function createProductCommand(
       data: {
         name: payload.name,
         description: payload.description,
-        precoUnitario: new Decimal(payload.precoUnitario),
+        precoUnitario: new Prisma.Decimal(payload.precoUnitario),
         currentStock: payload.currentStock,
         unit: payload.unit || "un",
       },
@@ -52,7 +52,7 @@ export async function updateProductCommand(
           ? { description: payload.description }
           : {}),
         ...(payload.precoUnitario !== undefined
-          ? { precoUnitario: new Decimal(payload.precoUnitario) }
+          ? { precoUnitario: new Prisma.Decimal(payload.precoUnitario) }
           : {}),
         ...(payload.currentStock !== undefined
           ? { currentStock: payload.currentStock }

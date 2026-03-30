@@ -1,10 +1,10 @@
-import { Decimal } from "@prisma/client/runtime/library";
+import { Prisma } from "@prisma/client";
 import type { SaleStatus } from "../contracts/v1/sales";
 
 export interface SaleItemLike {
   quantidadeRetirada: number;
   quantidadeDevolvida: number | null;
-  precoUnitarioNoMomento: Decimal | number;
+  precoUnitarioNoMomento: Prisma.Decimal | number;
 }
 
 export function deriveSaleStatus(
@@ -48,12 +48,12 @@ export function countPendingReturns(
   }, 0);
 }
 
-export function calculateTotalAmount(items: SaleItemLike[]): Decimal {
+export function calculateTotalAmount(items: SaleItemLike[]): Prisma.Decimal {
   return items.reduce((sum, item) => {
-    const unitPrice = new Decimal(item.precoUnitarioNoMomento);
+    const unitPrice = new Prisma.Decimal(item.precoUnitarioNoMomento);
     const usedQuantity = getPendingQuantity(item);
     return sum.add(unitPrice.mul(usedQuantity));
-  }, new Decimal(0));
+  }, new Prisma.Decimal(0));
 }
 
 export function appendReturnNote(
