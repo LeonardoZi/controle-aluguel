@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Decimal } from "@prisma/client/runtime/library";
+import { Prisma } from "@prisma/client";
 import { Button } from "@/components/ui/button";
 import { getCustomers } from "@/actions/customers";
 import { getProducts } from "@/actions/products";
@@ -20,7 +20,7 @@ interface Product {
   name: string;
   description?: string | null;
   currentStock: number;
-  precoUnitario: number | Decimal;
+  precoUnitario: number | Prisma.Decimal;
   unit: string;
 }
 
@@ -186,7 +186,7 @@ export default function NewSale() {
     return items.reduce((sum, item) => sum + item.subtotal, 0);
   };
 
-  const formatCurrency = (value: number | Decimal) => {
+  const formatCurrency = (value: number | Prisma.Decimal) => {
     return new Intl.NumberFormat("pt-BR", {
       style: "currency",
       currency: "BRL",

@@ -1,13 +1,13 @@
 import { type ClassValue, clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
-import { Decimal } from "@prisma/client/runtime/library";
+import { Prisma } from "@prisma/client";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
 export function formatCurrency(
-  value: Decimal | number | null | undefined,
+  value: Prisma.Decimal | number | null | undefined,
   currency = "BRL",
   locale = "pt-BR",
 ): string {
@@ -88,7 +88,7 @@ export function debounce<F extends (...args: unknown[]) => void>(
 }
 
 export function calculateTotal<
-  T extends { quantity: number; unitPrice?: number | Decimal },
+  T extends { quantity: number; unitPrice?: number | Prisma.Decimal },
 >(items: T[]): number {
   return items.reduce((sum, item) => {
     const price = item.unitPrice ? Number(item.unitPrice) : 0;

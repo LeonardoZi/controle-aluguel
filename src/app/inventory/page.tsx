@@ -2,14 +2,14 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { Decimal } from "@prisma/client/runtime/library";
+import { Prisma } from "@prisma/client";
 import { getProducts, deleteProduct } from "@/actions/products";
 
 interface Product {
   id: string;
   name: string;
   description?: string | null;
-  precoUnitario: Decimal | number;
+  precoUnitario: Prisma.Decimal | number;
   currentStock: number;
   unit: string;
   createdAt: string | Date;
@@ -68,7 +68,7 @@ export default function InventoryPage() {
     }
   };
 
-  const formatCurrency = (value: Decimal | number) => {
+  const formatCurrency = (value: Prisma.Decimal | number) => {
     return new Intl.NumberFormat("pt-BR", {
       style: "currency",
       currency: "BRL",

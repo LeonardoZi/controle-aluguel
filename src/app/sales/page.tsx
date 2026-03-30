@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { Decimal } from "@prisma/client/runtime/library";
+import { Prisma } from "@prisma/client";
 import { getSales } from "@/actions/sales";
 
 type SaleStatus = "ATIVO" | "ATRASADO" | "CONCLUIDO" | "CANCELADO";
@@ -16,7 +16,7 @@ interface Product {
   id: string;
   name: string;
   unit: string;
-  precoUnitario: number | Decimal;
+  precoUnitario: number | Prisma.Decimal;
 }
 
 interface SaleItem {
@@ -25,7 +25,7 @@ interface SaleItem {
   produto: Product;
   quantidadeRetirada: number;
   quantidadeDevolvida: number | null;
-  precoUnitarioNoMomento: number | Decimal;
+  precoUnitarioNoMomento: number | Prisma.Decimal;
 }
 
 interface Sale {
@@ -35,7 +35,7 @@ interface Sale {
   dataRetirada: string | Date;
   dataDevolucaoPrevista: string | Date;
   status: SaleStatus;
-  totalAmount: Decimal | number | null;
+  totalAmount: Prisma.Decimal | number | null;
   notes?: string | null;
   itens: SaleItem[];
   user: {
@@ -76,7 +76,7 @@ export default function SalesPage() {
     fetchSales();
   }, []);
 
-  const formatCurrency = (value: Decimal | number | null) => {
+  const formatCurrency = (value: Prisma.Decimal | number | null) => {
     if (value === null) return "R$ 0,00";
     return new Intl.NumberFormat("pt-BR", {
       style: "currency",
