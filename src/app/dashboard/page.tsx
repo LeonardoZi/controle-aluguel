@@ -21,6 +21,9 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { cn } from "@/lib/utils";
+import ChartSection from "@/components/data-display/charts/ChartSection";
+import { RevenueChartData } from "@/components/data-display/charts/RevenueChart";
+import { BestSellersChartData } from "@/components/data-display/charts/BestSellersChart";
 
 interface SummaryCard {
   title: string;
@@ -70,6 +73,38 @@ export default async function DashboardPage() {
   try {
     const overview = await getDashboardOverview();
 
+    // Gerar dados de receita por data para o gráfico
+    // Agrupa as locações concluídas por dia e soma o total
+
+    // Receita por dia
+    const revenueMap: Record<string, number> = {};
+    // Produtos mais vendidos
+    const productSalesMap: Record<string, { name: string; total: number }> = {};
+
+    overview.recentRentals.forEach((rental) => {
+      if (rental.status === "CONCLUIDO" && rental.dataRetirada && rental.totalAmount) {
+        const date = new Date(rental.dataRetirada);
+        const label = date.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" });
+        revenueMap[label] = (revenueMap[label] || 0) + Number(rental.totalAmount);
+      }
+      // Contabiliza produtos vendidos
+      if (rental.status === "CONCLUIDO" && rental.itens) {
+        rental.itens.forEach((item) => {
+          if (!item.produto) return;
+          const prodId = item.produto.id;
+          if (!productSalesMap[prodId]) {
+            productSalesMap[prodId] = { name: item.produto.name, total: 0 };
+          }
+          // Considera como vendido o que não foi devolvido
+          const vendido = item.quantidadeRetirada - (item.quantidadeDevolvida || 0);
+          productSalesMap[prodId].total += vendido;
+        });
+      }
+    });
+    const revenueData: RevenueChartData[] = Object.entries(revenueMap).map(([name, total]) => ({ name, total }));
+    revenueData.sort((a, b) => a.name.localeCompare(b.name));
+    const bestSellersData: BestSellersChartData[] = Object.values(productSalesMap).sort((a, b) => b.total - a.total);
+
     const summaryCards: SummaryCard[] = [
       {
         title: "Locações Ativas",
@@ -117,7 +152,7 @@ export default async function DashboardPage() {
               Dashboard - Sistema de Locação
             </h1>
             <p className="text-sm text-gray-500">
-              Resumo operacional dos últimos 30 dias.
+              Resumo operacional.
             </p>
           </div>
         </header>
@@ -165,9 +200,6 @@ export default async function DashboardPage() {
           <Card>
             <CardHeader>
               <CardTitle>Locações Recentes</CardTitle>
-              <CardDescription>
-                Últimos registros dos últimos 30 dias.
-              </CardDescription>
             </CardHeader>
             <CardContent>
               {overview.recentRentals.length > 0 ? (
@@ -213,10 +245,9 @@ export default async function DashboardPage() {
           <Card>
             <CardHeader>
               <CardTitle className="text-white-400">Gráficos</CardTitle>
-              <CardDescription>Dropdown</CardDescription>
             </CardHeader>
             <CardContent>
-              grafico.
+              <ChartSection revenueData={revenueData} bestSellersData={bestSellersData} />
             </CardContent>
           </Card>
         </section>
