@@ -1,0 +1,39 @@
+@media (max-width: 600px) {
+  .datepicker-x-btn {
+    right: 45% !important;
+    top: 50% !important;
+    transform: translateY(-50%) !important;
+    position: absolute !important;
+  }
+}
+.react-datepicker__close-icon {
+  background: #2563eb !important;
+  border-radius: 50%;
+  width: 24px;
+  height: 24px;
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+  position: absolute;
+  right: 8px !important;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 2;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+  pointer-events: auto;
+}
+.react-datepicker__close-icon::after {
+  content: "\00d7";
+  color: #fff !important;
+  font-size: 16px !important;
+  font-weight: bold;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  line-height: 1;
+}
+input.react-datepicker-ignore-onclickoutside {
+  padding-right: 36px !important;
+}

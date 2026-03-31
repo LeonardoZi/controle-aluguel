@@ -1,7 +1,6 @@
 import Link from "next/link";
 import { type ReactNode } from "react";
 import { getDashboardOverview } from "@/server/dashboard/queries";
-import type { SaleStatus } from "@/server/contracts/v1/sales";
 import { Badge, type BadgeVariant } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { HandCoins, Package2, CheckCircle2, CircleAlert } from "lucide-react";
@@ -24,6 +23,9 @@ import { cn } from "@/lib/utils";
 import ChartSection from "@/components/data-display/charts/ChartSection";
 import { RevenueChartData } from "@/components/data-display/charts/RevenueChart";
 import { BestSellersChartData } from "@/components/data-display/charts/BestSellersChart";
+import { CustomerRankingChartData } from "@/components/data-display/charts/CustomerRankingChart";
+import { listSales } from "@/server/sales/queries";
+import SalesTableWithFilters from "@/components/data-display/SalesTableWithFilters";
 
 interface SummaryCard {
   title: string;
@@ -39,19 +41,6 @@ interface SummaryCard {
   };
 }
 
-const statusConfig: Record<
-  SaleStatus,
-  {
-    label: string;
-    variant: BadgeVariant;
-  }
-> = {
-  ATIVO: { label: "Ativo", variant: "info" },
-  ATRASADO: { label: "Atrasado", variant: "destructive" },
-  CONCLUIDO: { label: "Concluído", variant: "success" },
-  CANCELADO: { label: "Cancelado", variant: "secondary" },
-};
-
 function formatCurrency(value: number) {
   return new Intl.NumberFormat("pt-BR", {
     style: "currency",
@@ -59,27 +48,20 @@ function formatCurrency(value: number) {
   }).format(value);
 }
 
-function formatDate(dateValue: string | Date): string {
-  const date = typeof dateValue === "string" ? new Date(dateValue) : dateValue;
-  return new Intl.DateTimeFormat("pt-BR").format(date);
-}
-
-function renderStatusBadge(status: SaleStatus) {
-  const config = statusConfig[status];
-  return <Badge variant={config.variant}>{config.label}</Badge>;
-}
-
 export default async function DashboardPage() {
   try {
     const overview = await getDashboardOverview();
 
-    // Gerar dados de receita por data para o gráfico
-    // Agrupa as locações concluídas por dia e soma o total
+    // Buscar todas as vendas do banco
+    const sales = await listSales();
 
     // Receita por dia
     const revenueMap: Record<string, number> = {};
     // Produtos mais vendidos
     const productSalesMap: Record<string, { name: string; total: number }> = {};
+
+    // Ranking de clientes por quantidade de compras
+    const customerRankingMap: Record<string, { name: string; total: number }> = {};
 
     overview.recentRentals.forEach((rental) => {
       if (rental.status === "CONCLUIDO" && rental.dataRetirada && rental.totalAmount) {
@@ -100,10 +82,20 @@ export default async function DashboardPage() {
           productSalesMap[prodId].total += vendido;
         });
       }
+      // Ranking de clientes
+      if (rental.status === "CONCLUIDO" && rental.customer) {
+        const customerId = rental.customer.id;
+        if (!customerRankingMap[customerId]) {
+          customerRankingMap[customerId] = { name: rental.customer.name, total: 0 };
+        }
+        customerRankingMap[customerId].total += 1;
+      }
     });
     const revenueData: RevenueChartData[] = Object.entries(revenueMap).map(([name, total]) => ({ name, total }));
     revenueData.sort((a, b) => a.name.localeCompare(b.name));
     const bestSellersData: BestSellersChartData[] = Object.values(productSalesMap).sort((a, b) => b.total - a.total);
+    // Ordena clientes do que mais comprou para o que menos comprou
+    const customerRankingData: CustomerRankingChartData[] = Object.values(customerRankingMap).sort((a, b) => b.total - a.total);
 
     const summaryCards: SummaryCard[] = [
       {
@@ -201,57 +193,37 @@ export default async function DashboardPage() {
         </section>
 
         <section className="grid grid-cols-1 gap-6 xl:grid-cols-2">
-          <Card>
-            <CardHeader>
-              <CardTitle>Locações Recentes</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {overview.recentRentals.length > 0 ? (
-                <Table className="min-w-[560px]">
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Cliente</TableHead>
-                      <TableHead>Retirada</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead className="text-right">Valor</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {overview.recentRentals.map((rental) => (
-                      <TableRow key={rental.id}>
-                        <TableCell>
-                          <Link
-                            href={`/sales/${rental.id}`}
-                            className="font-medium text-blue-600 hover:underline"
-                          >
-                            {rental.customer.name}
-                          </Link>
-                        </TableCell>
-                        <TableCell>{formatDate(rental.dataRetirada)}</TableCell>
-                        <TableCell>
-                          {renderStatusBadge(rental.status)}
-                        </TableCell>
-                        <TableCell className="text-right font-medium">
-                          {formatCurrency(rental.totalAmount ?? 0)}
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              ) : (
-                <p className="py-4 text-center text-sm text-gray-500">
-                  Nenhuma locação registrada nos últimos 30 dias.
-                </p>
-              )}
-            </CardContent>
-          </Card>
+          {/* Tabela de vendas com filtros */}
+          <SalesTableWithFilters
+            initialSales={(sales as unknown[]).map((item) => {
+              // Tipagem segura que inclui a relação com o cliente
+              const sale = item as {
+                id: string;
+                customer?: { name: string } | null;
+                dataRetirada: string | Date;
+                status: string;
+                totalAmount: number | null;
+              };
+
+              return {
+                id: sale.id,
+                customer: { name: sale.customer?.name || "-" },
+                // Garante que a data seja string, tratando se vier como Date do Prisma
+                dataRetirada: sale.dataRetirada instanceof Date
+                  ? sale.dataRetirada.toISOString()
+                  : String(sale.dataRetirada),
+                status: sale.status,
+                totalAmount: Number(sale.totalAmount ?? 0),
+              };
+            })}
+          />
 
           <Card>
             <CardHeader>
               <CardTitle className="text-white-400">Gráficos</CardTitle>
             </CardHeader>
             <CardContent>
-              <ChartSection revenueData={revenueData} bestSellersData={bestSellersData} />
+              <ChartSection revenueData={revenueData} bestSellersData={bestSellersData} customerRankingData={customerRankingData} />
             </CardContent>
           </Card>
         </section>
@@ -317,7 +289,7 @@ export default async function DashboardPage() {
 
       </div>
     );
-  } catch {
+  } catch (err) {
     return (
       <div className="container mx-auto space-y-8 px-4 py-8">
         <header className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -339,7 +311,8 @@ export default async function DashboardPage() {
               Falha ao carregar dashboard
             </CardTitle>
             <CardDescription className="text-red-600">
-              Ocorreu um erro ao carregar os dados. Tente novamente.
+              Ocorreu um erro ao carregar os dados. Tente novamente.<br />
+              <span style={{ fontSize: 12, color: '#b91c1c' }}>{String(err)}</span>
             </CardDescription>
           </CardHeader>
           <CardContent>

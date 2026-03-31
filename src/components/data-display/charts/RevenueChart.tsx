@@ -19,8 +19,8 @@ export interface RevenueChartData {
 
 export function RevenueChart({ data }: { data: RevenueChartData[] }) {
     return (
-        <div className="h-[350px] w-full pt-4">
-            <ResponsiveContainer width="100%" height="100%">
+        <div style={{ minHeight: 350, minWidth: 300, height: 350, width: '100%' }} className="pt-4">
+            <ResponsiveContainer width="100%" height={350} minWidth={300} minHeight={350}>
                 <AreaChart
                     data={data}
                     margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
