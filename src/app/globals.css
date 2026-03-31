@@ -1,4 +1,24 @@
-@tailwind base;
+@keyframes fadein {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes fadein-slow {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes slidein {
+  from { opacity: 0; transform: translateX(-32px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+.animate-fadein {
+  animation: fadein 0.7s cubic-bezier(.4,0,.2,1) both;
+}
+.animate-fadein-slow {
+  animation: fadein-slow 1.1s cubic-bezier(.4,0,.2,1) both;
+}
+.animate-slidein {
+  animation: slidein 0.8s cubic-bezier(.4,0,.2,1) both;
+}@tailwind base;
 @tailwind components;
 @tailwind utilities;
 

@@ -141,35 +141,39 @@ export default async function DashboardPage() {
     ];
 
     return (
-      <div className="container mx-auto space-y-8 px-4 py-8">
+      <div className="container mx-auto space-y-10 px-2 py-6 sm:px-4 sm:py-10 animate-fadein">
         <header className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <Button variant="ghost" asChild className="w-fit">
+          <Button variant="ghost" asChild className="w-fit transition-all hover:scale-105 hover:bg-blue-50/10">
             <Link href="/">← Voltar</Link>
           </Button>
 
           <div className="space-y-1 text-left sm:text-right">
-            <h1 className="text-2xl font-bold text-gray-900">
-              Dashboard - Sistema de Locação
+            <h1 className="text-3xl font-extrabold drop-shadow-sm tracking-tight animate-slidein text-white dark:text-white text-black dark:!text-white">
+              <span className="dark:text-white text-black">Dashboard <span className="text-blue-600">•</span> Sistema de Locação</span>
             </h1>
-            <p className="text-sm text-gray-500">
-              Resumo operacional.
-            </p>
+            <p className="text-base text-gray-300 dark:text-gray-300 text-gray-500 animate-fadein-slow">Resumo operacional.</p>
           </div>
         </header>
 
-        <section className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
-          {summaryCards.map((card) => (
-            <Card key={card.title}>
+        <section className="grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-4">
+          {summaryCards.map((card, idx) => (
+            <Card
+              key={card.title}
+              className="shadow-lg border-0 bg-white dark:bg-gradient-to-br dark:from-slate-900/80 dark:to-blue-900/60 hover:scale-[1.025] transition-transform duration-300 animate-fadein"
+              style={{ animationDelay: `${idx * 80}ms` }}
+            >
               <CardHeader className="space-y-1 pb-3">
-                <CardDescription>{card.title}</CardDescription>
-                <CardTitle className={cn("text-3xl flex items-center gap-2", card.valueClassName)}>
-                  {card.icon}
+                <CardDescription className="uppercase tracking-wider text-xs text-blue-300/80 font-semibold animate-fadein-slow dark:text-blue-300/80 text-blue-700/80">
+                  {card.title}
+                </CardDescription>
+                <CardTitle className={cn("text-4xl flex items-center gap-2 font-bold drop-shadow-sm dark:text-white text-black", card.valueClassName)}>
+                  <span className="transition-transform duration-300 group-hover:scale-110">{card.icon}</span>
                   {card.value}
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-2">
                 {card.caption ? (
-                  <p className="text-xs text-gray-500">{card.caption}</p>
+                  <p className="text-xs animate-fadein-slow dark:text-gray-400 text-gray-600">{card.caption}</p>
                 ) : null}
 
                 {card.badge ? (
@@ -180,14 +184,14 @@ export default async function DashboardPage() {
                   <Button
                     variant="link"
                     asChild
-                    className="h-auto p-0 text-blue-600"
+                    className="h-auto p-0 dark:text-blue-400 text-blue-700 hover:text-blue-300 transition-colors animate-fadein"
                   >
                     <Link href={card.href}>
                       {card.linkLabel} →
                     </Link>
                   </Button>
                 ) : (
-                  <div className="inline-flex items-center text-[14px] font-medium text-[#60A5FA] leading-5 cursor-default select-none transition-colors">
+                  <div className="inline-flex items-center text-[14px] font-medium leading-5 cursor-default select-none animate-fadein dark:text-blue-300 text-blue-700">
                     {card.linkLabel}
                   </div>
                 )}
