@@ -4,7 +4,14 @@ import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { DatePicker } from "@/components/ui/date-picker";
-import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table";
+import {
+  Table,
+  TableHeader,
+  TableRow,
+  TableHead,
+  TableBody,
+  TableCell,
+} from "@/components/ui/table";
 import Link from "next/link";
 
 export interface SaleRow {
@@ -19,13 +26,14 @@ interface SalesTableWithFiltersProps {
   initialSales: SaleRow[];
 }
 
-export default function SalesTableWithFilters({ initialSales }: SalesTableWithFiltersProps) {
+export default function SalesTableWithFilters({
+  initialSales,
+}: SalesTableWithFiltersProps) {
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState("");
   const [sales, setSales] = useState<SaleRow[]>(initialSales);
   const [date, setDate] = useState("");
 
-  // Função para converter data para yyyy-mm-dd (input date)
   function toInputDateString(date: Date) {
     const year = date.getFullYear();
     const month = String(date.getMonth() + 1).padStart(2, "0");
@@ -36,14 +44,15 @@ export default function SalesTableWithFilters({ initialSales }: SalesTableWithFi
   useEffect(() => {
     let filtered = initialSales;
     if (search) {
-      filtered = filtered.filter(sale => sale.customer.name.toLowerCase().includes(search.toLowerCase()));
+      filtered = filtered.filter((sale) =>
+        sale.customer.name.toLowerCase().includes(search.toLowerCase()),
+      );
     }
     if (status) {
-      filtered = filtered.filter(sale => sale.status === status);
+      filtered = filtered.filter((sale) => sale.status === status);
     }
     if (date) {
-      filtered = filtered.filter(sale => {
-        // Corrigir para comparar apenas a data local (yyyy-mm-dd)
+      filtered = filtered.filter((sale) => {
         const saleDate = new Date(sale.dataRetirada);
         const saleDateStr = toInputDateString(saleDate);
         return saleDateStr === date;
@@ -61,10 +70,14 @@ export default function SalesTableWithFilters({ initialSales }: SalesTableWithFi
           <Input
             placeholder="Buscar cliente..."
             value={search}
-            onChange={e => setSearch(e.target.value)}
+            onChange={(e) => setSearch(e.target.value)}
             className="w-full sm:w-56"
           />
-          <Select value={status} onChange={e => setStatus(e.target.value)} className="w-full sm:w-40">
+          <Select
+            value={status}
+            onChange={(e) => setStatus(e.target.value)}
+            className="w-full sm:w-40"
+          >
             <option value="">Todos status</option>
             <option value="CONCLUIDO">Concluído</option>
             <option value="ATIVO">Ativo</option>
@@ -84,20 +97,40 @@ export default function SalesTableWithFilters({ initialSales }: SalesTableWithFi
             </TableRow>
           </TableHeader>
           <TableBody>
-            {sales.length > 0 ? sales.map((sale) => (
-              <TableRow key={sale.id}>
-                <TableCell>
-                  <Link href={`/sales/${sale.id}`} className="font-medium text-blue-600 hover:underline">
-                    {sale.customer.name}
-                  </Link>
-                </TableCell>
-                <TableCell>{toInputDateString(new Date(sale.dataRetirada)).split("-").reverse().join("/")}</TableCell>
-                <TableCell>{sale.status}</TableCell>
-                <TableCell className="text-right font-medium">R$ {sale.totalAmount?.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</TableCell>
-              </TableRow>
-            )) : (
+            {sales.length > 0 ? (
+              sales.map((sale) => (
+                <TableRow key={sale.id}>
+                  <TableCell>
+                    <Link
+                      href={`/sales/${sale.id}`}
+                      className="font-medium text-blue-600 hover:underline"
+                    >
+                      {sale.customer.name}
+                    </Link>
+                  </TableCell>
+                  <TableCell>
+                    {toInputDateString(new Date(sale.dataRetirada))
+                      .split("-")
+                      .reverse()
+                      .join("/")}
+                  </TableCell>
+                  <TableCell>{sale.status}</TableCell>
+                  <TableCell className="text-right font-medium">
+                    R${" "}
+                    {sale.totalAmount?.toLocaleString("pt-BR", {
+                      minimumFractionDigits: 2,
+                    })}
+                  </TableCell>
+                </TableRow>
+              ))
+            ) : (
               <TableRow>
-                <TableCell colSpan={4} className="text-center text-gray-500 py-4">Nenhuma venda encontrada.</TableCell>
+                <TableCell
+                  colSpan={4}
+                  className="text-center text-gray-500 py-4"
+                >
+                  Nenhuma venda encontrada.
+                </TableCell>
               </TableRow>
             )}
           </TableBody>

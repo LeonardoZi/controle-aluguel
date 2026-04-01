@@ -183,9 +183,7 @@ export default async function Home() {
           </div>
         </div>
 
-        {/* Main Sections */}
         <div className="flex flex-col md:flex-row gap-8">
-          {/* Main Navigation Cards */}
           <div className="md:w-8/12">
             <h2 className="text-xl font-semibold mb-4">Módulos do Sistema</h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
@@ -385,7 +383,6 @@ export default async function Home() {
             </div>
           </div>
 
-          {/* Quick Access Panel */}
           <div className="md:w-4/12">
             <h2 className="text-xl font-semibold mb-4">Acesso Rápido</h2>
             <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-6">
@@ -543,7 +540,6 @@ export default async function Home() {
         </div>
       </div>
 
-      {/* Footer */}
       <footer className="bg-white border-t border-gray-200 py-4 mt-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col sm:flex-row justify-between items-center">

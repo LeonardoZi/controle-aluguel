@@ -160,7 +160,6 @@ export default function NewProductPage() {
           </div>
         </div>
 
-        {/* Action Buttons */}
         <div className="flex justify-end gap-4">
           <Link href="/inventory">
             <Button variant="outline" type="button">

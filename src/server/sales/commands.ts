@@ -237,14 +237,12 @@ export async function processReturnCommand(
           where: { saleId: payload.saleId },
         });
 
-        // O novo total da venda é calculado apenas com o que foi efetivamente usado pelo cliente
-        // (quantidade retirada - quantidade devolvida) * precoUnitarioNoMomento
         const totalAmount = updatedItems.reduce((sum, item) => {
-          const usedQty = item.quantidadeRetirada - (item.quantidadeDevolvida || 0);
-          return sum + (usedQty * Number(item.precoUnitarioNoMomento));
+          const usedQty =
+            item.quantidadeRetirada - (item.quantidadeDevolvida || 0);
+          return sum + usedQty * Number(item.precoUnitarioNoMomento);
         }, 0);
 
-        // Sempre marcar como CONCLUIDO ao processar devolução
         return tx.sale.update({
           where: { id: payload.saleId },
           data: {

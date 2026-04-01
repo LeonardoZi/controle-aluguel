@@ -3,7 +3,6 @@ import { type ReactNode } from "react";
 import { getDashboardOverview } from "@/server/dashboard/queries";
 import { Badge, type BadgeVariant } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { HandCoins, Package2, CheckCircle2, CircleAlert } from "lucide-react";
 import {
   Card,
   CardContent,
@@ -41,6 +40,94 @@ interface SummaryCard {
   };
 }
 
+interface DashboardIconProps {
+  className?: string;
+  size?: number;
+}
+
+function ActiveSalesIcon({ className, size = 24 }: DashboardIconProps) {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+    >
+      <path d="m9 12 2 2 4-4" />
+      <path d="M21 12c0 4.97-4.03 9-9 9s-9-4.03-9-9 4.03-9 9-9" />
+    </svg>
+  );
+}
+
+function OverdueSalesIcon({ className, size = 24 }: DashboardIconProps) {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+    >
+      <circle cx="12" cy="12" r="10" />
+      <path d="M12 7v6" />
+      <path d="M12 17h.01" />
+    </svg>
+  );
+}
+
+function RevenueIcon({ className, size = 24 }: DashboardIconProps) {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+    >
+      <path d="M12 2v20" />
+      <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H7" />
+    </svg>
+  );
+}
+
+function InventoryIcon({ className, size = 24 }: DashboardIconProps) {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+    >
+      <path d="m7.5 4.27 9 5.15" />
+      <path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z" />
+      <path d="m3.3 7 8.7 5 8.7-5" />
+      <path d="M12 22V12" />
+    </svg>
+  );
+}
+
 function formatCurrency(value: number) {
   return new Intl.NumberFormat("pt-BR", {
     style: "currency",
@@ -52,24 +139,28 @@ export default async function DashboardPage() {
   try {
     const overview = await getDashboardOverview();
 
-    // Buscar todas as vendas do banco
     const sales = await listSales();
 
-    // Receita por dia
     const revenueMap: Record<string, number> = {};
-    // Produtos mais vendidos
     const productSalesMap: Record<string, { name: string; total: number }> = {};
 
-    // Ranking de clientes por quantidade de compras
-    const customerRankingMap: Record<string, { name: string; total: number }> = {};
+    const customerRankingMap: Record<string, { name: string; total: number }> =
+      {};
 
     overview.recentRentals.forEach((rental) => {
-      if (rental.status === "CONCLUIDO" && rental.dataRetirada && rental.totalAmount) {
+      if (
+        rental.status === "CONCLUIDO" &&
+        rental.dataRetirada &&
+        rental.totalAmount
+      ) {
         const date = new Date(rental.dataRetirada);
-        const label = date.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" });
-        revenueMap[label] = (revenueMap[label] || 0) + Number(rental.totalAmount);
+        const label = date.toLocaleDateString("pt-BR", {
+          day: "2-digit",
+          month: "2-digit",
+        });
+        revenueMap[label] =
+          (revenueMap[label] || 0) + Number(rental.totalAmount);
       }
-      // Contabiliza produtos vendidos
       if (rental.status === "CONCLUIDO" && rental.itens) {
         rental.itens.forEach((item) => {
           if (!item.produto) return;
@@ -77,30 +168,37 @@ export default async function DashboardPage() {
           if (!productSalesMap[prodId]) {
             productSalesMap[prodId] = { name: item.produto.name, total: 0 };
           }
-          // Considera como vendido o que não foi devolvido
-          const vendido = item.quantidadeRetirada - (item.quantidadeDevolvida || 0);
+          const vendido =
+            item.quantidadeRetirada - (item.quantidadeDevolvida || 0);
           productSalesMap[prodId].total += vendido;
         });
       }
-      // Ranking de clientes
       if (rental.status === "CONCLUIDO" && rental.customer) {
         const customerId = rental.customer.id;
         if (!customerRankingMap[customerId]) {
-          customerRankingMap[customerId] = { name: rental.customer.name, total: 0 };
+          customerRankingMap[customerId] = {
+            name: rental.customer.name,
+            total: 0,
+          };
         }
         customerRankingMap[customerId].total += 1;
       }
     });
-    const revenueData: RevenueChartData[] = Object.entries(revenueMap).map(([name, total]) => ({ name, total }));
+    const revenueData: RevenueChartData[] = Object.entries(revenueMap).map(
+      ([name, total]) => ({ name, total }),
+    );
     revenueData.sort((a, b) => a.name.localeCompare(b.name));
-    const bestSellersData: BestSellersChartData[] = Object.values(productSalesMap).sort((a, b) => b.total - a.total);
-    // Ordena clientes do que mais comprou para o que menos comprou
-    const customerRankingData: CustomerRankingChartData[] = Object.values(customerRankingMap).sort((a, b) => b.total - a.total);
+    const bestSellersData: BestSellersChartData[] = Object.values(
+      productSalesMap,
+    ).sort((a, b) => b.total - a.total);
+    const customerRankingData: CustomerRankingChartData[] = Object.values(
+      customerRankingMap,
+    ).sort((a, b) => b.total - a.total);
 
     const summaryCards: SummaryCard[] = [
       {
         title: "Locações Ativas",
-        icon: <CheckCircle2 size={24} className="text-muted-foreground" />,
+        icon: <ActiveSalesIcon size={24} className="text-muted-foreground" />,
         value: overview.summary.activeSales,
         valueClassName: "text-blue-600",
         href: "/sales?status=ATIVO",
@@ -108,7 +206,7 @@ export default async function DashboardPage() {
       },
       {
         title: "Locações Atrasadas",
-        icon: <CircleAlert className="text-muted-foreground" size={24} />,
+        icon: <OverdueSalesIcon className="text-muted-foreground" size={24} />,
         value: overview.summary.overdueSales,
         valueClassName: "text-red-600",
         href: "/sales?status=ATRASADO",
@@ -116,7 +214,7 @@ export default async function DashboardPage() {
       },
       {
         title: "Receita (30 dias)",
-        icon: <HandCoins className="text-muted-foreground" size={24} />,
+        icon: <RevenueIcon className="text-muted-foreground" size={24} />,
         value: formatCurrency(overview.summary.totalRevenue),
         valueClassName: "text-2xl text-green-600",
         href: undefined,
@@ -124,7 +222,7 @@ export default async function DashboardPage() {
       },
       {
         title: "Estoque Baixo",
-        icon: <Package2 className="text-muted-foreground" size={24} />,
+        icon: <InventoryIcon className="text-muted-foreground" size={24} />,
         value: overview.lowStockProducts.length,
         valueClassName: "text-amber-600",
         href: "/inventory",
@@ -135,15 +233,24 @@ export default async function DashboardPage() {
     return (
       <div className="container mx-auto space-y-10 px-2 py-6 sm:px-4 sm:py-10 animate-fadein">
         <header className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <Button variant="ghost" asChild className="w-fit transition-all hover:scale-105 hover:bg-blue-50/10">
+          <Button
+            variant="ghost"
+            asChild
+            className="w-fit transition-all hover:scale-105 hover:bg-blue-50/10"
+          >
             <Link href="/">← Voltar</Link>
           </Button>
 
           <div className="space-y-1 text-left sm:text-right">
             <h1 className="text-3xl font-extrabold drop-shadow-sm tracking-tight animate-slidein text-white dark:text-white text-black dark:!text-white">
-              <span className="dark:text-white text-black">Dashboard <span className="text-blue-600">•</span> Sistema de Locação</span>
+              <span className="dark:text-white text-black">
+                Dashboard <span className="text-blue-600">•</span> Sistema de
+                Locação
+              </span>
             </h1>
-            <p className="text-base text-gray-300 dark:text-gray-300 text-gray-500 animate-fadein-slow">Resumo operacional.</p>
+            <p className="text-base text-gray-300 dark:text-gray-300 text-gray-500 animate-fadein-slow">
+              Resumo operacional.
+            </p>
           </div>
         </header>
 
@@ -158,14 +265,23 @@ export default async function DashboardPage() {
                 <CardDescription className="uppercase tracking-wider text-xs text-blue-300/80 font-semibold animate-fadein-slow dark:text-blue-300/80 text-blue-700/80">
                   {card.title}
                 </CardDescription>
-                <CardTitle className={cn("text-4xl flex items-center gap-2 font-bold drop-shadow-sm dark:text-white text-black", card.valueClassName)}>
-                  <span className="transition-transform duration-300 group-hover:scale-110">{card.icon}</span>
+                <CardTitle
+                  className={cn(
+                    "text-4xl flex items-center gap-2 font-bold drop-shadow-sm dark:text-white text-black",
+                    card.valueClassName,
+                  )}
+                >
+                  <span className="transition-transform duration-300 group-hover:scale-110">
+                    {card.icon}
+                  </span>
                   {card.value}
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-2">
                 {card.caption ? (
-                  <p className="text-xs animate-fadein-slow dark:text-gray-400 text-gray-600">{card.caption}</p>
+                  <p className="text-xs animate-fadein-slow dark:text-gray-400 text-gray-600">
+                    {card.caption}
+                  </p>
                 ) : null}
 
                 {card.badge ? (
@@ -178,9 +294,7 @@ export default async function DashboardPage() {
                     asChild
                     className="h-auto p-0 dark:text-blue-400 text-blue-700 hover:text-blue-300 transition-colors animate-fadein"
                   >
-                    <Link href={card.href}>
-                      {card.linkLabel} →
-                    </Link>
+                    <Link href={card.href}>{card.linkLabel} →</Link>
                   </Button>
                 ) : (
                   <div className="inline-flex items-center text-[14px] font-medium leading-5 cursor-default select-none animate-fadein dark:text-blue-300 text-blue-700">
@@ -193,10 +307,8 @@ export default async function DashboardPage() {
         </section>
 
         <section className="grid grid-cols-1 gap-6 xl:grid-cols-2">
-          {/* Tabela de vendas com filtros */}
           <SalesTableWithFilters
             initialSales={(sales as unknown[]).map((item) => {
-              // Tipagem segura que inclui a relação com o cliente
               const sale = item as {
                 id: string;
                 customer?: { name: string } | null;
@@ -208,10 +320,10 @@ export default async function DashboardPage() {
               return {
                 id: sale.id,
                 customer: { name: sale.customer?.name || "-" },
-                // Garante que a data seja string, tratando se vier como Date do Prisma
-                dataRetirada: sale.dataRetirada instanceof Date
-                  ? sale.dataRetirada.toISOString()
-                  : String(sale.dataRetirada),
+                dataRetirada:
+                  sale.dataRetirada instanceof Date
+                    ? sale.dataRetirada.toISOString()
+                    : String(sale.dataRetirada),
                 status: sale.status,
                 totalAmount: Number(sale.totalAmount ?? 0),
               };
@@ -223,7 +335,11 @@ export default async function DashboardPage() {
               <CardTitle className="text-white-400">Gráficos</CardTitle>
             </CardHeader>
             <CardContent>
-              <ChartSection revenueData={revenueData} bestSellersData={bestSellersData} customerRankingData={customerRankingData} />
+              <ChartSection
+                revenueData={revenueData}
+                bestSellersData={bestSellersData}
+                customerRankingData={customerRankingData}
+              />
             </CardContent>
           </Card>
         </section>
@@ -285,8 +401,6 @@ export default async function DashboardPage() {
             </Card>
           </section>
         ) : null}
-
-
       </div>
     );
   } catch (err) {
@@ -311,8 +425,11 @@ export default async function DashboardPage() {
               Falha ao carregar dashboard
             </CardTitle>
             <CardDescription className="text-red-600">
-              Ocorreu um erro ao carregar os dados. Tente novamente.<br />
-              <span style={{ fontSize: 12, color: '#b91c1c' }}>{String(err)}</span>
+              Ocorreu um erro ao carregar os dados. Tente novamente.
+              <br />
+              <span style={{ fontSize: 12, color: "#b91c1c" }}>
+                {String(err)}
+              </span>
             </CardDescription>
           </CardHeader>
           <CardContent>
