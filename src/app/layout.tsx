@@ -1,6 +1,8 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { ThemeToggle } from "@/components/theme/theme-toggle";
+import "react-datepicker/dist/react-datepicker.css";
+import "../components/ui/date-picker.css";
 import "./globals.css";
 
 const geistSans = Geist({

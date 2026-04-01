@@ -24,9 +24,45 @@ interface SimpleAreaChartProps {
   emptyMessage: string;
 }
 
+const chartSurfaceStyle: CSSProperties = {
+  backgroundColor: "var(--secondary)",
+  borderColor: "var(--border)",
+};
+
+const chartTrackStyle: CSSProperties = {
+  backgroundColor: "var(--background)",
+};
+
+const chartStrongTextStyle: CSSProperties = {
+  color: "var(--foreground)",
+};
+
+const chartMutedTextStyle: CSSProperties = {
+  color: "var(--muted-foreground)",
+};
+
+const svgMutedTextStyle: CSSProperties = {
+  fill: "var(--muted-foreground)",
+};
+
+const svgStrongTextStyle: CSSProperties = {
+  fill: "var(--foreground)",
+};
+
+const svgGridLineStyle: CSSProperties = {
+  stroke: "var(--border)",
+};
+
+const svgPointStrokeStyle: CSSProperties = {
+  stroke: "var(--secondary)",
+};
+
 function EmptyChartState({ message }: EmptyChartStateProps) {
   return (
-    <div className="flex min-h-[350px] min-w-[300px] items-center justify-center rounded-xl border border-dashed border-slate-800 bg-slate-950/40 px-4 py-10 text-center text-sm text-slate-400">
+    <div
+      className="flex min-h-[350px] min-w-[300px] items-center justify-center rounded-xl border border-dashed px-4 py-10 text-center text-sm"
+      style={{ ...chartSurfaceStyle, ...chartMutedTextStyle }}
+    >
       {message}
     </div>
   );
@@ -47,7 +83,10 @@ export function SimpleBarChart({
   return (
     <div className="flex min-h-[350px] min-w-[300px] flex-col gap-4 pt-4">
       <div className="overflow-x-auto pb-2">
-        <div className="flex h-[280px] min-w-full items-end gap-3 rounded-xl border border-slate-800 bg-slate-950/70 p-4">
+        <div
+          className="flex h-[280px] min-w-full items-end gap-3 rounded-xl border p-4"
+          style={chartSurfaceStyle}
+        >
           {data.map((item) => {
             const heightPercentage =
               item.total > 0 ? Math.max((item.total / maxValue) * 100, 12) : 0;
@@ -62,16 +101,25 @@ export function SimpleBarChart({
                 className="flex h-full w-20 shrink-0 flex-col justify-end gap-2"
                 title={`${item.name}: ${valueFormatter(item.total)}`}
               >
-                <span className="text-center text-xs font-semibold text-slate-100">
+                <span
+                  className="text-center text-xs font-semibold"
+                  style={chartStrongTextStyle}
+                >
                   {valueFormatter(item.total)}
                 </span>
-                <div className="relative flex-1 overflow-hidden rounded-t-xl bg-slate-900/90">
+                <div
+                  className="relative flex-1 overflow-hidden rounded-t-xl"
+                  style={chartTrackStyle}
+                >
                   <div
                     className="absolute inset-x-0 bottom-0 rounded-t-xl transition-all duration-300"
                     style={barStyle}
                   />
                 </div>
-                <span className="truncate text-center text-xs text-slate-400">
+                <span
+                  className="truncate text-center text-xs"
+                  style={chartMutedTextStyle}
+                >
                   {item.name}
                 </span>
               </div>
@@ -131,7 +179,8 @@ export function SimpleAreaChart({
       <div className="overflow-x-auto pb-2">
         <svg
           viewBox={`0 0 ${chartWidth} ${chartHeight}`}
-          className="h-[280px] min-w-full rounded-xl border border-slate-800 bg-slate-950/70"
+          className="h-[280px] min-w-full rounded-xl border"
+          style={chartSurfaceStyle}
           role="img"
           aria-label="Receita por dia"
         >
@@ -151,14 +200,14 @@ export function SimpleAreaChart({
                   x2={chartWidth - paddingRight}
                   y1={y}
                   y2={y}
-                  stroke="#1e293b"
                   strokeDasharray="4 4"
+                  style={svgGridLineStyle}
                 />
                 <text
                   x={paddingLeft + 4}
                   y={y - 6}
-                  fill="#64748b"
                   fontSize="11"
+                  style={svgMutedTextStyle}
                 >
                   {axisFormatter(tick)}
                 </text>
@@ -181,24 +230,24 @@ export function SimpleAreaChart({
                 cy={point.y}
                 r="4"
                 fill={accentColor}
-                stroke="#0f172a"
                 strokeWidth="2"
+                style={svgPointStrokeStyle}
               />
               <text
                 x={point.x}
                 y={point.y - 12}
-                fill="#f8fafc"
                 fontSize="11"
                 textAnchor="middle"
+                style={svgStrongTextStyle}
               >
                 {valueFormatter(point.total)}
               </text>
               <text
                 x={point.x}
                 y={chartHeight - 12}
-                fill="#64748b"
                 fontSize="11"
                 textAnchor="middle"
+                style={svgMutedTextStyle}
               >
                 {point.name}
               </text>
