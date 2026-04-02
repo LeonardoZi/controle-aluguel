@@ -3,6 +3,19 @@ import { getHomeOverview } from "@/server/home/queries";
 
 export default async function Home() {
   const { stats, upcomingExpirations } = await getHomeOverview();
+  const monthRevenue = Number(stats.monthRevenue);
+  const fullMonthRevenue = new Intl.NumberFormat("pt-BR", {
+    style: "currency",
+    currency: "BRL",
+  }).format(monthRevenue);
+  const compactMonthRevenue = new Intl.NumberFormat("pt-BR", {
+    style: "currency",
+    currency: "BRL",
+    notation: "compact",
+    compactDisplay: "short",
+    maximumFractionDigits: 1,
+  }).format(monthRevenue);
+  const showCompactMonthRevenue = monthRevenue >= 100000;
 
   return (
     <div className="min-h-screen bg-gray-50 font-[family-name:var(--font-geist-sans)] text-gray-900">
@@ -42,22 +55,29 @@ export default async function Home() {
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="grid grid-cols-2 lg:grid-cols-6 gap-4 mb-10">
-          <div className="bg-white rounded-lg p-6 shadow-sm border border-gray-100">
-            <div className="flex items-center justify-between">
-              <div>
+          <div className="col-span-2 lg:col-span-2 bg-white rounded-lg p-6 shadow-sm border border-gray-100">
+            <div className="flex items-start justify-between gap-3">
+              <div className="min-w-0 flex-1">
                 <p className="text-sm text-gray-500">Receita Mês</p>
-                <h3 className="text-2xl font-bold mt-1">
-                  {new Intl.NumberFormat("pt-BR", {
-                    style: "currency",
-                    currency: "BRL",
-                  }).format(Number(stats.monthRevenue))}
+                <h3 className="mt-1 text-xl font-bold leading-tight xl:text-2xl">
+                  {showCompactMonthRevenue
+                    ? compactMonthRevenue
+                    : fullMonthRevenue}
                 </h3>
+                {showCompactMonthRevenue ? (
+                  <p
+                    className="mt-1 truncate text-xs text-gray-400"
+                    title={fullMonthRevenue}
+                  >
+                    {fullMonthRevenue}
+                  </p>
+                ) : null}
               </div>
-              <div className="h-12 w-12 bg-green-50 rounded-lg flex items-center justify-center text-green-500">
+              <div className="h-10 w-10 shrink-0 bg-green-50 rounded-lg flex items-center justify-center text-green-500">
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
-                  width="24"
-                  height="24"
+                  width="20"
+                  height="20"
                   viewBox="0 0 24 24"
                   fill="none"
                   stroke="currentColor"
