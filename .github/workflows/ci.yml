@@ -25,8 +25,35 @@ defaults:
     shell: bash
 
 jobs:
+  detect-tests:
+    name: Detect Test Configuration
+    runs-on: ubuntu-latest
+    outputs:
+      has-unit-config: ${{ steps.detect.outputs.has-unit-config }}
+      has-e2e-config: ${{ steps.detect.outputs.has-e2e-config }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Detect test config files
+        id: detect
+        run: |
+          if [ -f vitest.config.ts ] || [ -f vitest.config.mts ] || [ -f vitest.config.js ] || [ -f vitest.config.mjs ] || [ -f jest.config.ts ] || [ -f jest.config.js ] || [ -f jest.config.mjs ] || [ -f jest.config.cjs ]; then
+            echo "has-unit-config=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "has-unit-config=false" >> "$GITHUB_OUTPUT"
+          fi
+
+          if [ -f playwright.config.ts ] || [ -f playwright.config.js ] || [ -f playwright.config.mjs ] || [ -f playwright.config.cjs ]; then
+            echo "has-e2e-config=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "has-e2e-config=false" >> "$GITHUB_OUTPUT"
+          fi
+
   quality:
     name: Quality
+    needs: detect-tests
     runs-on: ubuntu-latest
     timeout-minutes: 20
 
@@ -95,8 +122,10 @@ jobs:
 
   unit-tests:
     name: Unit Tests
-    if: ${{ hashFiles('vitest.config.*', 'jest.config.*') != '' }}
-    needs: quality
+    if: ${{ needs.detect-tests.outputs.has-unit-config == 'true' }}
+    needs:
+      - detect-tests
+      - quality
     runs-on: ubuntu-latest
     timeout-minutes: 15
 
@@ -151,8 +180,10 @@ jobs:
 
   e2e:
     name: E2E
-    if: ${{ hashFiles('playwright.config.*') != '' }}
-    needs: quality
+    if: ${{ needs.detect-tests.outputs.has-e2e-config == 'true' }}
+    needs:
+      - detect-tests
+      - quality
     runs-on: ubuntu-latest
     timeout-minutes: 25
 
