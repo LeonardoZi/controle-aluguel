@@ -51,7 +51,9 @@ export function DatePicker({
     <div className="relative w-full min-w-[120px]">
       <ReactDatePicker
         selected={selectedDate}
-        onChange={(date: Date | null) => onChange(date ? formatDateToIso(date) : "")}
+        onChange={(date: Date | null) =>
+          onChange(date ? formatDateToIso(date) : "")
+        }
         dateFormat={format}
         locale={ptBR}
         isClearable
