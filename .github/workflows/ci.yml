@@ -105,7 +105,7 @@ jobs:
           if [ -d prisma/migrations ] && [ -n "$(find prisma/migrations -mindepth 1 -maxdepth 1 -type d -print -quit)" ]; then
             npx prisma migrate deploy
           else
-            npx prisma db push --skip-generate
+            npx prisma db push
           fi
 
       - name: Check formatting
@@ -166,7 +166,7 @@ jobs:
           if [ -d prisma/migrations ] && [ -n "$(find prisma/migrations -mindepth 1 -maxdepth 1 -type d -print -quit)" ]; then
             npx prisma migrate deploy
           else
-            npx prisma db push --skip-generate
+            npx prisma db push
           fi
 
       - name: Seed database
@@ -232,7 +232,7 @@ jobs:
           if [ -d prisma/migrations ] && [ -n "$(find prisma/migrations -mindepth 1 -maxdepth 1 -type d -print -quit)" ]; then
             npx prisma migrate deploy
           else
-            npx prisma db push --skip-generate
+            npx prisma db push
           fi
 
       - name: Seed database
