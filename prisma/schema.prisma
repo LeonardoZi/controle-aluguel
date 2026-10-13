@@ -97,3 +97,12 @@ enum SaleStatus {
   CONCLUIDO
   CANCELADO
 }
+
+model PrecoMercado {
+  id                      String       @id @default(uuid())
+  codigoSinapi            String
+  nome                    String
+  unidade                 String       @default("un")                 
+  precoUnitario           Decimal        @db.Decimal(10, 2)
+  atualizadoEm            DateTime     @default(now())
+}

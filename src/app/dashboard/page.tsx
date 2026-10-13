@@ -25,6 +25,7 @@ import { BestSellersChartData } from "@/components/data-display/charts/BestSelle
 import { CustomerRankingChartData } from "@/components/data-display/charts/CustomerRankingChart";
 import { listSales } from "@/server/sales/queries";
 import SalesTableWithFilters from "@/components/data-display/SalesTableWithFilters";
+import { prisma } from "@/lib/prisma";
 
 interface SummaryCard {
   title: string;
@@ -128,6 +129,26 @@ function InventoryIcon({ className, size = 24 }: DashboardIconProps) {
   );
 }
 
+function MarketIcon({className, size = 24}: DashboardIconProps) {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+    >
+      <line x1="12" y1="1" x2="12" y2="23" />
+      <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+    </svg>
+  );
+}
+
 function formatCurrency(value: number) {
   return new Intl.NumberFormat("pt-BR", {
     style: "currency",
@@ -195,6 +216,8 @@ export default async function DashboardPage() {
       customerRankingMap,
     ).sort((a, b) => b.total - a.total);
 
+    const totalMateriais = await prisma.precoMercado.count();
+
     const summaryCards: SummaryCard[] = [
       {
         title: "Locações Ativas",
@@ -228,6 +251,14 @@ export default async function DashboardPage() {
         href: "/inventory",
         linkLabel: "Ver inventário",
       },
+      {
+        title: "Preços de Mercado",
+        icon: <MarketIcon className="text-muted-foreground" size={24} />,
+        value: totalMateriais + " itens",
+        valueClassName: "text-emerald-600 !text-2xl",
+        href: "/market",
+        linkLabel: "Consultar preços",
+      },
     ];
 
     return (
@@ -254,7 +285,7 @@ export default async function DashboardPage() {
           </div>
         </header>
 
-        <section className="grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-4">
+        <section className="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-5">
           {summaryCards.map((card, idx) => (
             <Card
               key={card.title}
