@@ -18,6 +18,7 @@ import {
   listLowStockProducts,
   listProducts,
 } from "@/server/inventory/queries";
+import { prisma } from "@/lib/prisma";
 
 export async function getProducts(options?: {
   query?: string;
@@ -117,5 +118,24 @@ export async function getLowStockProducts() {
     return { products };
   } catch {
     return { error: "Falha ao buscar produtos com estoque baixo" };
+  }
+}
+
+export async function getMarketPrices() {
+  try {
+    const listaMercado = await prisma.precoMercado.findMany({
+      orderBy: { nome: "asc" },
+    });
+
+    return listaMercado.map((item) => ({
+      id: item.id,
+      codigoSinapi: item.codigoSinapi,
+      nome: item.nome,
+      unidade: item.unidade,
+      precoUnitario: Number(item.precoUnitario),
+    }));
+  } catch (error) {
+    console.error("Erro ao buscar preços do SINAPI:", error);
+    return []; // Retorna lista vazia em caso de erro para não quebrar a tela
   }
 }

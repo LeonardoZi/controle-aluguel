@@ -1,15 +1,42 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { createProduct } from "@/actions/products";
+import { createProduct, getMarketPrices } from "@/actions/products";
+import MarketClient from "@/app/market/MarketClient";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+
+interface MaterialSinapi {
+  id: string;
+  codigoSinapi: string;
+  nome: string;
+  unidade: string;
+  precoUnitario: number;
+}
 
 export default function NewProductPage() {
   const router = useRouter();
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
+  const [codigoSinapi, setCodigoSinapi] = useState("");
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [materiaisSinapi, setMateriaisSinapi] = useState<MaterialSinapi[]>([]);
+
+  useEffect(() => {
+    async function carregarSinapi() {
+      const dados = await getMarketPrices();
+      setMateriaisSinapi(dados);
+    }
+    carregarSinapi();
+  }, []);
 
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
@@ -38,6 +65,7 @@ export default function NewProductPage() {
         precoUnitario: parseFloat(precoUnitario),
         currentStock: parseInt(currentStock) || 0,
         unit,
+        codigoSinapi: codigoSinapi || undefined,
       };
 
       const result = await createProduct(productData);
@@ -156,6 +184,52 @@ export default function NewProductPage() {
                 className="w-full px-3 py-2 border border-gray-300 rounded"
                 placeholder="0"
               />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Referência SINAPI (Opcional)
+              </label>
+
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={codigoSinapi}
+                  onChange={(e) => setCodigoSinapi(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded bg-white"
+                  placeholder="Ex: 39131"
+                />
+
+                <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
+                  <DialogTrigger asChild>
+                    <Button
+                      variant="outline"
+                      type="button"
+                      className="shrink-0"
+                    >
+                      Buscar SINAPI
+                    </Button>
+                  </DialogTrigger>
+
+                  <DialogContent className="sm:max-w-[90vw] lg:max-w-5xl h-[85vh] flex flex-col p-6 bg-white  overflow-hidden">
+                    <DialogHeader>
+                      <DialogTitle>
+                        Buscar Referência de Preço (SINAPI)
+                      </DialogTitle>
+                    </DialogHeader>
+
+                    <div className="flex-1 overflow-hidden mt-2">
+                      <MarketClient
+                        materiaisIniciais={materiaisSinapi}
+                        onSelect={(codigo) => {
+                          setCodigoSinapi(codigo);
+                          setIsModalOpen(false);
+                        }}
+                      />
+                    </div>
+                  </DialogContent>
+                </Dialog>
+              </div>
             </div>
           </div>
         </div>

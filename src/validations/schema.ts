@@ -104,6 +104,7 @@ export const createProductSchema = z.object({
     .nonnegative("Estoque não pode ser negativo")
     .default(0),
   unit: unitString,
+  codigoSinapi: optionalNullableString(50, "Código SINAPI"),
 });
 
 export const updateProductSchema = createProductSchema
