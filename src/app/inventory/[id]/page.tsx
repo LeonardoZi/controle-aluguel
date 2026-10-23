@@ -5,6 +5,15 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { getProductById, updateProduct } from "@/actions/products";
+import { getMarketPrices } from "@/actions/products";
+import MarketClient from "@/app/market/MarketClient";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 
 interface Product {
   id: string;
@@ -13,6 +22,15 @@ interface Product {
   precoUnitario: number;
   currentStock: number;
   unit: string;
+  codigoSinapi?: string | null;
+}
+
+interface MaterialSinapi {
+  id: string;
+  codigoSinapi: string;
+  nome: string;
+  unidade: string;
+  precoUnitario: number;
 }
 
 export default function EditProductPage({
@@ -31,6 +49,9 @@ export default function EditProductPage({
   const [precoUnitario, setPrecoUnitario] = useState("");
   const [currentStock, setCurrentStock] = useState("0");
   const [unit, setUnit] = useState("un");
+  const [codigoSinapi, setCodigoSinapi] = useState("");
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [materiaisSinapi, setMateriaisSinapi] = useState<MaterialSinapi[]>([]);
 
   useEffect(() => {
     const initializeProduct = async () => {
@@ -60,6 +81,7 @@ export default function EditProductPage({
           setPrecoUnitario(product.precoUnitario.toString());
           setCurrentStock(product.currentStock.toString());
           setUnit(product.unit);
+          setCodigoSinapi(product.codigoSinapi || "");
         }
       } catch (err) {
         console.error("Erro ao buscar produto:", err);
@@ -71,6 +93,14 @@ export default function EditProductPage({
 
     fetchProduct();
   }, [productId]);
+
+  useEffect(() => {
+    async function carregarSinapi() {
+      const dados = await getMarketPrices();
+      setMateriaisSinapi(dados);
+    }
+    carregarSinapi();
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -93,6 +123,7 @@ export default function EditProductPage({
         precoUnitario: parseFloat(precoUnitario),
         currentStock: parseInt(currentStock) || 0,
         unit,
+        codigoSinapi: codigoSinapi || undefined,
       };
 
       const result = await updateProduct(productId, productData);
@@ -221,6 +252,51 @@ export default function EditProductPage({
                 className="w-full px-3 py-2 border border-gray-300 rounded"
                 placeholder="0"
               />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Referência SINAPI (Opcional)
+              </label>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={codigoSinapi}
+                  onChange={(e) => setCodigoSinapi(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded bg-gray-50"
+                  placeholder="Ex: 39131"
+                />
+
+                <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
+                  <DialogTrigger asChild>
+                    <Button
+                      variant="outline"
+                      type="button"
+                      className="shrink-0"
+                    >
+                      🔍 Buscar
+                    </Button>
+                  </DialogTrigger>
+
+                  <DialogContent className="sm:max-w-[90vw] lg:max-w-5xl h-[85vh] flex flex-col p-6 bg-white dark:bg-zinc-950 overflow-hidden">
+                    <DialogHeader className="px-4 py-2">
+                      <DialogTitle>
+                        Buscar Referência de Preço (SINAPI)
+                      </DialogTitle>
+                    </DialogHeader>
+
+                    <div className="flex-1 overflow-hidden mt-2">
+                      <MarketClient
+                        materiaisIniciais={materiaisSinapi}
+                        onSelect={(codigo) => {
+                          setCodigoSinapi(codigo);
+                          setIsModalOpen(false);
+                        }}
+                      />
+                    </div>
+                  </DialogContent>
+                </Dialog>
+              </div>
             </div>
           </div>
         </div>

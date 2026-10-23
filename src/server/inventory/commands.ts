@@ -18,6 +18,7 @@ export async function createProductCommand(
         precoUnitario: new Prisma.Decimal(payload.precoUnitario),
         currentStock: payload.currentStock,
         unit: payload.unit || "un",
+        codigoSinapi: payload.codigoSinapi,
       },
     });
 
@@ -58,6 +59,9 @@ export async function updateProductCommand(
           ? { currentStock: payload.currentStock }
           : {}),
         ...(payload.unit !== undefined ? { unit: payload.unit } : {}),
+        ...(payload.codigoSinapi !== undefined
+          ? { codigoSinapi: payload.codigoSinapi }
+          : {}),
       },
     });
 
